@@ -37,9 +37,18 @@ pnpm install
 | --- | --- |
 | `pnpm lint` | Check linting, formatting and import order (read-only, fails on warnings) |
 | `pnpm lint:fix` | Apply safe lint fixes, formatting and import order |
+| `pnpm test` | Run unit tests once |
+| `pnpm test:watch` | Run tests in watch mode |
+| `pnpm test:coverage` | Run tests with a coverage report (`coverage/`), enforcing 80% thresholds |
 | `pnpm typecheck` | Type-check the project without emitting files |
 | `pnpm build` | Compile TypeScript to `dist/` |
 | `pnpm clean` | Remove build output |
+
+### Testing conventions
+
+- Tests live next to the code they cover: `foo.ts` → `foo.test.ts`.
+- Keep business logic in plain TypeScript modules (no Electron or OS APIs) so it can be unit-tested in isolation.
+- Coverage must stay at or above 80% for lines, branches, functions and statements.
 
 ### Editor setup
 
