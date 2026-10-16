@@ -9,12 +9,14 @@ const MINUTES_PER_HOUR = 60;
  * - Hours are never rolled up into days: daily screen time reads more
  *   naturally as `"25h 5m"` than `"1d 1h 5m"`.
  *
- * @param ms Duration in milliseconds. Must be a finite, non-negative number.
- * @throws {RangeError} If `ms` is negative, `NaN` or infinite.
+ * @param ms Duration in milliseconds. Must be a non-negative number no
+ *   larger than `Number.MAX_SAFE_INTEGER` (about 285,000 years).
+ * @throws {RangeError} If `ms` is negative, `NaN`, infinite or too large to
+ *   be represented exactly.
  */
 export function formatDuration(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) {
-    throw new RangeError(`Duration must be a finite, non-negative number, got ${ms}`);
+  if (!(ms >= 0 && ms <= Number.MAX_SAFE_INTEGER)) {
+    throw new RangeError(`Duration must be between 0 and Number.MAX_SAFE_INTEGER ms, got ${ms}`);
   }
 
   if (ms === 0) return '0m';

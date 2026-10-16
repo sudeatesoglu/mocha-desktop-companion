@@ -11,6 +11,7 @@ describe('formatDuration', () => {
   });
 
   it('shows <1m for durations shorter than a minute', () => {
+    expect(formatDuration(0.5)).toBe('<1m');
     expect(formatDuration(1)).toBe('<1m');
     expect(formatDuration(59 * SECOND)).toBe('<1m');
   });
@@ -37,10 +38,16 @@ describe('formatDuration', () => {
     expect(formatDuration(25 * HOUR + 5 * MINUTE)).toBe('25h 5m');
   });
 
+  it('accepts the largest safe integer', () => {
+    expect(formatDuration(Number.MAX_SAFE_INTEGER)).toMatch(/^\d+h( \d+m)?$/);
+  });
+
   it.each([
     ['negative', -1],
     ['NaN', Number.NaN],
     ['Infinity', Number.POSITIVE_INFINITY],
+    ['-Infinity', Number.NEGATIVE_INFINITY],
+    ['larger than MAX_SAFE_INTEGER', Number.MAX_SAFE_INTEGER + 2],
   ])('throws a RangeError for %s input', (_label, input) => {
     expect(() => formatDuration(input)).toThrow(RangeError);
   });
