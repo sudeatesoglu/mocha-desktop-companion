@@ -20,6 +20,7 @@
     "clean": "node -e \"import('node:fs').then((fs) => fs.rmSync('dist', { recursive: true, force: true }))\""
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.15",
     "@types/node": "^24.19.2",
     "typescript": "^7.0.2"
   }
