@@ -28,7 +28,7 @@ Mocha is a small, Tamagotchi-like character that sits in the bottom-right corner
 ```bash
 git clone https://github.com/sudeatesoglu/mocha-desktop-companion.git
 cd mocha-desktop-companion
-pnpm install
+pnpm install   # also installs Git hooks (Lefthook)
 ```
 
 ### Scripts
@@ -53,6 +53,10 @@ pnpm install
 ### Editor setup
 
 Install the recommended VS Code extensions when prompted (Biome, EditorConfig). TypeScript, JavaScript, JSON and CSS files are formatted and fixed on save using the shared settings in `.vscode/`.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, commit conventions and Git hooks.
 
 ## Roadmap
 
