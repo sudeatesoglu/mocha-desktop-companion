@@ -1,16 +1,22 @@
 
 # <type>(<scope>): <summary>
 #
-# Summary line: imperative mood, lowercase, no trailing period, max 72 chars.
+# Summary: imperative mood, no trailing period, max 72 chars.
 #   e.g. feat(tracker): add idle detection to screen time tracker
 #
-# Types:  feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert
-# Scopes: app | ui | pet | tracker | api | docs | ci | deps | release | config
+# Allowed types and scopes: see commitlint.config.ts (single source of truth).
 # Breaking change: add "!" after the scope, e.g. feat(api)!: ...
 #
-# --- Body (wrap at 72 chars) ---
-# Why:  the problem or motivation behind this change.
-# What: what changed, at a high level (the diff shows the details).
+# --- Body (required, wrap at 72 chars) ---
+# Keep "Why:" and "What:" on their own lines. "Why: text" on one line
+# looks like a Git trailer (Key: value) and is parsed as a footer.
+#
+# Why:
+# <the problem or motivation behind this change>
+#
+# What:
+# - <notable change>
+# - <notable change>
 #
 # --- Footer ---
 # Closes #<issue>

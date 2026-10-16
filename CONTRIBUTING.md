@@ -24,7 +24,8 @@ Commits follow [Conventional Commits 1.0](https://www.conventionalcommits.org/en
 ```text
 <type>(<scope>): <summary>
 
-Why: <the problem or motivation>
+Why:
+<the problem or motivation>
 
 What:
 - <notable change>
@@ -33,8 +34,9 @@ What:
 Closes #<issue>
 ```
 
+- **Header:** a scope is required.
 - **Summary:** imperative mood ("add", not "added"), no trailing period, at most 72 characters.
-- **Body:** explain *why* the change is needed and *what* changed at a high level; the diff shows the details. Wrap lines at 72 characters.
+- **Body (required):** explain *why* the change is needed and *what* changed at a high level; the diff shows the details. Wrap lines at 72 characters. Keep `Why:` and `What:` on their own lines: `Why: text` on a single line looks like a [Git trailer](https://git-scm.com/docs/git-interpret-trailers) (`Key: value`) and is parsed as a footer, leaving the body empty.
 - **Footer:** `Closes #N` / `Refs #N`; `BREAKING CHANGE: <description>` for breaking changes, together with a `!` after the scope (`feat(api)!: ...`).
 
 A commit template is included. Enable it once per clone:
@@ -61,9 +63,7 @@ git config commit.template .gitmessage
 
 ### Scopes
 
-`app`, `ui`, `pet`, `tracker`, `api`, `db`, `docs`, `readme`, `ci`, `deps`, `release`, `config`, `test`
-
-The list is defined in `commitlint.config.ts`; extend both together as the project grows.
+Allowed scopes are defined in [`commitlint.config.ts`](commitlint.config.ts), the single source of truth. Add a new scope there when a new area of the codebase appears.
 
 ## Git hooks
 
@@ -74,7 +74,9 @@ The list is defined in `commitlint.config.ts`; extend both together as the proje
 | `pre-commit` | Runs Biome on staged files and re-stages any fixes |
 | `commit-msg` | Validates the commit message with commitlint |
 
-In an emergency you can bypass hooks with `git commit --no-verify`. CI runs the same checks, so a bypassed problem is still caught before merging.
+In an emergency you can bypass hooks with `git commit --no-verify`. CI re-runs the same checks on every pull request, so a bypassed problem is still caught before merging.
+
+Hooks are not installed when there is no `.git` directory (e.g. a source tarball) or when the `CI` environment variable is set.
 
 ## Dependencies
 
