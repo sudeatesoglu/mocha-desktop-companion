@@ -8,12 +8,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: [
-        'src/**/*.{test,spec}.{ts,tsx}',
-        'src/**/__tests__/**',
-        // Placeholder entry point until the Electron main process lands.
-        'src/index.ts',
-      ],
+      // Keep in sync with the test-file excludes in tsconfig.build.json.
+      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/**/__tests__/**'],
       reporter: ['text', 'html', 'lcov'],
       thresholds: {
         lines: 80,
