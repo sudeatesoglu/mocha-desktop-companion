@@ -17,11 +17,12 @@
     "useUnknownInCatchVariables": true,
 
     "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
 
     "noEmit": true
   },
-  "include": ["src"]
+  "include": ["src", "vitest.config.ts"]
 }

@@ -6,6 +6,8 @@
     "rootDir": "src",
     "sourceMap": true
   },
+  "include": ["src"],
+  // Keep in sync with coverage.exclude in vitest.config.ts.
   "exclude": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
