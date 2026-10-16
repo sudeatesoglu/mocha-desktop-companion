@@ -35,16 +35,15 @@ pnpm install
 
 | Command | Description |
 | --- | --- |
-| `pnpm lint` | Check linting, formatting and import order (read-only) |
-| `pnpm lint:fix` | Apply safe lint fixes and formatting |
-| `pnpm format` | Format all files |
+| `pnpm lint` | Check linting, formatting and import order (read-only, fails on warnings) |
+| `pnpm lint:fix` | Apply safe lint fixes, formatting and import order |
 | `pnpm typecheck` | Type-check the project without emitting files |
 | `pnpm build` | Compile TypeScript to `dist/` |
 | `pnpm clean` | Remove build output |
 
 ### Editor setup
 
-Install the recommended VS Code extensions when prompted (Biome, EditorConfig). Files are formatted and fixed on save using the shared settings in `.vscode/`.
+Install the recommended VS Code extensions when prompted (Biome, EditorConfig). TypeScript, JavaScript, JSON and CSS files are formatted and fixed on save using the shared settings in `.vscode/`.
 
 ## Roadmap
 
