@@ -20,7 +20,7 @@ Mocha is a small, Tamagotchi-like character that sits in the bottom-right corner
 
 | Tool | Version | Notes |
 | --- | --- | --- |
-| [Node.js](https://nodejs.org) | 24 LTS | Pinned in `.node-version` (picked up by fnm, nvm, Volta, etc.) |
+| [Node.js](https://nodejs.org) | 24 LTS | Pinned in `.node-version` (read by fnm, mise and asdf; with nvm run `nvm install 24 && nvm use 24`) |
 | [pnpm](https://pnpm.io) | 12.x | Exact version pinned in `package.json` (`packageManager`); pnpm switches to it automatically |
 
 ### Setup
