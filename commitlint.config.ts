@@ -2,7 +2,9 @@ import type { UserConfig } from '@commitlint/types';
 
 /**
  * Commit message rules (Conventional Commits 1.0).
- * Keep the scope list in sync with CONTRIBUTING.md.
+ *
+ * This file is the single source of truth for allowed types and scopes;
+ * docs and the commit template link here instead of copying the list.
  */
 const config: UserConfig = {
   extends: ['@commitlint/config-conventional'],
@@ -26,9 +28,10 @@ const config: UserConfig = {
         'test',
       ],
     ],
-    // GitHub appends " (#123)" to squash-merge titles, so keep headroom
-    // above the 72-char guideline for the summary itself.
-    'header-max-length': [2, 'always', 100],
+    'scope-empty': [2, 'never'],
+    'header-max-length': [2, 'always', 72],
+    // Every commit explains itself with a Why/What body.
+    'body-empty': [2, 'never'],
   },
 };
 
