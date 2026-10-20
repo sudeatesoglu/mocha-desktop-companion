@@ -10,7 +10,7 @@ Write an ADR when a decision is expensive to reverse or shapes many parts of the
 
 1. Copy [`template.md`](template.md) to `NNNN-short-title.md`, using the next free number.
 2. Fill in every section. Keep it short: one decision per record.
-3. Open a pull request. The record starts as `Proposed` and becomes `Accepted` when merged.
+3. Open a pull request with the status `Proposed`. Once the decision is agreed in review, set it to `Accepted` before merging; the merge makes it final.
 4. Add it to the index below.
 
 Accepted records are immutable. When a decision changes, write a new ADR that supersedes the old one, and set the old record's status to `Superseded by ADR-NNNN`.
