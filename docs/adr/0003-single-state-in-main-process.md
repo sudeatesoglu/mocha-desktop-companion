@@ -36,5 +36,5 @@ window ──intent { type }──▶ main: state = reduce(state, action, now) �
 
 - Game rules live in one pure module that is tested without Electron (functional core, imperative shell).
 - Adding a new view (for example a menu-bar popover) only requires subscribing to the snapshot.
-- Every user action costs one IPC round trip. This is negligible for a companion that reacts on human timescales.
+- Every user action costs one IPC message to the main process and one broadcast back to each window. This is negligible for a companion that reacts on human timescales.
 - The IPC surface must stay small and validated, because it is the only way renderers can affect state.
