@@ -40,4 +40,4 @@ Every window uses the same security baseline: `contextIsolation: true`, `sandbox
 - Electron ships a full Chromium runtime, so the installer and memory footprint are larger than a native app. Rendering cost must be kept low on purpose (see [ADR-0004](0004-canvas-2d-renderer-with-fixed-timestep-loop.md)).
 - The overlay has no menu and no Dock icon, so it is hard to quit. A tray menu with a Quit item is required from the first release.
 - Moving between macOS Spaces shows the overlay with a short delay caused by the system's Space transition. This is accepted.
-- Windows and Linux overlay behavior still has to be verified before those platforms are supported.
+- `type: 'panel'` and `app.dock` are macOS-only APIs. They must sit behind a platform check, and Windows and Linux overlay behavior still has to be verified before those platforms are supported.
