@@ -15,6 +15,7 @@ We will write a small renderer on the **Canvas 2D API** instead of adopting a re
 
 - Game logic advances in fixed steps (100 ms in the spike). Animation speed is therefore identical on 60 Hz and 120 Hz displays, and the elapsed time per frame is clamped so a wake-up from sleep does not replay a burst of steps.
 - The loop is scheduled at the step rate, not at the display refresh rate. Pixel-art animation does not benefit from 60 frames per second.
+- Input is the exception: a change caused directly by the user (the eye following the cursor, hover feedback) is drawn on the next animation frame instead of waiting for the next step, so direct manipulation never lags by up to one step.
 - `update()` reports whether anything visible changed. `render()` runs only when something did (the "dirty" flag), and the loop pauses while the window is hidden.
 - Scenes are drawn back to front in layers (painter's algorithm).
 
@@ -29,6 +30,7 @@ With this loop, the same spike measured under 1% total CPU at idle, down from ro
 ## Consequences
 
 - The renderer stays small and fully understood, with no engine dependency to upgrade.
+- The loop has two paths into `render()`: the fixed step for time-driven animation and an input path for immediate feedback. Both must go through the same dirty flag so a frame is never drawn twice.
 - Effects such as lighting and particles must be implemented by us. If they become expensive, this decision can be revisited and superseded.
 - Visual reactions must be designed for the low resolution: the spike showed that a 1-pixel change lasting under a second is not noticed. Reactions need a silhouette change or an effect and should last at least about a second.
 - The loop and the drawing code are plain modules that can be unit-tested by injecting a clock and a canvas context.
