@@ -21,3 +21,4 @@ Accepted records are immutable. When a decision changes, write a new ADR that su
 | --- | --- | --- |
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
 | [0002](0002-electron-shell-with-overlay-window.md) | Electron shell with a transparent overlay window | Accepted |
+| [0003](0003-single-state-in-main-process.md) | One state in the main process, rendered by two windows | Accepted |
