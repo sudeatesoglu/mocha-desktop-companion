@@ -31,7 +31,19 @@ cd mocha-desktop-companion
 pnpm install   # also installs Git hooks (Lefthook)
 ```
 
+### Repository layout
+
+This is a [pnpm workspace](https://pnpm.io/workspaces) (see [ADR-0005](docs/adr/0005-pnpm-workspace-layout.md)):
+
+| Path | Package | Contents |
+| --- | --- | --- |
+| `packages/core` | `@mocha/core` | Pure game and habit logic. No Electron, DOM or Node APIs, enforced by its tsconfig |
+| `apps/` | | Runnable applications (the Electron desktop app is added next) |
+| `docs/adr/` | | Architecture Decision Records |
+
 ### Scripts
+
+Run from the repository root; they cover every workspace package.
 
 | Command | Description |
 | --- | --- |
@@ -40,14 +52,15 @@ pnpm install   # also installs Git hooks (Lefthook)
 | `pnpm test` | Run unit tests once |
 | `pnpm test:watch` | Run tests in watch mode |
 | `pnpm test:coverage` | Run tests with a coverage report (`coverage/`), enforcing 80% thresholds |
-| `pnpm typecheck` | Type-check the project without emitting files |
-| `pnpm build` | Compile TypeScript to `dist/` |
-| `pnpm clean` | Remove build output |
+| `pnpm typecheck` | Type-check the root config files and every package |
+| `pnpm build` | Build every package that has a `build` script |
+
+To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/core test`.
 
 ### Testing conventions
 
 - Tests live next to the code they cover: `foo.ts` → `foo.test.ts`.
-- Keep business logic in plain TypeScript modules (no Electron or OS APIs) so it can be unit-tested in isolation.
+- Keep business logic in `@mocha/core` (no Electron or OS APIs) so it can be unit-tested in isolation. Platform code only calls into it.
 - Coverage must stay at or above 80% for lines, branches, functions and statements.
 
 ### Editor setup
