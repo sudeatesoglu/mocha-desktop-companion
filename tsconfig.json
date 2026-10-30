@@ -1,28 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  // Root project: shared compiler options live in tsconfig.base.json.
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2024",
-    "lib": ["ES2024"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "types": ["node"],
-
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "useUnknownInCatchVariables": true,
-
-    "verbatimModuleSyntax": true,
-    "rewriteRelativeImportExtensions": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-
-    "noEmit": true
+    "types": ["node"]
   },
   "include": ["src", "*.config.ts"]
 }
