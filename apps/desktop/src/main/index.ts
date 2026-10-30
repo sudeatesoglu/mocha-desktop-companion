@@ -1,5 +1,7 @@
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { app, session } from 'electron';
+import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { createSecureWindow } from './windows/create-secure-window.ts';
 
 // Composition root: wires Electron to the app's modules. Logic lives in
@@ -21,6 +23,9 @@ if (!app.requestSingleInstanceLock()) {
       callback(false),
     );
     session.defaultSession.setPermissionCheckHandler(() => false);
+
+    const trustedUrls = [devServerUrl ?? pathToFileURL(rendererFile).href];
+    registerIpcHandlers(trustedUrls, console);
 
     const window = createSecureWindow(
       { width: 360, height: 240, title: 'Mocha', resizable: false },
