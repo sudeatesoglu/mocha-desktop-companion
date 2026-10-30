@@ -12,3 +12,8 @@ body {
   /* Nearest-neighbor upscaling keeps pixel edges crisp. */
   image-rendering: pixelated;
 }
+
+/* Signals that Mocha itself (not the empty corner) is under the cursor. */
+.interactive #mocha {
+  cursor: pointer;
+}

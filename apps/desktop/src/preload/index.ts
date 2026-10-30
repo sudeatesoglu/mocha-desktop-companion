@@ -6,6 +6,8 @@ import { IpcChannel, type MochaBridge } from '../shared/ipc-channels.ts';
 const bridge: MochaBridge = {
   getAppInfo: () => ipcRenderer.invoke(IpcChannel.GetAppInfo),
   reportError: (report) => ipcRenderer.send(IpcChannel.ReportRendererError, report),
+  setOverlayInteractive: (interactive) =>
+    ipcRenderer.send(IpcChannel.SetOverlayInteractive, interactive),
 };
 
 contextBridge.exposeInMainWorld('mocha', bridge);

@@ -1,11 +1,8 @@
-import { app, type IpcMainEvent, type IpcMainInvokeEvent, ipcMain } from 'electron';
+import { app, ipcMain } from 'electron';
 import { z } from 'zod';
 import { type AppInfo, IpcChannel } from '../../shared/ipc-channels.ts';
 import { rendererErrorReportSchema } from './schemas.ts';
-import { type IpcLogger, isTrustedSenderUrl, validated } from './validate.ts';
-
-const senderUrl = (event: IpcMainEvent | IpcMainInvokeEvent): string =>
-  event.senderFrame?.url ?? '';
+import { type IpcLogger, isTrustedSenderUrl, senderUrl, validated } from './validate.ts';
 
 export function registerIpcHandlers(trustedUrls: readonly string[], logger: IpcLogger): void {
   const options = {

@@ -33,8 +33,10 @@ describe('registerIpcHandlers', () => {
     registerIpcHandlers([TRUSTED], logger);
   });
 
-  it('registers a handler for every channel', () => {
-    expect([...ipc.handlers.keys()].sort()).toEqual(Object.values(IpcChannel).sort());
+  it('registers the app-wide channels (overlay channels live in their own module)', () => {
+    expect([...ipc.handlers.keys()].sort()).toEqual(
+      [IpcChannel.GetAppInfo, IpcChannel.ReportRendererError].sort(),
+    );
   });
 
   describe(IpcChannel.GetAppInfo, () => {

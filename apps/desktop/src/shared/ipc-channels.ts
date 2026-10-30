@@ -9,6 +9,8 @@ export const IpcChannel = {
   GetAppInfo: 'app:get-info',
   /** Renderer → main (send): report a renderer error to the main-process log. */
   ReportRendererError: 'app:report-renderer-error',
+  /** Overlay → main (send): whether the cursor is over Mocha's pixels. */
+  SetOverlayInteractive: 'overlay:set-interactive',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -27,4 +29,6 @@ export interface RendererErrorReport {
 export interface MochaBridge {
   getAppInfo(): Promise<AppInfo>;
   reportError(report: RendererErrorReport): void;
+  /** Overlay only: let clicks reach Mocha (true) or fall through (false). */
+  setOverlayInteractive(interactive: boolean): void;
 }

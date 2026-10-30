@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { app, screen, session } from 'electron';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
+import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
 
 // Composition root: wires Electron to the app's modules. Logic lives in
@@ -32,6 +33,7 @@ if (!app.requestSingleInstanceLock()) {
       screen.getPrimaryDisplay().workArea,
       process.platform,
     );
+    registerOverlayHandlers(window, trustedUrls, console);
     if (devServerUrl) {
       window.loadURL(devServerUrl);
     } else {
