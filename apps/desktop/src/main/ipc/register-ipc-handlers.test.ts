@@ -8,9 +8,7 @@ type Handler = (event: unknown, payload?: unknown) => unknown;
 const ipc = vi.hoisted(() => ({ handlers: new Map<string, Handler>() }));
 
 vi.mock('electron', () => ({
-  app: { getName: () => 'Mocha', getVersion: () => '1.2.3' },
   ipcMain: {
-    handle: (channel: string, handler: Handler) => ipc.handlers.set(channel, handler),
     on: (channel: string, handler: Handler) => ipc.handlers.set(channel, handler),
   },
 }));
@@ -34,36 +32,7 @@ describe('registerIpcHandlers', () => {
   });
 
   it('registers the app-wide channels (overlay channels live in their own module)', () => {
-    expect([...ipc.handlers.keys()].sort()).toEqual(
-      [IpcChannel.GetAppInfo, IpcChannel.ReportRendererError].sort(),
-    );
-  });
-
-  describe(IpcChannel.GetAppInfo, () => {
-    it('returns the app name and version to a trusted renderer', () => {
-      const result = handlerFor(IpcChannel.GetAppInfo)(fromUrl(TRUSTED), undefined);
-
-      expect(result).toEqual({ name: 'Mocha', version: '1.2.3' });
-    });
-
-    it('rejects an untrusted sender with an error', () => {
-      const call = () => handlerFor(IpcChannel.GetAppInfo)(fromUrl('https://example.com/'));
-
-      expect(call).toThrow('request rejected');
-      expect(logger.warn).toHaveBeenCalledOnce();
-    });
-
-    it('rejects a sender whose frame is gone', () => {
-      const call = () => handlerFor(IpcChannel.GetAppInfo)({ senderFrame: null });
-
-      expect(call).toThrow('request rejected');
-    });
-
-    it('rejects an unexpected payload', () => {
-      const call = () => handlerFor(IpcChannel.GetAppInfo)(fromUrl(TRUSTED), { evil: true });
-
-      expect(call).toThrow('request rejected');
-    });
+    expect([...ipc.handlers.keys()]).toEqual([IpcChannel.ReportRendererError]);
   });
 
   describe(IpcChannel.ReportRendererError, () => {
