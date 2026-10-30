@@ -6,5 +6,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["*.config.ts", "packages/*/vitest.config.ts"]
+  "include": ["*.config.ts", "vitest.shared.ts", "packages/*/vitest.config.ts"]
 }

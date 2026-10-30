@@ -1,9 +1,12 @@
-import { defineProject } from 'vitest/config';
+import { defineProject, mergeConfig } from 'vitest/config';
+import { sharedProjectConfig } from '../../vitest.shared.ts';
 
-export default defineProject({
-  test: {
-    name: 'core',
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    environment: 'node',
-  },
-});
+export default mergeConfig(
+  sharedProjectConfig,
+  defineProject({
+    test: {
+      name: 'core',
+      include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    },
+  }),
+);
