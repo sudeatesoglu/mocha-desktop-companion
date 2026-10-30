@@ -1,0 +1,27 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #0d0b0e;
+  color: #f2eee6;
+  font-family: ui-monospace, monospace;
+  font-size: 14px;
+  user-select: none;
+}
+
+main {
+  display: grid;
+  place-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.name {
+  margin: 0;
+  font-size: 24px;
+}
+
+.version {
+  margin: 4px 0 0;
+  color: #a8a1a6;
+}

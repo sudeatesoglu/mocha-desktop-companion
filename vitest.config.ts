@@ -10,7 +10,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['{packages,apps}/*/src/**/*.{ts,tsx}'],
-      exclude: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**'],
+      exclude: [
+        '**/*.{test,spec}.{ts,tsx}',
+        '**/__tests__/**',
+        // Entry points (composition roots) only wire modules together and
+        // need a running Electron app. They are left to end-to-end tests;
+        // keep logic out of them so it stays unit-tested.
+        'apps/desktop/src/{main,preload,renderer}/index.ts',
+      ],
       reporter: ['text', 'html', 'lcov'],
       thresholds: {
         lines: 80,
