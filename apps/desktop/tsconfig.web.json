@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Renderer: browser APIs only. Using a Node API here is a type error.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    // Treat every file as a module (Vite loads it with type="module"), so
+    // top-level names never collide with browser globals like window.name.
+    "moduleDetection": "force"
+  },
+  "include": ["src/renderer", "src/shared"]
+}

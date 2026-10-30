@@ -17,6 +17,9 @@
     "enabled": true,
     "rules": {
       "preset": "recommended",
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
       "suspicious": {
         "noConsole": { "level": "warn", "options": { "allow": ["error", "warn"] } }
       },

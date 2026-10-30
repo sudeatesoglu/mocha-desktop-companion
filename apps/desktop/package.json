@@ -1,0 +1,25 @@
+{
+  "name": "@mocha/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Mocha's Electron desktop app.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron --version && electron-vite dev --watch",
+    "build": "electron-vite build",
+    "preview": "electron --version && electron-vite preview",
+    "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "electron": "44.10.0",
+    "electron-vite": "6.0.0",
+    "vite": "8.3.5"
+  }
+}
