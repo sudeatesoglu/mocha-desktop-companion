@@ -20,9 +20,9 @@ export function registerIpcHandlers(trustedUrls: readonly string[], logger: IpcL
     options,
   );
   ipcMain.handle(IpcChannel.GetAppInfo, (event, payload: unknown) => {
-    const info = getAppInfo(senderUrl(event), payload);
-    if (info === undefined) throw new Error(`${IpcChannel.GetAppInfo}: request rejected`);
-    return info;
+    const result = getAppInfo(senderUrl(event), payload);
+    if (!result.ok) throw new Error(`${IpcChannel.GetAppInfo}: request rejected`);
+    return result.value;
   });
 
   const reportRendererError = validated(

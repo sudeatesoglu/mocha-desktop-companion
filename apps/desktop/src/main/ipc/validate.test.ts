@@ -50,9 +50,18 @@ describe('validated', () => {
   it('passes a valid payload to the handler and returns its result', () => {
     const { handler, logger, listener } = setup();
 
-    expect(listener(PROD_URL, { message: 'boom' })).toBe(4);
+    expect(listener(PROD_URL, { message: 'boom' })).toEqual({ ok: true, value: 4 });
     expect(handler).toHaveBeenCalledWith({ message: 'boom' });
     expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('distinguishes a handler that returns undefined from a rejection', () => {
+    const listener = validated('test:channel', rendererErrorReportSchema, () => undefined, {
+      isTrusted: () => true,
+      logger: { warn: vi.fn() },
+    });
+
+    expect(listener(PROD_URL, { message: 'boom' })).toEqual({ ok: true, value: undefined });
   });
 
   it.each([
@@ -66,7 +75,7 @@ describe('validated', () => {
   ])('rejects and logs %s', (_case, payload) => {
     const { handler, logger, listener } = setup();
 
-    expect(listener(PROD_URL, payload)).toBeUndefined();
+    expect(listener(PROD_URL, payload)).toEqual({ ok: false });
     expect(handler).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledWith(
       '[ipc] test:channel: rejected invalid payload',
@@ -77,7 +86,7 @@ describe('validated', () => {
   it('rejects an untrusted sender before looking at the payload', () => {
     const { handler, logger, listener } = setup(false);
 
-    expect(listener('https://example.com/', { message: 'boom' })).toBeUndefined();
+    expect(listener('https://example.com/', { message: 'boom' })).toEqual({ ok: false });
     expect(handler).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledWith('[ipc] test:channel: rejected untrusted sender', {
       senderUrl: 'https://example.com/',

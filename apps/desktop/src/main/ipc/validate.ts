@@ -27,6 +27,12 @@ export function isTrustedSenderUrl(senderUrl: string, trustedUrls: readonly stri
 }
 
 /**
+ * Outcome of a validated IPC call. An explicit flag instead of `undefined`,
+ * because a handler may legitimately return `undefined` itself.
+ */
+export type IpcResult<R> = { ok: true; value: R } | { ok: false };
+
+/**
  * Wraps an IPC handler so it only runs for a trusted sender and a payload
  * that matches the schema. Anything else is rejected and logged, never
  * thrown back into the renderer.
@@ -36,17 +42,17 @@ export function validated<S extends z.ZodType, R>(
   schema: S,
   handler: (payload: z.infer<S>) => R,
   options: { isTrusted: (senderUrl: string) => boolean; logger: IpcLogger },
-): (senderUrl: string, payload: unknown) => R | undefined {
+): (senderUrl: string, payload: unknown) => IpcResult<R> {
   return (senderUrl, payload) => {
     if (!options.isTrusted(senderUrl)) {
       options.logger.warn(`[ipc] ${channel}: rejected untrusted sender`, { senderUrl });
-      return undefined;
+      return { ok: false };
     }
     const result = schema.safeParse(payload);
     if (!result.success) {
       options.logger.warn(`[ipc] ${channel}: rejected invalid payload`, result.error.issues);
-      return undefined;
+      return { ok: false };
     }
-    return handler(result.data);
+    return { ok: true, value: handler(result.data) };
   };
 }
