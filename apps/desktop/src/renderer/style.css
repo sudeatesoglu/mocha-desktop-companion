@@ -1,27 +1,14 @@
 html,
 body {
   margin: 0;
-  height: 100%;
-  background: #0d0b0e;
-  color: #f2eee6;
-  font-family: ui-monospace, monospace;
-  font-size: 14px;
+  overflow: hidden;
+  /* The overlay window is transparent; only canvas pixels are visible. */
+  background: transparent;
   user-select: none;
 }
 
-main {
-  display: grid;
-  place-content: center;
-  height: 100%;
-  text-align: center;
-}
-
-.name {
-  margin: 0;
-  font-size: 24px;
-}
-
-.version {
-  margin: 4px 0 0;
-  color: #a8a1a6;
+#mocha {
+  display: block;
+  /* Nearest-neighbor upscaling keeps pixel edges crisp. */
+  image-rendering: pixelated;
 }

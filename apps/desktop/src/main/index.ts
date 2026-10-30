@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { app, session } from 'electron';
+import { app, screen, session } from 'electron';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
-import { createSecureWindow } from './windows/create-secure-window.ts';
+import { createOverlayWindow } from './windows/create-overlay-window.ts';
 
 // Composition root: wires Electron to the app's modules. Logic lives in
 // the imported modules, which are unit-tested; this file stays thin.
@@ -27,9 +27,10 @@ if (!app.requestSingleInstanceLock()) {
     const trustedUrls = [devServerUrl ?? pathToFileURL(rendererFile).href];
     registerIpcHandlers(trustedUrls, console);
 
-    const window = createSecureWindow(
-      { width: 360, height: 240, title: 'Mocha', resizable: false },
+    const window = createOverlayWindow(
       preloadPath,
+      screen.getPrimaryDisplay().workArea,
+      process.platform,
     );
     if (devServerUrl) {
       window.loadURL(devServerUrl);

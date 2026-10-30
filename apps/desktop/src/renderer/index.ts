@@ -1,4 +1,6 @@
-// Renderer entry. Placeholder screen until the overlay (#18) replaces it.
+// Overlay renderer entry: draws Mocha on a transparent canvas.
+import { OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
+import { drawPlaceholderMocha } from './placeholder-sprite.ts';
 
 // Synchronous exceptions fire 'error'; rejected promises fire
 // 'unhandledrejection'. Both are forwarded to the main-process log.
@@ -11,8 +13,16 @@ window.addEventListener('unhandledrejection', (event) => {
   window.mocha.reportError({ message: message || 'Unhandled promise rejection' });
 });
 
-const info = await window.mocha.getAppInfo();
-const name = document.getElementById('name');
-const version = document.getElementById('version');
-if (name) name.textContent = `Hello, ${info.name}`;
-if (version) version.textContent = `v${info.version}`;
+const canvas = document.getElementById('mocha');
+if (!(canvas instanceof HTMLCanvasElement)) throw new Error('#mocha canvas is missing');
+
+// The backing store stays at sprite resolution; CSS scales it to the window.
+canvas.width = SPRITE_SIZE;
+canvas.height = SPRITE_SIZE;
+canvas.style.width = `${OVERLAY_SIZE}px`;
+canvas.style.height = `${OVERLAY_SIZE}px`;
+
+const context = canvas.getContext('2d');
+if (!context) throw new Error('2D canvas context is unavailable');
+
+drawPlaceholderMocha(context);
