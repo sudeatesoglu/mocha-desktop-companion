@@ -1,9 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  // Root project: shared compiler options live in tsconfig.base.json.
+  // Root project: type-checks repo-level config files only. Each workspace
+  // package has its own tsconfig; shared options live in tsconfig.base.json.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["src", "*.config.ts"]
+  "include": ["*.config.ts", "packages/*/vitest.config.ts"]
 }
