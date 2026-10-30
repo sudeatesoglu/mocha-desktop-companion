@@ -80,5 +80,7 @@ Hooks are not installed when there is no `.git` directory (e.g. a source tarball
 
 ## Dependencies
 
+- Add a dependency to the package that uses it: `pnpm --filter <package> add <name>`. Shared tooling (TypeScript, Biome, Vitest, commitlint) lives in the root `package.json`.
+- `@mocha/core` must stay free of runtime dependencies on Electron, the DOM or Node APIs.
 - Dependency lifecycle scripts (`postinstall`, etc.) are **blocked by default**. A package that ships one must be listed in `pnpm-workspace.yaml` under `allowBuilds` with a short justification. Prefer denying (`false`) unless the script is essential.
 - Tooling packages whose output must be stable (formatter, test runner, Git hooks) are pinned to exact versions.

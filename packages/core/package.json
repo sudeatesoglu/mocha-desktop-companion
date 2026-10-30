@@ -1,0 +1,16 @@
+{
+  "name": "@mocha/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure game and habit logic for Mocha. No Electron, no DOM, no Node APIs.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

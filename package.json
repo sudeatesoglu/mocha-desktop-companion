@@ -15,9 +15,8 @@
   },
   "packageManager": "pnpm@12.14.0",
   "scripts": {
-    "build": "pnpm clean && tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json",
-    "clean": "node -e \"import('node:fs').then((fs) => fs.rmSync('dist', { recursive: true, force: true }))\"",
+    "build": "pnpm --recursive --if-present build",
+    "typecheck": "tsc -p tsconfig.json && pnpm --recursive typecheck",
     "lint": "biome check --error-on-warnings .",
     "lint:fix": "biome check --write .",
     "test": "vitest run",
