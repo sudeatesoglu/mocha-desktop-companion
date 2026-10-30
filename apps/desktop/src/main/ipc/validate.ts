@@ -1,7 +1,13 @@
+import type { IpcMainEvent, IpcMainInvokeEvent } from 'electron';
 import type { z } from 'zod';
 
 export interface IpcLogger {
   warn(message: string, details?: unknown): void;
+}
+
+/** URL of the frame that sent an IPC message; empty if the frame is gone. */
+export function senderUrl(event: Pick<IpcMainEvent | IpcMainInvokeEvent, 'senderFrame'>): string {
+  return event.senderFrame?.url ?? '';
 }
 
 /**
