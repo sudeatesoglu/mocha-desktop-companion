@@ -38,7 +38,7 @@ This is a [pnpm workspace](https://pnpm.io/workspaces) (see [ADR-0005](docs/adr/
 | Path | Package | Contents |
 | --- | --- | --- |
 | `packages/core` | `@mocha/core` | Pure game and habit logic. No Electron, DOM or Node APIs, enforced by its tsconfig |
-| `apps/` | | Runnable applications (the Electron desktop app is added next) |
+| `apps/desktop` | `@mocha/desktop` | The Electron app: main process, sandboxed preload bridge and renderer, built with [electron-vite](https://electron-vite.org) |
 | `docs/adr/` | | Architecture Decision Records |
 
 ### Scripts
@@ -47,13 +47,14 @@ Run from the repository root; they cover every workspace package.
 
 | Command | Description |
 | --- | --- |
+| `pnpm dev` | Start the desktop app with hot reload (downloads the Electron binary on first run) |
 | `pnpm lint` | Check linting, formatting and import order (read-only, fails on warnings) |
 | `pnpm lint:fix` | Apply safe lint fixes, formatting and import order |
 | `pnpm test` | Run unit tests once |
 | `pnpm test:watch` | Run tests in watch mode |
 | `pnpm test:coverage` | Run tests with a coverage report (`coverage/`), enforcing 80% thresholds |
 | `pnpm typecheck` | Type-check the root config files and every package |
-| `pnpm build` | Build every package that has a `build` script |
+| `pnpm build` | Build every package that has a `build` script (desktop output goes to `apps/desktop/out/`) |
 
 To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/core test`.
 
