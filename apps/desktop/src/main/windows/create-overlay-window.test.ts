@@ -40,7 +40,6 @@ describe('createOverlayWindow', () => {
     expect(fakeWindow.setAlwaysOnTop).toHaveBeenCalledWith(true, 'floating');
     expect(fakeWindow.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {
       visibleOnFullScreen: true,
-      skipTransformProcessType: true,
     });
   });
 

@@ -20,12 +20,10 @@ export function createOverlayWindow(
 
   // 'floating' sits above normal windows without covering system UI.
   window.setAlwaysOnTop(true, 'floating');
-  // Follow the user across Spaces and over fullscreen apps. Keep the Dock
-  // icon for now: it is the only way to quit until the tray menu exists.
-  window.setVisibleOnAllWorkspaces(true, {
-    visibleOnFullScreen: true,
-    skipTransformProcessType: true,
-  });
+  // Follow the user across Spaces and over fullscreen apps. On macOS this
+  // turns the app into a UI element: no Dock icon, as decided in ADR-0002.
+  // Quitting is done from the tray menu (#25); in development, Ctrl+C.
+  window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   // Click-through by default. `forward` still delivers mouse moves to the
   // renderer, so it can tell when the cursor reaches an opaque pixel.
   window.setIgnoreMouseEvents(true, { forward: true });
