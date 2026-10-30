@@ -9,6 +9,7 @@ interface FakeWindow {
   windowOpenHandler: Listener | undefined;
   onceListeners: Map<string, Listener>;
   show: ReturnType<typeof vi.fn>;
+  showInactive: ReturnType<typeof vi.fn>;
 }
 
 // A stand-in for Electron's BrowserWindow that records what the factory does.
@@ -21,6 +22,7 @@ vi.mock('electron', () => ({
     onceListeners = new Map<string, Listener>();
     windowOpenHandler: Listener | undefined;
     show = vi.fn();
+    showInactive = vi.fn();
     webContents = {
       on: (event: string, listener: Listener) => this.contentsListeners.set(event, listener),
       setWindowOpenHandler: (handler: Listener) => {
@@ -83,6 +85,16 @@ describe('createSecureWindow', () => {
     window.onceListeners.get('ready-to-show')?.();
 
     expect(window.show).toHaveBeenCalledOnce();
+  });
+
+  it('can show the window without taking focus', () => {
+    createSecureWindow({}, PRELOAD, { activate: false });
+    const window = lastWindow();
+
+    window.onceListeners.get('ready-to-show')?.();
+
+    expect(window.showInactive).toHaveBeenCalledOnce();
+    expect(window.show).not.toHaveBeenCalled();
   });
 
   it('does not wait for ready-to-show when the caller shows it immediately', () => {
