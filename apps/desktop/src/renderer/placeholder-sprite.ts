@@ -17,9 +17,10 @@ export const PLACEHOLDER_BLOCKS: readonly Block[] = [
   ['#0d0b0e', 23, 12, 2, 2], // pupil
 ];
 
-export function drawPlaceholderMocha(painter: PixelPainter): void {
+/** Draws the placeholder, shifted down by `offsetY` sprite pixels. */
+export function drawPlaceholderMocha(painter: PixelPainter, offsetY = 0): void {
   for (const [color, x, y, width, height] of PLACEHOLDER_BLOCKS) {
     painter.fillStyle = color;
-    painter.fillRect(x, y, width, height);
+    painter.fillRect(x, y + offsetY, width, height);
   }
 }

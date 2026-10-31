@@ -21,12 +21,22 @@ describe('drawPlaceholderMocha', () => {
     expect(calls).toEqual(PLACEHOLDER_BLOCKS.map(([c, x, y, w, h]) => `${c} ${x},${y} ${w}x${h}`));
   });
 
-  it('stays inside the sprite canvas', () => {
+  it('shifts every block down by the offset', () => {
+    const ys: number[] = [];
+    const painter: PixelPainter = { fillStyle: '', fillRect: (_x, y) => ys.push(y) };
+
+    drawPlaceholderMocha(painter, 1);
+
+    expect(ys).toEqual(PLACEHOLDER_BLOCKS.map(([, , y]) => y + 1));
+  });
+
+  it('stays inside the sprite canvas in every breathing pose', () => {
+    const maxOffset = 1;
     for (const [, x, y, width, height] of PLACEHOLDER_BLOCKS) {
       expect(x).toBeGreaterThanOrEqual(0);
       expect(y).toBeGreaterThanOrEqual(0);
       expect(x + width).toBeLessThanOrEqual(SPRITE_SIZE);
-      expect(y + height).toBeLessThanOrEqual(SPRITE_SIZE);
+      expect(y + height + maxOffset).toBeLessThanOrEqual(SPRITE_SIZE);
     }
   });
 });

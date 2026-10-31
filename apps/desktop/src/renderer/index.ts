@@ -1,6 +1,9 @@
 // Overlay renderer entry: draws Mocha on a transparent canvas.
+import { createGameLoop } from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
-import { isOpaqueAt } from './hit-test.ts';
+import { breathOffset } from './breathing.ts';
+import { createBrowserScheduler } from './browser-scheduler.ts';
+import { isOpaqueAt, type Point } from './hit-test.ts';
 import { drawPlaceholderMocha } from './placeholder-sprite.ts';
 
 // Synchronous exceptions fire 'error'; rejected promises fire
@@ -27,13 +30,12 @@ canvas.style.height = `${OVERLAY_SIZE}px`;
 const context = canvas.getContext('2d', { willReadFrequently: true });
 if (!context) throw new Error('2D canvas context is unavailable');
 
-drawPlaceholderMocha(context);
-// Read the pixels once per drawing, not on every mouse move.
-const pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-
 // Clicks pass through the window except where Mocha is drawn. The main
 // process is told only when the state changes, not on every mouse move.
 let interactive = false;
+let pointer: Point | undefined;
+let pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
 function setInteractive(next: boolean): void {
   if (next === interactive) return;
   interactive = next;
@@ -41,7 +43,47 @@ function setInteractive(next: boolean): void {
   window.mocha.setOverlayInteractive(next);
 }
 
-window.addEventListener('mousemove', (event) => {
-  setInteractive(isOpaqueAt(pixels, { x: event.clientX, y: event.clientY }, OVERLAY_SCALE));
+function refreshHitTest(): void {
+  setInteractive(pointer !== undefined && isOpaqueAt(pixels, pointer, OVERLAY_SCALE));
+}
+
+// Game state for now: just the placeholder's breathing pose.
+let elapsedMs = 0;
+let offsetY = breathOffset(0);
+
+const loop = createGameLoop({
+  stepMs: 100,
+  scheduler: createBrowserScheduler(),
+  update(stepMs) {
+    elapsedMs += stepMs;
+    const next = breathOffset(elapsedMs);
+    if (next === offsetY) return false;
+    offsetY = next;
+    return true;
+  },
+  render() {
+    context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+    drawPlaceholderMocha(context, offsetY);
+    // Read the pixels once per drawing, not on every mouse move.
+    pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+    // Mocha may have moved under a still cursor.
+    refreshHitTest();
+  },
 });
-document.addEventListener('mouseleave', () => setInteractive(false));
+
+window.addEventListener('mousemove', (event) => {
+  pointer = { x: event.clientX, y: event.clientY };
+  refreshHitTest();
+});
+document.addEventListener('mouseleave', () => {
+  pointer = undefined;
+  refreshHitTest();
+});
+
+// Do no work at all while the window is hidden.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) loop.stop();
+  else loop.start();
+});
+
+loop.start();
