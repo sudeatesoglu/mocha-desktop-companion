@@ -1,3 +1,5 @@
+import { drawPupil } from './pupil.ts';
+
 /** The drawing calls the placeholder needs; CanvasRenderingContext2D satisfies it. */
 export interface PixelPainter {
   fillStyle: string | CanvasGradient | CanvasPattern;
@@ -16,8 +18,8 @@ export const PLACEHOLDER_BLOCKS: readonly Block[] = [
   ['#f2eee6', 22, 11, 5, 5], // eye white
 ];
 
-/** The pupil is drawn separately because its color shows the hover state. */
-export const PUPIL = { x: 23, y: 12, size: 2, color: '#0d0b0e', hoverColor: '#c2213a' } as const;
+/** Where the placeholder's pupil sits when Mocha looks straight ahead. */
+export const PUPIL_POSITION = { x: 23, y: 12 } as const;
 
 export interface PlaceholderPose {
   /** Vertical shift in sprite pixels (breathing). */
@@ -32,9 +34,5 @@ export function drawPlaceholderMocha(painter: PixelPainter, pose: PlaceholderPos
     painter.fillStyle = color;
     painter.fillRect(x, y + pose.offsetY, width, height);
   }
-  // Hover feedback lives in Mocha's own pixels, not the system cursor:
-  // macOS only lets the active app change the cursor, and the overlay
-  // never activates so it does not steal focus.
-  painter.fillStyle = pose.hovered ? PUPIL.hoverColor : PUPIL.color;
-  painter.fillRect(PUPIL.x, PUPIL.y + pose.offsetY, PUPIL.size, PUPIL.size);
+  drawPupil(painter, { x: PUPIL_POSITION.x, y: PUPIL_POSITION.y + pose.offsetY }, pose.hovered);
 }
