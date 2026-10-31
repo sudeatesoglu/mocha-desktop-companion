@@ -15,6 +15,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@mocha/core": "workspace:*",
     "zod": "4.6.7"
   },
   "devDependencies": {
