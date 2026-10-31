@@ -193,6 +193,48 @@ describe('createGameLoop', () => {
     });
   });
 
+  describe('failures', () => {
+    it('stops and rethrows when an update throws, and can be started again', () => {
+      const loop = loopWith(true);
+      loop.start();
+      update.mockImplementationOnce(() => {
+        throw new Error('broken update');
+      });
+
+      expect(() => scheduler.advance(STEP)).toThrow('broken update');
+      expect(loop.running).toBe(false);
+      expect(scheduler.pendingTimers).toBe(0);
+
+      loop.start();
+      scheduler.advance(STEP);
+      expect(loop.running).toBe(true);
+    });
+
+    it('stops and rethrows when rendering on the input path throws', () => {
+      const loop = loopWith(false);
+      loop.start();
+      render.mockImplementationOnce(() => {
+        throw new Error('broken render');
+      });
+
+      loop.invalidate();
+
+      expect(() => scheduler.flushFrames()).toThrow('broken render');
+      expect(loop.running).toBe(false);
+    });
+
+    it('does not stay marked as running when the first render throws', () => {
+      render.mockImplementationOnce(() => {
+        throw new Error('broken first frame');
+      });
+      const loop = loopWith(false);
+
+      expect(() => loop.start()).toThrow('broken first frame');
+      expect(loop.running).toBe(false);
+      expect(scheduler.pendingTimers).toBe(0);
+    });
+  });
+
   it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])('rejects a step of %s', (stepMs) => {
     expect(() => createGameLoop({ stepMs, update, render, scheduler })).toThrow(RangeError);
   });

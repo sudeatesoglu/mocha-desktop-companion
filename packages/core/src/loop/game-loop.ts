@@ -66,19 +66,43 @@ export function createGameLoop(options: GameLoopOptions): GameLoop {
     render();
   }
 
-  function tick(): void {
-    const now = scheduler.now();
-    // Clamp: after sleep or a long freeze, skip ahead instead of catching up.
-    accumulator += Math.min(now - last, maxElapsedMs);
-    last = now;
+  function stop(): void {
+    running = false;
+    cancelTick?.();
+    cancelFrame?.();
+    cancelTick = undefined;
+    cancelFrame = undefined;
+  }
 
-    while (accumulator >= stepMs) {
-      if (update(stepMs)) dirty = true;
-      accumulator -= stepMs;
+  /**
+   * Runs loop work; if it throws, stops the loop before rethrowing. Without
+   * this, a failed tick would schedule nothing while `running` stayed true,
+   * and start() could never revive the loop.
+   */
+  function guarded(work: () => void): void {
+    try {
+      work();
+    } catch (error) {
+      stop();
+      throw error;
     }
+  }
 
-    draw();
-    cancelTick = scheduler.after(stepMs, tick);
+  function tick(): void {
+    guarded(() => {
+      const now = scheduler.now();
+      // Clamp: after sleep or a long freeze, skip ahead instead of catching up.
+      accumulator += Math.min(now - last, maxElapsedMs);
+      last = now;
+
+      while (accumulator >= stepMs) {
+        if (update(stepMs)) dirty = true;
+        accumulator -= stepMs;
+      }
+
+      draw();
+      cancelTick = scheduler.after(stepMs, tick);
+    });
   }
 
   return {
@@ -92,17 +116,13 @@ export function createGameLoop(options: GameLoopOptions): GameLoop {
       last = scheduler.now(); // time spent stopped is not replayed
       accumulator = 0;
       dirty = true; // draw the first frame right away
-      draw();
-      cancelTick = scheduler.after(stepMs, tick);
+      guarded(() => {
+        draw();
+        cancelTick = scheduler.after(stepMs, tick);
+      });
     },
 
-    stop() {
-      running = false;
-      cancelTick?.();
-      cancelFrame?.();
-      cancelTick = undefined;
-      cancelFrame = undefined;
-    },
+    stop,
 
     invalidate() {
       if (!running) return;
@@ -110,7 +130,7 @@ export function createGameLoop(options: GameLoopOptions): GameLoop {
       if (cancelFrame) return; // a frame is already requested
       cancelFrame = scheduler.nextFrame(() => {
         cancelFrame = undefined;
-        draw();
+        guarded(draw);
       });
     },
   };
