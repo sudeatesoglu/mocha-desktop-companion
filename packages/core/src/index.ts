@@ -10,4 +10,11 @@ export function greet(name: string): string {
   return `Hi ${name}, I'm ${APP_NAME}!`;
 }
 
+export {
+  type Cancel,
+  createGameLoop,
+  type GameLoop,
+  type GameLoopOptions,
+  type LoopScheduler,
+} from './loop/game-loop.ts';
 export { formatDuration } from './time/format-duration.ts';
