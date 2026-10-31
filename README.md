@@ -40,6 +40,7 @@ This is a [pnpm workspace](https://pnpm.io/workspaces) (see [ADR-0005](docs/adr/
 | `packages/core` | `@mocha/core` | Pure game and habit logic. No Electron, DOM or Node APIs, enforced by its tsconfig |
 | `apps/desktop` | `@mocha/desktop` | The Electron app: main process, sandboxed preload bridge and renderer, built with [electron-vite](https://electron-vite.org) |
 | `docs/adr/` | | Architecture Decision Records |
+| `docs/skins.md` | | How skins (sprite sheet + manifest) are made and validated |
 
 ### Scripts
 
