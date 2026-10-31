@@ -12,5 +12,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
   }
 }
