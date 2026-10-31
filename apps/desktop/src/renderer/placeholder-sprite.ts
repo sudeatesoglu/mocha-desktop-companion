@@ -14,13 +14,27 @@ export const PLACEHOLDER_BLOCKS: readonly Block[] = [
   ['#0d0b0e', 16, 8, 16, 12], // head
   ['#5a5260', 32, 13, 7, 3], // beak
   ['#f2eee6', 22, 11, 5, 5], // eye white
-  ['#0d0b0e', 23, 12, 2, 2], // pupil
 ];
 
-/** Draws the placeholder, shifted down by `offsetY` sprite pixels. */
-export function drawPlaceholderMocha(painter: PixelPainter, offsetY = 0): void {
+/** The pupil is drawn separately because its color shows the hover state. */
+export const PUPIL = { x: 23, y: 12, size: 2, color: '#0d0b0e', hoverColor: '#c2213a' } as const;
+
+export interface PlaceholderPose {
+  /** Vertical shift in sprite pixels (breathing). */
+  offsetY: number;
+  /** Whether the cursor is over Mocha; shown as a red pupil. */
+  hovered: boolean;
+}
+
+/** Draws the placeholder in the given pose. */
+export function drawPlaceholderMocha(painter: PixelPainter, pose: PlaceholderPose): void {
   for (const [color, x, y, width, height] of PLACEHOLDER_BLOCKS) {
     painter.fillStyle = color;
-    painter.fillRect(x, y + offsetY, width, height);
+    painter.fillRect(x, y + pose.offsetY, width, height);
   }
+  // Hover feedback lives in Mocha's own pixels, not the system cursor:
+  // macOS only lets the active app change the cursor, and the overlay
+  // never activates so it does not steal focus.
+  painter.fillStyle = pose.hovered ? PUPIL.hoverColor : PUPIL.color;
+  painter.fillRect(PUPIL.x, PUPIL.y + pose.offsetY, PUPIL.size, PUPIL.size);
 }

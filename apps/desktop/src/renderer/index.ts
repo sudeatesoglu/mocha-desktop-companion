@@ -39,8 +39,9 @@ let pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
 function setInteractive(next: boolean): void {
   if (next === interactive) return;
   interactive = next;
-  document.body.classList.toggle('interactive', next);
   window.mocha.setOverlayInteractive(next);
+  // Input path: show the hover state on the next frame, not the next step.
+  loop.invalidate();
 }
 
 function refreshHitTest(): void {
@@ -63,7 +64,7 @@ const loop = createGameLoop({
   },
   render() {
     context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    drawPlaceholderMocha(context, offsetY);
+    drawPlaceholderMocha(context, { offsetY, hovered: interactive });
     // Read the pixels once per drawing, not on every mouse move.
     pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     // Mocha may have moved under a still cursor.
