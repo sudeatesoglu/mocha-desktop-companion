@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { rendererErrorReportSchema } from './schemas.ts';
-import { isTrustedSenderUrl, validated } from './validate.ts';
+import { isTrustedSenderUrl, senderUrl, validated } from './validate.ts';
 
 const PROD_URL = 'file:///Applications/Mocha.app/Contents/Resources/app/out/renderer/index.html';
 const DEV_URL = 'http://localhost:5173/';
@@ -33,6 +33,17 @@ describe('isTrustedSenderUrl', () => {
 
   it('rejects malformed URLs', () => {
     expect(isTrustedSenderUrl('not a url', [PROD_URL])).toBe(false);
+  });
+});
+
+describe('senderUrl', () => {
+  it('returns the URL of the sending frame', () => {
+    expect(senderUrl({ senderFrame: { url: PROD_URL } } as never)).toBe(PROD_URL);
+  });
+
+  it('returns an empty string when the frame is gone, which no trusted URL matches', () => {
+    expect(senderUrl({ senderFrame: null })).toBe('');
+    expect(isTrustedSenderUrl(senderUrl({ senderFrame: null }), [PROD_URL])).toBe(false);
   });
 });
 
