@@ -40,9 +40,16 @@ const frameSchema = z.strictObject({
   anchors: anchorsSchema.optional(),
 });
 
+type Frame = z.infer<typeof frameSchema>;
+
 const animationSchema = z.strictObject({
   loop: z.boolean(),
-  frames: z.array(frameSchema).min(1),
+  frames: z
+    .array(frameSchema)
+    .min(1, 'an animation needs at least one frame')
+    // Encode "at least one" in the type too, so code can use frames[0]
+    // without a check. Safe: min(1) has already run.
+    .transform((frames) => frames as [Frame, ...Frame[]]),
 });
 
 const manifestSchema = z
