@@ -130,14 +130,17 @@ function closeEye(grid, half) {
 // --- frames and anchors ---
 
 const base = drawRaven();
-const anchors = (dy) => ({
+// `dy` moves the body; `feetDy` moves the feet, which stay put when the
+// body squashes and only rise when the whole bird leaves the ground.
+const anchors = (dy, feetDy = 0) => ({
   eye: { x: 18, y: 19 + dy }, // top-left of the 2x2 pupil
   beak: { x: 5, y: 20 + dy },
   head: { x: 23, y: 5 + dy },
+  feet: { x: 24, y: 46 + feetDy }, // between the two legs, on the toes
 });
-const closedAnchors = (dy) => {
-  const { beak, head } = anchors(dy);
-  return { beak, head };
+const closedAnchors = (dy, feetDy = 0) => {
+  const { beak, head, feet } = anchors(dy, feetDy);
+  return { beak, head, feet };
 };
 
 const sleepA = squash(closeEye(base, false), 1);
@@ -183,7 +186,7 @@ const manifest = {
       loop: false,
       frames: [
         { index: 4, durationMs: 80, anchors: anchors(2) },
-        { index: 5, durationMs: 220, anchors: anchors(-4) },
+        { index: 5, durationMs: 220, anchors: anchors(-4, -4) },
         { index: 4, durationMs: 80, anchors: anchors(2) },
       ],
     },
