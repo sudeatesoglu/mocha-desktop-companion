@@ -78,19 +78,19 @@ The placeholder uses an eight-color ink palette. Skins may use any colors, but s
 | Name | When it plays | Required |
 | --- | --- | --- |
 | `idle` | Default state: breathing | Yes |
-| `blink` | Now and then while idle | No |
+| `blink` | While idle, after a random pause of 2.5–6 s | No |
 | `look` | While Mocha watches the cursor | No |
 | `hop` | When petted | No |
 | `sleep` | While the user is away | No |
 
-Every animation has a `loop` flag and at least one frame. A missing optional animation falls back to `idle`.
+Every animation has a `loop` flag and at least one frame. A looping animation repeats until another one is requested; a one-shot animation (`"loop": false`) plays once and returns to `idle`. A missing optional animation falls back to `idle`, and a skin without `blink` simply never blinks.
 
 ### Frames
 
 | Field | Rules |
 | --- | --- |
 | `index` | Cell in the sheet (0-based, row by row). |
-| `durationMs` | How long the frame shows, 16–60000 ms. 16 ms is one display frame at 60 Hz; shorter frames would never be seen. |
+| `durationMs` | How long the frame shows, 16–60000 ms. The desktop app advances animations in 50 ms steps, so use **50 ms or more**: a shorter frame can be skipped, and times are rounded to the step. |
 | `anchors` | Optional points inside the frame, in frame pixels (top-left is 0,0). |
 
 ### Anchors

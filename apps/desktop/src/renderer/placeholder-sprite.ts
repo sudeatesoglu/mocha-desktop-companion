@@ -1,3 +1,4 @@
+import type { SkinManifest } from '@mocha/core';
 import { drawPupil } from './pupil.ts';
 
 /** The drawing calls the placeholder needs; CanvasRenderingContext2D satisfies it. */
@@ -36,3 +37,14 @@ export function drawPlaceholderMocha(painter: PixelPainter, pose: PlaceholderPos
   }
   drawPupil(painter, { x: PUPIL_POSITION.x, y: PUPIL_POSITION.y + pose.offsetY }, pose.hovered);
 }
+
+/** Animations for the placeholder: two idle poses, bobbing by one pixel. */
+export const PLACEHOLDER_ANIMATIONS: SkinManifest['animations'] = {
+  idle: {
+    loop: true,
+    frames: [
+      { index: 0, durationMs: 800 },
+      { index: 1, durationMs: 800 },
+    ],
+  },
+};
