@@ -17,4 +17,17 @@ export {
   type GameLoopOptions,
   type LoopScheduler,
 } from './loop/game-loop.ts';
+export {
+  ANIMATION_NAMES,
+  type AnimationName,
+  checkSkinImage,
+  frameSource,
+  type ManifestResult,
+  parseSkinManifest,
+  SKIN_SCHEMA_VERSION,
+  type SkinAnchors,
+  type SkinAnimation,
+  type SkinFrame,
+  type SkinManifest,
+} from './skin/skin-manifest.ts';
 export { formatDuration } from './time/format-duration.ts';

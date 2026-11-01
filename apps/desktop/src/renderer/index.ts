@@ -1,10 +1,14 @@
 // Overlay renderer entry: draws Mocha on a transparent canvas.
 import { createGameLoop } from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
+import { type Appearance, placeholderAppearance, skinAppearance } from './appearance.ts';
 import { breathOffset } from './breathing.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
 import { isOpaqueAt, type Point } from './hit-test.ts';
-import { drawPlaceholderMocha } from './placeholder-sprite.ts';
+import { loadImage } from './load-image.ts';
+import { loadSkin } from './skin-loader.ts';
+import defaultManifest from './skins/default/manifest.json';
+import defaultSpriteUrl from './skins/default/sprite.png';
 
 // Synchronous exceptions fire 'error'; rejected promises fire
 // 'unhandledrejection'. Both are forwarded to the main-process log.
@@ -30,6 +34,30 @@ canvas.style.height = `${OVERLAY_SIZE}px`;
 const context = canvas.getContext('2d', { willReadFrequently: true });
 if (!context) throw new Error('2D canvas context is unavailable');
 
+// The bundled skin's files, by the name the manifest uses. A manifest can
+// only reference files listed here.
+const defaultSkinFiles: Record<string, string> = { 'sprite.png': defaultSpriteUrl };
+
+const skin = await loadSkin(
+  defaultManifest,
+  (fileName) => {
+    const url = defaultSkinFiles[fileName];
+    return url ? loadImage(url) : Promise.reject(new Error('not part of the skin'));
+  },
+  { width: SPRITE_SIZE, height: SPRITE_SIZE },
+);
+
+// Graceful degradation: a broken skin is reported, and Mocha stays on
+// screen as the built-in placeholder instead of disappearing.
+let appearance: Appearance<HTMLImageElement>;
+if (skin.ok) {
+  appearance = skinAppearance(skin.skin);
+} else {
+  const message = `Default skin is invalid, using the placeholder: ${skin.errors.join('; ')}`;
+  window.mocha.reportError({ message: message.slice(0, 2_000) });
+  appearance = placeholderAppearance();
+}
+
 // Clicks pass through the window except where Mocha is drawn. The main
 // process is told only when the state changes, not on every mouse move.
 let interactive = false;
@@ -48,9 +76,9 @@ function refreshHitTest(): void {
   setInteractive(pointer !== undefined && isOpaqueAt(pixels, pointer, OVERLAY_SCALE));
 }
 
-// Game state for now: just the placeholder's breathing pose.
+// Game state for now: just the breathing phase.
 let elapsedMs = 0;
-let offsetY = breathOffset(0);
+let phase = breathOffset(0);
 
 const loop = createGameLoop({
   stepMs: 100,
@@ -58,13 +86,13 @@ const loop = createGameLoop({
   update(stepMs) {
     elapsedMs += stepMs;
     const next = breathOffset(elapsedMs);
-    if (next === offsetY) return false;
-    offsetY = next;
+    if (next === phase) return false;
+    phase = next;
     return true;
   },
   render() {
     context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    drawPlaceholderMocha(context, { offsetY, hovered: interactive });
+    appearance.draw(context, { phase, hovered: interactive });
     // Read the pixels once per drawing, not on every mouse move.
     pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     // Mocha may have moved under a still cursor.

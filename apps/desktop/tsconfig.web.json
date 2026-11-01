@@ -8,7 +8,9 @@
     "moduleResolution": "Bundler",
     // Treat every file as a module (Vite loads it with type="module"), so
     // top-level names never collide with browser globals like window.name.
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    // Lets TypeScript understand Vite asset imports (e.g. a .png gives its URL).
+    "types": ["vite/client"]
   },
   "include": ["src/renderer", "src/shared"]
 }

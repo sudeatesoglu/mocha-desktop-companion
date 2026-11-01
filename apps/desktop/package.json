@@ -12,7 +12,8 @@
     "preview": "electron --version && electron-vite preview",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate:skin": "node scripts/generate-default-skin.mjs"
   },
   "dependencies": {
     "@mocha/core": "workspace:*",

@@ -4,8 +4,16 @@ import {
   drawPlaceholderMocha,
   type PixelPainter,
   PLACEHOLDER_BLOCKS,
-  PUPIL,
+  PUPIL_POSITION,
 } from './placeholder-sprite.ts';
+import { PUPIL_COLOR, PUPIL_HOVER_COLOR, PUPIL_SIZE } from './pupil.ts';
+
+const PUPIL = {
+  ...PUPIL_POSITION,
+  size: PUPIL_SIZE,
+  color: PUPIL_COLOR,
+  hoverColor: PUPIL_HOVER_COLOR,
+};
 
 /** Records every fillRect call as "color x,y wxh". */
 function recordingPainter(): PixelPainter & { calls: string[] } {
