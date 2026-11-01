@@ -1,6 +1,7 @@
 import { frameSource } from '@mocha/core';
 import { drawPlaceholderMocha, type PixelPainter } from './placeholder-sprite.ts';
 import { drawPupil } from './pupil.ts';
+import { drawShadow, shadowRows } from './shadow.ts';
 import type { LoadedSkin, SkinImage } from './skin-loader.ts';
 
 export interface Pose {
@@ -38,10 +39,15 @@ export interface Appearance<I> {
 export function skinAppearance<I extends SkinImage>(skin: LoadedSkin<I>): Appearance<I> {
   const { frameSize, animations } = skin.manifest;
   const idle = animations.idle.frames;
+  // The ground is where the feet rest in the first idle frame.
+  const groundY = idle[0].anchors?.feet?.y;
   return {
     draw(painter, pose) {
       // A negative or fractional phase would miss the array; show the first frame.
       const frame = idle[pose.phase % idle.length] ?? idle[0];
+      // Behind the sprite, so the feet stand on it.
+      const feet = frame.anchors?.feet;
+      if (feet && groundY !== undefined) drawShadow(painter, shadowRows(feet, groundY));
       const source = frameSource(frameSize, frame.index, skin.image.width);
       painter.drawImage(
         skin.image,

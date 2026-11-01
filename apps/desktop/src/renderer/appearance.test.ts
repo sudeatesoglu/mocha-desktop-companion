@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { placeholderAppearance, type SpritePainter, skinAppearance } from './appearance.ts';
 import { PLACEHOLDER_BLOCKS } from './placeholder-sprite.ts';
 import { PUPIL_COLOR, PUPIL_HOVER_COLOR } from './pupil.ts';
+import { SHADOW_COLOR } from './shadow.ts';
 
 interface FakeImage {
   width: number;
@@ -76,6 +77,64 @@ describe('skinAppearance', () => {
     const { painter, fills } = recordingPainter();
 
     skinAppearance(skin).draw(painter, { phase: 1, hovered: true });
+
+    expect(fills).toEqual([]);
+  });
+});
+
+describe('skinAppearance shadow', () => {
+  const withFeet = (feet: { x: number; y: number } | undefined, idleFeet = { x: 24, y: 46 }) => ({
+    manifest: {
+      ...MANIFEST,
+      animations: {
+        idle: {
+          loop: true,
+          frames: [
+            { index: 0, durationMs: 800, anchors: { feet: idleFeet } },
+            { index: 1, durationMs: 800, anchors: feet ? { feet } : {} },
+          ],
+        },
+      },
+    } as SkinManifest,
+    image: { width: 144, height: 96 },
+  });
+
+  it('draws the shadow before the sprite, on the ground line', () => {
+    const order: string[] = [];
+    const painter: SpritePainter<FakeImage> = {
+      fillStyle: '',
+      fillRect(_x, y) {
+        order.push(`${String(this.fillStyle)}@${y}`);
+      },
+      drawImage() {
+        order.push('sprite');
+      },
+    };
+
+    skinAppearance(withFeet({ x: 24, y: 46 })).draw(painter, { phase: 1, hovered: false });
+
+    expect(order).toEqual([
+      `${SHADOW_COLOR}@45`,
+      `${SHADOW_COLOR}@46`,
+      `${SHADOW_COLOR}@47`,
+      'sprite',
+    ]);
+  });
+
+  it('casts no shadow for a frame without feet', () => {
+    const { painter, fills } = recordingPainter();
+
+    skinAppearance(withFeet(undefined)).draw(painter, { phase: 1, hovered: false });
+
+    expect(fills).toEqual([]);
+  });
+
+  it('casts no shadow when the skin does not say where the ground is', () => {
+    const { painter, fills } = recordingPainter();
+    const skin = withFeet({ x: 24, y: 46 });
+    skin.manifest.animations.idle.frames[0].anchors = {};
+
+    skinAppearance(skin).draw(painter, { phase: 1, hovered: false });
 
     expect(fills).toEqual([]);
   });

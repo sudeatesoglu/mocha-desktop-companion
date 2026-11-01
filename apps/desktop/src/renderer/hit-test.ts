@@ -11,7 +11,13 @@ export interface Point {
 }
 
 /**
- * Whether a point in window coordinates lies on a visible sprite pixel.
+ * Pixels below half opacity do not count as Mocha. Soft effects such as the
+ * ground shadow stay visible but let clicks through.
+ */
+export const MIN_HIT_ALPHA = 128;
+
+/**
+ * Whether a point in window coordinates lies on a solid sprite pixel.
  *
  * The overlay window is a square, but Mocha is not: clicks on transparent
  * pixels must fall through to the app underneath, so hit testing uses the
@@ -23,5 +29,5 @@ export function isOpaqueAt(pixels: PixelBuffer, point: Point, scale: number): bo
   if (x < 0 || y < 0 || x >= pixels.width || y >= pixels.height) return false;
 
   const alpha = pixels.data[(y * pixels.width + x) * 4 + 3] ?? 0;
-  return alpha > 0;
+  return alpha >= MIN_HIT_ALPHA;
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isOpaqueAt, type PixelBuffer } from './hit-test.ts';
+import { isOpaqueAt, MIN_HIT_ALPHA, type PixelBuffer } from './hit-test.ts';
+import { SHADOW_ALPHA } from './shadow.ts';
 
 /** Builds a buffer from rows of '#' (opaque) and '.' (transparent). */
 function bufferFrom(rows: string[]): PixelBuffer {
@@ -30,10 +31,18 @@ describe('isOpaqueAt', () => {
     expect(isOpaqueAt(DOT, { x: 2.9, y: 3 }, 3)).toBe(false);
   });
 
-  it('treats any non-zero alpha as opaque', () => {
-    const faint = { width: 1, height: 1, data: [0, 0, 0, 1] };
+  it('lets clicks through semi-transparent pixels such as the shadow', () => {
+    // Ties the two constants together: a darker shadow must not become clickable.
+    const shadow = { width: 1, height: 1, data: [13, 11, 14, Math.round(SHADOW_ALPHA * 255)] };
 
-    expect(isOpaqueAt(faint, { x: 0, y: 0 }, 1)).toBe(true);
+    expect(isOpaqueAt(shadow, { x: 0, y: 0 }, 1)).toBe(false);
+  });
+
+  it('counts pixels from half opacity upward as Mocha', () => {
+    const at = (alpha: number) => ({ width: 1, height: 1, data: [0, 0, 0, alpha] });
+
+    expect(isOpaqueAt(at(MIN_HIT_ALPHA - 1), { x: 0, y: 0 }, 1)).toBe(false);
+    expect(isOpaqueAt(at(MIN_HIT_ALPHA), { x: 0, y: 0 }, 1)).toBe(true);
   });
 
   it.each([
