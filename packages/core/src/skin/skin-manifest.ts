@@ -26,11 +26,13 @@ const pointSchema = z.strictObject({
  * - eye: top-left of the 2x2 pupil the app draws (frames without it have a closed eye)
  * - beak: tip of the beak (where food and speech start)
  * - head: top of the head (where hearts and "z"s appear)
+ * - feet: bottom center of the feet (where the ground shadow is cast)
  */
 const anchorsSchema = z.strictObject({
   eye: pointSchema.optional(),
   beak: pointSchema.optional(),
   head: pointSchema.optional(),
+  feet: pointSchema.optional(),
 });
 
 const frameSchema = z.strictObject({

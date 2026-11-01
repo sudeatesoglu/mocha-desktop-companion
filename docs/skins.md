@@ -12,7 +12,8 @@ The bundled placeholder skin lives in [`apps/desktop/src/renderer/skins/default`
 
 ## Sprite sheet
 
-- **PNG with transparency.** Transparent pixels are click-through: clicks there reach the app underneath Mocha.
+- **PNG with transparency.** Transparent and semi-transparent pixels (below 50% opacity) are click-through: clicks there reach the app underneath Mocha.
+- **Leave out the shadow.** The app draws Mocha's ground shadow from the `feet` anchor.
 - **Frames on a grid** of equal cells, no padding and no gaps. The image size must be a whole number of frames in both directions.
 - **Frame size: 48×48** for the desktop overlay. The app scales it up by an integer factor without smoothing, so pixels stay crisp.
 - **Frames are numbered row by row**, starting at 0 in the top-left cell:
@@ -99,6 +100,7 @@ Every animation has a `loop` flag and at least one frame. A missing optional ani
 | `eye` | Top-left pixel of the 2×2 pupil when Mocha looks straight ahead. Omit it on frames where the eye is closed: no pupil is drawn. |
 | `beak` | Tip of the beak, where food and speech bubbles attach. |
 | `head` | Top of the head (or hat), where hearts and "z"s appear. |
+| `feet` | Bottom center of the feet (the left of the two middle pixels). The app draws a ground shadow there. The ground line is the `feet` position in the first `idle` frame; when a frame lifts the feet above it, the shadow stays on the ground and shrinks. Omit it to cast no shadow. |
 
 Anchors move with the drawing. If a frame lowers the head by one pixel, its anchors move down by one pixel too, so effects stay attached.
 
