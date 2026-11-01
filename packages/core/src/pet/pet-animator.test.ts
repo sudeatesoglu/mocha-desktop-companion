@@ -41,6 +41,16 @@ describe('createPetAnimator', () => {
     expect(animator.frame.index).toBe(2);
   });
 
+  it('keeps the blink countdown when idle is requested while already idle', () => {
+    const animator = createPetAnimator(ANIMATIONS, options);
+    animator.update(900);
+
+    animator.play('idle');
+    animator.update(100);
+
+    expect(animator.frame.index).toBe(2); // the wait was not restarted
+  });
+
   it('skips blinking for skins without a blink animation', () => {
     const animator = createPetAnimator({ idle: ANIMATIONS.idle }, options);
 
@@ -53,6 +63,7 @@ describe('createPetAnimator', () => {
     const animator = createPetAnimator(ANIMATIONS, options);
 
     expect(animator.play('hop')).toBe(true);
+    expect(animator.current).toBe('hop');
     expect(animator.frame.index).toBe(4);
   });
 });

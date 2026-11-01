@@ -29,15 +29,29 @@ export function createAnimationPlayer(animations: SkinManifest['animations']): A
   let current: AnimationName = 'idle';
   let animation: SkinAnimation = animations.idle;
   let index = 0;
+  let frame: SkinFrame = animation.frames[0];
   let elapsedMs = 0;
-
-  const frameNow = (): SkinFrame => animation.frames[index] ?? animation.frames[0];
 
   function start(name: AnimationName, next: SkinAnimation): void {
     current = name;
     animation = next;
     index = 0;
+    frame = next.frames[0];
     elapsedMs = 0;
+  }
+
+  /** Moves to the next frame, wrapping or returning to idle at the end. */
+  function advance(): void {
+    const next = animation.frames[index + 1];
+    if (next) {
+      index += 1;
+      frame = next;
+    } else if (animation.loop) {
+      index = 0;
+      frame = animation.frames[0];
+    } else {
+      start('idle', animations.idle);
+    }
   }
 
   return {
@@ -45,7 +59,7 @@ export function createAnimationPlayer(animations: SkinManifest['animations']): A
       return current;
     },
     get frame() {
-      return frameNow();
+      return frame;
     },
 
     play(name) {
@@ -53,26 +67,20 @@ export function createAnimationPlayer(animations: SkinManifest['animations']): A
       const [target, next] = requested ? [name, requested] : (['idle', animations.idle] as const);
       if (target === current && next.loop) return false;
 
-      const before = frameNow().index;
+      const before = frame.index;
       start(target, next);
-      return frameNow().index !== before;
+      return frame.index !== before;
     },
 
     update(stepMs) {
-      const before = frameNow().index;
+      const before = frame.index;
       elapsedMs += stepMs;
       // Schema guarantees durations >= 16 ms, so this loop always ends.
-      while (elapsedMs >= frameNow().durationMs) {
-        elapsedMs -= frameNow().durationMs;
-        if (index + 1 < animation.frames.length) {
-          index += 1;
-        } else if (animation.loop) {
-          index = 0;
-        } else {
-          start('idle', animations.idle);
-        }
+      while (elapsedMs >= frame.durationMs) {
+        elapsedMs -= frame.durationMs;
+        advance();
       }
-      return frameNow().index !== before;
+      return frame.index !== before;
     },
   };
 }
