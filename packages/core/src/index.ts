@@ -19,6 +19,7 @@ export {
 } from './loop/game-loop.ts';
 export { type AnimationPlayer, createAnimationPlayer } from './pet/animation-player.ts';
 export { type BlinkTimer, type BlinkTimerOptions, createBlinkTimer } from './pet/blink-timer.ts';
+export { type Gaze, type GazeOptions, gazeOffset } from './pet/gaze.ts';
 export {
   createPetAnimator,
   type PetAnimator,
