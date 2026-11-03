@@ -42,6 +42,8 @@ export interface Appearance<I> {
   draw(painter: SpritePainter<I>, pose: Pose): void;
   /** Center of the open eye in sprite pixels, or undefined when the eye is closed. */
   eyeCenter(frame: SkinFrame): Point | undefined;
+  /** Top of the head, where effects such as hearts attach. */
+  head(frame: SkinFrame): Point | undefined;
 }
 
 /** The pupil is 2x2; its center is one pixel right of and below its top-left anchor. */
@@ -57,6 +59,7 @@ export function skinAppearance<I extends SkinImage>(skin: LoadedSkin<I>): Appear
       const eye = frame.anchors?.eye;
       return eye ? centerOf(eye) : undefined;
     },
+    head: (frame) => frame.anchors?.head,
     draw(painter, { frame, hovered, gaze }) {
       // Behind the sprite, so the feet stand on it.
       const feet = frame.anchors?.feet;
@@ -89,6 +92,8 @@ export function placeholderAppearance<I>(): Appearance<I> {
     eyeCenter(frame) {
       return centerOf({ x: PUPIL_POSITION.x, y: PUPIL_POSITION.y + (frame.index % 2) });
     },
+    // The placeholder's head block starts at (16, 8); its top center is x 24.
+    head: (frame) => ({ x: 24, y: 8 + (frame.index % 2) }),
     draw(painter, { frame, hovered, gaze }) {
       drawPlaceholderMocha(painter, { offsetY: frame.index % 2, hovered, gaze });
     },
