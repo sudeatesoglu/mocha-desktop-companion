@@ -27,6 +27,8 @@ export interface PlaceholderPose {
   offsetY: number;
   /** Whether the cursor is over Mocha; shown as a red pupil. */
   hovered: boolean;
+  /** Where the pupil looks, one pixel at most per axis. */
+  gaze?: { x: number; y: number };
 }
 
 /** Draws the placeholder in the given pose. */
@@ -35,7 +37,12 @@ export function drawPlaceholderMocha(painter: PixelPainter, pose: PlaceholderPos
     painter.fillStyle = color;
     painter.fillRect(x, y + pose.offsetY, width, height);
   }
-  drawPupil(painter, { x: PUPIL_POSITION.x, y: PUPIL_POSITION.y + pose.offsetY }, pose.hovered);
+  const gaze = pose.gaze ?? { x: 0, y: 0 };
+  drawPupil(
+    painter,
+    { x: PUPIL_POSITION.x + gaze.x, y: PUPIL_POSITION.y + pose.offsetY + gaze.y },
+    pose.hovered,
+  );
 }
 
 /** Animations for the placeholder: two idle poses, bobbing by one pixel. */

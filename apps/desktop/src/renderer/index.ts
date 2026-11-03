@@ -1,5 +1,5 @@
 // Overlay renderer entry: draws Mocha on a transparent canvas.
-import { createGameLoop, createPetAnimator } from '@mocha/core';
+import { createGameLoop, createPetAnimator, type Gaze, gazeOffset } from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
 import { type Appearance, placeholderAppearance, skinAppearance } from './appearance.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
@@ -81,6 +81,21 @@ function refreshHitTest(): void {
 // Picks the frame to show: idle, with a blink now and then.
 const animator = createPetAnimator(animations, { random: Math.random });
 
+// Where the eye looks. The cursor arrives from the main process in window
+// pixels and is converted to sprite pixels to compare with the eye.
+let cursor: Point | undefined;
+let gaze: Gaze = { x: 0, y: 0 };
+
+/** Recomputes the gaze; returns true if it changed. */
+function updateGaze(): boolean {
+  const eye = appearance.eyeCenter(animator.frame);
+  if (!cursor || !eye) return false; // closed eye or no cursor yet: keep looking
+  const next = gazeOffset(eye, { x: cursor.x / OVERLAY_SCALE, y: cursor.y / OVERLAY_SCALE });
+  if (next.x === gaze.x && next.y === gaze.y) return false;
+  gaze = next;
+  return true;
+}
+
 const loop = createGameLoop({
   // 50 ms steps: frames of 50 ms or more are always shown at least once,
   // while the loop still sleeps between steps.
@@ -89,12 +104,19 @@ const loop = createGameLoop({
   update: (stepMs) => animator.update(stepMs),
   render() {
     context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    appearance.draw(context, { frame: animator.frame, hovered: interactive });
+    updateGaze(); // the eye may have moved with the frame
+    appearance.draw(context, { frame: animator.frame, hovered: interactive, gaze });
     // Read the pixels once per drawing, not on every mouse move.
     pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     // Mocha may have moved under a still cursor.
     refreshHitTest();
   },
+});
+
+// Input path: a new gaze is drawn on the next frame, not the next step.
+window.mocha.onCursorMove((point) => {
+  cursor = point;
+  if (updateGaze()) loop.invalidate();
 });
 
 window.addEventListener('mousemove', (event) => {

@@ -42,6 +42,7 @@ const MANIFEST: SkinManifest = {
   },
 };
 const skin = { manifest: MANIFEST, image: { width: 144, height: 96 } };
+const STRAIGHT = { x: 0, y: 0 } as const;
 const OPEN = MANIFEST.animations.idle.frames[0];
 const CLOSED = MANIFEST.animations.idle.frames[1] ?? OPEN;
 
@@ -50,8 +51,8 @@ describe('skinAppearance', () => {
     const { painter, sources } = recordingPainter();
     const appearance = skinAppearance(skin);
 
-    appearance.draw(painter, { frame: OPEN, hovered: false });
-    appearance.draw(painter, { frame: CLOSED, hovered: false });
+    appearance.draw(painter, { frame: OPEN, hovered: false, gaze: STRAIGHT });
+    appearance.draw(painter, { frame: CLOSED, hovered: false, gaze: STRAIGHT });
 
     expect(sources).toEqual(['0,0 48x48 -> 0,0', '0,48 48x48 -> 0,0']);
   });
@@ -60,16 +61,31 @@ describe('skinAppearance', () => {
     const { painter, fills } = recordingPainter();
     const appearance = skinAppearance(skin);
 
-    appearance.draw(painter, { frame: OPEN, hovered: false });
-    appearance.draw(painter, { frame: OPEN, hovered: true });
+    appearance.draw(painter, { frame: OPEN, hovered: false, gaze: STRAIGHT });
+    appearance.draw(painter, { frame: OPEN, hovered: true, gaze: STRAIGHT });
 
     expect(fills).toEqual([`${PUPIL_COLOR} 18,19 2x2`, `${PUPIL_HOVER_COLOR} 18,19 2x2`]);
+  });
+
+  it('shifts the pupil one pixel in the direction of the gaze', () => {
+    const { painter, fills } = recordingPainter();
+
+    skinAppearance(skin).draw(painter, { frame: OPEN, hovered: false, gaze: { x: -1, y: 1 } });
+
+    expect(fills).toEqual([`${PUPIL_COLOR} 17,20 2x2`]);
+  });
+
+  it('reports the eye center for open eyes only', () => {
+    const appearance = skinAppearance(skin);
+
+    expect(appearance.eyeCenter(OPEN)).toEqual({ x: 19, y: 20 });
+    expect(appearance.eyeCenter(CLOSED)).toBeUndefined();
   });
 
   it('draws no pupil on frames with a closed eye', () => {
     const { painter, fills } = recordingPainter();
 
-    skinAppearance(skin).draw(painter, { frame: CLOSED, hovered: true });
+    skinAppearance(skin).draw(painter, { frame: CLOSED, hovered: true, gaze: STRAIGHT });
 
     expect(fills).toEqual([]);
   });
@@ -111,7 +127,11 @@ describe('skinAppearance shadow', () => {
     };
 
     const shadowed = withFeet({ x: 24, y: 46 });
-    skinAppearance(shadowed).draw(painter, { frame: second(shadowed), hovered: false });
+    skinAppearance(shadowed).draw(painter, {
+      frame: second(shadowed),
+      hovered: false,
+      gaze: STRAIGHT,
+    });
 
     expect(order).toEqual([
       `${SHADOW_COLOR}@45`,
@@ -125,7 +145,11 @@ describe('skinAppearance shadow', () => {
     const { painter, fills } = recordingPainter();
 
     const unshadowed = withFeet(undefined);
-    skinAppearance(unshadowed).draw(painter, { frame: second(unshadowed), hovered: false });
+    skinAppearance(unshadowed).draw(painter, {
+      frame: second(unshadowed),
+      hovered: false,
+      gaze: STRAIGHT,
+    });
 
     expect(fills).toEqual([]);
   });
@@ -135,21 +159,29 @@ describe('skinAppearance shadow', () => {
     const skin = withFeet({ x: 24, y: 46 });
     skin.manifest.animations.idle.frames[0].anchors = {};
 
-    skinAppearance(skin).draw(painter, { frame: second(skin), hovered: false });
+    skinAppearance(skin).draw(painter, { frame: second(skin), hovered: false, gaze: STRAIGHT });
 
     expect(fills).toEqual([]);
   });
 });
 
 describe('placeholderAppearance', () => {
+  it('reports its eye center, following the bob', () => {
+    const appearance = placeholderAppearance<FakeImage>();
+    const [still, bobbed] = PLACEHOLDER_ANIMATIONS.idle.frames;
+
+    expect(appearance.eyeCenter(still)).toEqual({ x: 24, y: 13 });
+    expect(appearance.eyeCenter(bobbed ?? still)).toEqual({ x: 24, y: 14 });
+  });
+
   it('draws the blocky placeholder, bobbing with the frame index', () => {
     const first = recordingPainter();
     const second = recordingPainter();
     const appearance = placeholderAppearance<FakeImage>();
 
     const [still, bobbed] = PLACEHOLDER_ANIMATIONS.idle.frames;
-    appearance.draw(first.painter, { frame: still, hovered: false });
-    appearance.draw(second.painter, { frame: bobbed ?? still, hovered: false });
+    appearance.draw(first.painter, { frame: still, hovered: false, gaze: STRAIGHT });
+    appearance.draw(second.painter, { frame: bobbed ?? still, hovered: false, gaze: STRAIGHT });
 
     const [, x, y, w, h] = PLACEHOLDER_BLOCKS[0] ?? [];
     expect(first.fills[0]).toContain(`${x},${y} ${w}x${h}`);

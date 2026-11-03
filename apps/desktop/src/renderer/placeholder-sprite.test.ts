@@ -49,6 +49,16 @@ describe('drawPlaceholderMocha', () => {
     );
   });
 
+  it('moves the pupil with the gaze', () => {
+    const painter = recordingPainter();
+
+    drawPlaceholderMocha(painter, { offsetY: 0, hovered: false, gaze: { x: 1, y: -1 } });
+
+    expect(painter.calls.at(-1)).toBe(
+      `${PUPIL.color} ${PUPIL.x + 1},${PUPIL.y - 1} ${PUPIL.size}x${PUPIL.size}`,
+    );
+  });
+
   it('shifts everything down by the offset', () => {
     const ys: number[] = [];
     const painter: PixelPainter = { fillStyle: '', fillRect: (_x, y) => ys.push(y) };
