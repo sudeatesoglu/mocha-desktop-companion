@@ -31,6 +31,11 @@ const ORBIT = [
   [9, 2],
 ] as const;
 
+/** Orbit station `i`, wrapping around. */
+const station = (i: number) =>
+  // The modulo keeps the index in range; TypeScript cannot see that.
+  ORBIT[i % ORBIT.length] as (typeof ORBIT)[number];
+
 const offset = (shape: readonly (readonly [number, number])[], ox: number, oy: number) =>
   shape.map(([x, y]) => [x + ox, y + oy] as const);
 
@@ -50,7 +55,7 @@ const EFFECTS: Record<EffectKind, EffectSpec> = {
     color: '#ffd27a',
     pixels: (n) =>
       [0, 2].flatMap((phase) => {
-        const [x, y] = ORBIT[(n + phase) % ORBIT.length] ?? ORBIT[0];
+        const [x, y] = station(n + phase);
         return offset(STAR_SHAPE, x, y);
       }),
   },

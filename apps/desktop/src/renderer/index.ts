@@ -1,8 +1,16 @@
 // Overlay renderer entry: draws Mocha on a transparent canvas.
-import { createGameLoop, createPetAnimator, type Gaze, gazeOffset } from '@mocha/core';
+import {
+  createGameLoop,
+  createPetAnimator,
+  createReactionDetector,
+  type Gaze,
+  gazeOffset,
+  type Reaction,
+} from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
 import { type Appearance, placeholderAppearance, skinAppearance } from './appearance.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
+import { createEffects } from './effects.ts';
 import { isOpaqueAt, type Point } from './hit-test.ts';
 import { loadImage } from './load-image.ts';
 import { PLACEHOLDER_ANIMATIONS } from './placeholder-sprite.ts';
@@ -81,6 +89,26 @@ function refreshHitTest(): void {
 // Picks the frame to show: idle, with a blink now and then.
 const animator = createPetAnimator(animations, { random: Math.random });
 
+// Petting and dizziness: input becomes a reaction, which plays an
+// animation and an effect.
+const reactions = createReactionDetector();
+const effects = createEffects();
+
+function react(reaction: Reaction | undefined): void {
+  // A dizzy spell outlasts the petting cooldown; do not cut it short.
+  if (reaction === 'pet' && animator.current === 'dizzy') return;
+  if (reaction === 'pet') {
+    animator.play('hop');
+    effects.add('heart');
+  } else if (reaction === 'dizzy') {
+    animator.play('dizzy');
+    effects.add('stars');
+  } else {
+    return;
+  }
+  loop.invalidate(); // input path: react on the next frame
+}
+
 // Where the eye looks. The cursor arrives from the main process in window
 // pixels and is converted to sprite pixels to compare with the eye.
 let cursor: Point | undefined;
@@ -101,13 +129,21 @@ const loop = createGameLoop({
   // while the loop still sleeps between steps.
   stepMs: 50,
   scheduler: createBrowserScheduler(),
-  update: (stepMs) => animator.update(stepMs),
+  update(stepMs) {
+    reactions.update(stepMs);
+    // Advance both every step; `||` would skip effects when the animator changed.
+    const animated = animator.update(stepMs);
+    const affected = effects.update(stepMs);
+    return animated || affected;
+  },
   render() {
     context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     updateGaze(); // the eye may have moved with the frame
     appearance.draw(context, { frame: animator.frame, hovered: interactive, gaze });
-    // Read the pixels once per drawing, not on every mouse move.
+    // Read the pixels once per drawing, not on every mouse move, and before
+    // effects: a heart or a star is not part of Mocha's body.
     pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+    effects.draw(context, appearance.head(animator.frame));
     // Mocha may have moved under a still cursor.
     refreshHitTest();
   },
@@ -121,8 +157,15 @@ window.mocha.onCursorMove((point) => {
 
 window.addEventListener('mousemove', (event) => {
   pointer = { x: event.clientX, y: event.clientY };
+  const wasOver = interactive;
   refreshHitTest();
+  // Pet only when the cursor arrives, not while it rests on Mocha or when
+  // Mocha moves under a still cursor.
+  if (!wasOver && interactive) react(reactions.hover());
 });
+
+// Mouse buttons only reach the page while it is interactive, i.e. over Mocha.
+window.addEventListener('mousedown', () => react(reactions.click()));
 document.addEventListener('mouseleave', () => {
   pointer = undefined;
   refreshHitTest();
