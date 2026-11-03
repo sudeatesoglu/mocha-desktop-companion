@@ -27,6 +27,7 @@ The bundled placeholder skin lives in [`apps/desktop/src/renderer/skins/default`
   ```
 
 - **Leave the pupil out.** Draw the eye white but not the pupil: the app draws a 2×2 pupil at the frame's `eye` anchor, so it can follow the cursor and turn red on hover without extra frames.
+- **Leave room for the pupil to move.** The pupil shifts one pixel toward the cursor in any of eight directions, so the eye white should extend at least one pixel beyond the 2×2 pupil on every side (a 4×4 area around the anchor).
 
 ### Palette
 
@@ -97,7 +98,7 @@ Every animation has a `loop` flag and at least one frame. A looping animation re
 
 | Anchor | Meaning |
 | --- | --- |
-| `eye` | Top-left pixel of the 2×2 pupil when Mocha looks straight ahead. Omit it on frames where the eye is closed: no pupil is drawn. |
+| `eye` | Top-left pixel of the 2×2 pupil when Mocha looks straight ahead; the app moves it by one pixel toward the cursor. Omit it on frames where the eye is closed: no pupil is drawn. |
 | `beak` | Tip of the beak, where food and speech bubbles attach. |
 | `head` | Top of the head (or hat), where hearts and "z"s appear. |
 | `feet` | Bottom center of the feet (the left of the two middle pixels). The app draws a ground shadow there. The ground line is the `feet` position in the first `idle` frame; when a frame lifts the feet above it, the shadow stays on the ground and shrinks. Omit it to cast no shadow. |
