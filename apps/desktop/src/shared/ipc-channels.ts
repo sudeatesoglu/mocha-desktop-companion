@@ -9,6 +9,8 @@ export const IpcChannel = {
   ReportRendererError: 'app:report-renderer-error',
   /** Overlay → main (send): whether the cursor is over Mocha's pixels. */
   SetOverlayInteractive: 'overlay:set-interactive',
+  /** Main → overlay: cursor position relative to the window, sent when it changes. */
+  OverlayCursor: 'overlay:cursor',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -23,4 +25,6 @@ export interface MochaBridge {
   reportError(report: RendererErrorReport): void;
   /** Overlay only: let clicks reach Mocha (true) or fall through (false). */
   setOverlayInteractive(interactive: boolean): void;
+  /** Overlay only: cursor position relative to the window. Returns an unsubscribe function. */
+  onCursorMove(callback: (point: { x: number; y: number }) => void): () => void;
 }

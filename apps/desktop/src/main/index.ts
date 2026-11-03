@@ -1,6 +1,8 @@
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { app, screen, session } from 'electron';
+import { IpcChannel } from '../shared/ipc-channels.ts';
+import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
@@ -34,6 +36,17 @@ if (!app.requestSingleInstanceLock()) {
       process.platform,
     );
     registerOverlayHandlers(window, trustedUrls, console);
+
+    const stopCursorTracking = startCursorTracker({
+      getCursor: () => screen.getCursorScreenPoint(),
+      getOrigin: () => window.getContentBounds(),
+      send: (point) => window.webContents.send(IpcChannel.OverlayCursor, point),
+      every: (ms, callback) => {
+        const id = setInterval(callback, ms);
+        return () => clearInterval(id);
+      },
+    });
+    window.on('closed', stopCursorTracking);
     if (devServerUrl) {
       window.loadURL(devServerUrl);
     } else {
