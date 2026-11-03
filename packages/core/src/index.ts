@@ -26,6 +26,12 @@ export {
   type PetAnimatorOptions,
 } from './pet/pet-animator.ts';
 export {
+  createReactionDetector,
+  type Reaction,
+  type ReactionDetector,
+  type ReactionOptions,
+} from './pet/reactions.ts';
+export {
   ANIMATION_NAMES,
   type AnimationName,
   checkSkinImage,
