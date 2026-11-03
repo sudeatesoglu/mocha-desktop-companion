@@ -67,6 +67,15 @@ function squash(grid, by, split = 40) {
   return result;
 }
 
+/** Shifts rows above `split` sideways by `dx` pixels (a sway), keeping the feet. */
+function sway(grid, dx, split = 40) {
+  const result = clone(grid);
+  for (let y = 0; y <= split; y++) {
+    result[y] = Array.from({ length: SIZE }, (_, x) => grid[y][x - dx] ?? null);
+  }
+  return result;
+}
+
 /** Moves the whole sprite up by `by` pixels. */
 function lift(grid, by) {
   return grid.map((_, y) => (grid[y + by] ? [...grid[y + by]] : Array(SIZE).fill(null)));
@@ -127,6 +136,16 @@ function closeEye(grid, half) {
   return result;
 }
 
+/** Crosses out the eye: the classic cartoon "x" of a dizzy character. */
+function dizzyEye(grid) {
+  const result = clone(grid);
+  for (const d of [-1, 0, 1]) {
+    result[EYE.cy + d][EYE.cx + d] = 'K';
+    result[EYE.cy - d][EYE.cx + d] = 'K';
+  }
+  return result;
+}
+
 // --- frames and anchors ---
 
 const base = drawRaven();
@@ -158,7 +177,15 @@ const FRAMES = [
   lift(base, 4), // 5 hop: airborne
   sleepA, // 6 sleep
   sleepB, // 7 sleep
+  sway(dizzyEye(base), -1), // 8 dizzy: sway left
+  sway(dizzyEye(base), 1), // 9 dizzy: sway right
 ];
+
+/** Dizzy anchors: crossed-out eye (no pupil), head swaying with the body. */
+const dizzyAnchors = (dx) => {
+  const { beak, head, feet } = anchors(0);
+  return { beak: { x: beak.x + dx, y: beak.y }, head: { x: head.x + dx, y: head.y }, feet };
+};
 
 const manifest = {
   schemaVersion: 1,
@@ -196,6 +223,14 @@ const manifest = {
         { index: 6, durationMs: 1200, anchors: closedAnchors(1) },
         { index: 7, durationMs: 1200, anchors: closedAnchors(1) },
       ],
+    },
+    // Six sways left and right, then back to idle.
+    dizzy: {
+      loop: false,
+      frames: Array.from({ length: 12 }, (_, i) => {
+        const dx = i % 2 === 0 ? -1 : 1;
+        return { index: i % 2 === 0 ? 8 : 9, durationMs: 150, anchors: dizzyAnchors(dx) };
+      }),
     },
   },
 };
