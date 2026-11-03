@@ -1,11 +1,11 @@
 // Overlay renderer entry: draws Mocha on a transparent canvas.
-import { createGameLoop } from '@mocha/core';
+import { createGameLoop, createPetAnimator } from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
 import { type Appearance, placeholderAppearance, skinAppearance } from './appearance.ts';
-import { breathOffset } from './breathing.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
 import { isOpaqueAt, type Point } from './hit-test.ts';
 import { loadImage } from './load-image.ts';
+import { PLACEHOLDER_ANIMATIONS } from './placeholder-sprite.ts';
 import { loadSkin } from './skin-loader.ts';
 import defaultManifest from './skins/default/manifest.json';
 import defaultSpriteUrl from './skins/default/sprite.png';
@@ -50,8 +50,10 @@ const skin = await loadSkin(
 // Graceful degradation: a broken skin is reported, and Mocha stays on
 // screen as the built-in placeholder instead of disappearing.
 let appearance: Appearance<HTMLImageElement>;
+let animations = PLACEHOLDER_ANIMATIONS;
 if (skin.ok) {
   appearance = skinAppearance(skin.skin);
+  animations = skin.skin.manifest.animations;
 } else {
   const message = `Default skin is invalid, using the placeholder: ${skin.errors.join('; ')}`;
   window.mocha.reportError({ message: message.slice(0, 2_000) });
@@ -76,23 +78,18 @@ function refreshHitTest(): void {
   setInteractive(pointer !== undefined && isOpaqueAt(pixels, pointer, OVERLAY_SCALE));
 }
 
-// Game state for now: just the breathing phase.
-let elapsedMs = 0;
-let phase = breathOffset(0);
+// Picks the frame to show: idle, with a blink now and then.
+const animator = createPetAnimator(animations, { random: Math.random });
 
 const loop = createGameLoop({
-  stepMs: 100,
+  // 50 ms steps: frames of 50 ms or more are always shown at least once,
+  // while the loop still sleeps between steps.
+  stepMs: 50,
   scheduler: createBrowserScheduler(),
-  update(stepMs) {
-    elapsedMs += stepMs;
-    const next = breathOffset(elapsedMs);
-    if (next === phase) return false;
-    phase = next;
-    return true;
-  },
+  update: (stepMs) => animator.update(stepMs),
   render() {
     context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    appearance.draw(context, { phase, hovered: interactive });
+    appearance.draw(context, { frame: animator.frame, hovered: interactive });
     // Read the pixels once per drawing, not on every mouse move.
     pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
     // Mocha may have moved under a still cursor.

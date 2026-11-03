@@ -1,7 +1,7 @@
 import type { SkinManifest } from '@mocha/core';
 import { describe, expect, it } from 'vitest';
 import { placeholderAppearance, type SpritePainter, skinAppearance } from './appearance.ts';
-import { PLACEHOLDER_BLOCKS } from './placeholder-sprite.ts';
+import { PLACEHOLDER_ANIMATIONS, PLACEHOLDER_BLOCKS } from './placeholder-sprite.ts';
 import { PUPIL_COLOR, PUPIL_HOVER_COLOR } from './pupil.ts';
 import { SHADOW_COLOR } from './shadow.ts';
 
@@ -42,33 +42,26 @@ const MANIFEST: SkinManifest = {
   },
 };
 const skin = { manifest: MANIFEST, image: { width: 144, height: 96 } };
+const OPEN = MANIFEST.animations.idle.frames[0];
+const CLOSED = MANIFEST.animations.idle.frames[1] ?? OPEN;
 
 describe('skinAppearance', () => {
-  it('draws the idle frame for the phase from its cell in the sheet', () => {
+  it('draws the given frame from its cell in the sheet', () => {
     const { painter, sources } = recordingPainter();
     const appearance = skinAppearance(skin);
 
-    appearance.draw(painter, { phase: 0, hovered: false });
-    appearance.draw(painter, { phase: 1, hovered: false });
-    appearance.draw(painter, { phase: 2, hovered: false }); // wraps around
+    appearance.draw(painter, { frame: OPEN, hovered: false });
+    appearance.draw(painter, { frame: CLOSED, hovered: false });
 
-    expect(sources).toEqual(['0,0 48x48 -> 0,0', '0,48 48x48 -> 0,0', '0,0 48x48 -> 0,0']);
-  });
-
-  it('falls back to the first idle frame for a phase outside the frame list', () => {
-    const { painter, sources } = recordingPainter();
-
-    skinAppearance(skin).draw(painter, { phase: -1, hovered: false });
-
-    expect(sources).toEqual(['0,0 48x48 -> 0,0']);
+    expect(sources).toEqual(['0,0 48x48 -> 0,0', '0,48 48x48 -> 0,0']);
   });
 
   it('draws the pupil at the eye anchor, red while hovered', () => {
     const { painter, fills } = recordingPainter();
     const appearance = skinAppearance(skin);
 
-    appearance.draw(painter, { phase: 0, hovered: false });
-    appearance.draw(painter, { phase: 0, hovered: true });
+    appearance.draw(painter, { frame: OPEN, hovered: false });
+    appearance.draw(painter, { frame: OPEN, hovered: true });
 
     expect(fills).toEqual([`${PUPIL_COLOR} 18,19 2x2`, `${PUPIL_HOVER_COLOR} 18,19 2x2`]);
   });
@@ -76,7 +69,7 @@ describe('skinAppearance', () => {
   it('draws no pupil on frames with a closed eye', () => {
     const { painter, fills } = recordingPainter();
 
-    skinAppearance(skin).draw(painter, { phase: 1, hovered: true });
+    skinAppearance(skin).draw(painter, { frame: CLOSED, hovered: true });
 
     expect(fills).toEqual([]);
   });
@@ -99,6 +92,12 @@ describe('skinAppearance shadow', () => {
     image: { width: 144, height: 96 },
   });
 
+  const second = (s: ReturnType<typeof withFeet>) => {
+    const frame = s.manifest.animations.idle.frames[1];
+    if (!frame) throw new Error('fixture needs two frames');
+    return frame;
+  };
+
   it('draws the shadow before the sprite, on the ground line', () => {
     const order: string[] = [];
     const painter: SpritePainter<FakeImage> = {
@@ -111,7 +110,8 @@ describe('skinAppearance shadow', () => {
       },
     };
 
-    skinAppearance(withFeet({ x: 24, y: 46 })).draw(painter, { phase: 1, hovered: false });
+    const shadowed = withFeet({ x: 24, y: 46 });
+    skinAppearance(shadowed).draw(painter, { frame: second(shadowed), hovered: false });
 
     expect(order).toEqual([
       `${SHADOW_COLOR}@45`,
@@ -124,7 +124,8 @@ describe('skinAppearance shadow', () => {
   it('casts no shadow for a frame without feet', () => {
     const { painter, fills } = recordingPainter();
 
-    skinAppearance(withFeet(undefined)).draw(painter, { phase: 1, hovered: false });
+    const unshadowed = withFeet(undefined);
+    skinAppearance(unshadowed).draw(painter, { frame: second(unshadowed), hovered: false });
 
     expect(fills).toEqual([]);
   });
@@ -134,20 +135,21 @@ describe('skinAppearance shadow', () => {
     const skin = withFeet({ x: 24, y: 46 });
     skin.manifest.animations.idle.frames[0].anchors = {};
 
-    skinAppearance(skin).draw(painter, { phase: 1, hovered: false });
+    skinAppearance(skin).draw(painter, { frame: second(skin), hovered: false });
 
     expect(fills).toEqual([]);
   });
 });
 
 describe('placeholderAppearance', () => {
-  it('draws the blocky placeholder, bobbing with the phase', () => {
+  it('draws the blocky placeholder, bobbing with the frame index', () => {
     const first = recordingPainter();
     const second = recordingPainter();
     const appearance = placeholderAppearance<FakeImage>();
 
-    appearance.draw(first.painter, { phase: 0, hovered: false });
-    appearance.draw(second.painter, { phase: 1, hovered: false });
+    const [still, bobbed] = PLACEHOLDER_ANIMATIONS.idle.frames;
+    appearance.draw(first.painter, { frame: still, hovered: false });
+    appearance.draw(second.painter, { frame: bobbed ?? still, hovered: false });
 
     const [, x, y, w, h] = PLACEHOLDER_BLOCKS[0] ?? [];
     expect(first.fills[0]).toContain(`${x},${y} ${w}x${h}`);

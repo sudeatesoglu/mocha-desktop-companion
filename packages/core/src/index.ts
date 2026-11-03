@@ -17,6 +17,13 @@ export {
   type GameLoopOptions,
   type LoopScheduler,
 } from './loop/game-loop.ts';
+export { type AnimationPlayer, createAnimationPlayer } from './pet/animation-player.ts';
+export { type BlinkTimer, type BlinkTimerOptions, createBlinkTimer } from './pet/blink-timer.ts';
+export {
+  createPetAnimator,
+  type PetAnimator,
+  type PetAnimatorOptions,
+} from './pet/pet-animator.ts';
 export {
   ANIMATION_NAMES,
   type AnimationName,

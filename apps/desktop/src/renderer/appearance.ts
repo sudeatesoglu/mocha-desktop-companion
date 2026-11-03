@@ -1,12 +1,12 @@
-import { frameSource } from '@mocha/core';
+import { frameSource, type SkinFrame } from '@mocha/core';
 import { drawPlaceholderMocha, type PixelPainter } from './placeholder-sprite.ts';
 import { drawPupil } from './pupil.ts';
 import { drawShadow, shadowRows } from './shadow.ts';
 import type { LoadedSkin, SkinImage } from './skin-loader.ts';
 
 export interface Pose {
-  /** Breathing phase: which idle frame to show (wraps around). */
-  phase: number;
+  /** The frame to draw, chosen by the pet animator. */
+  frame: SkinFrame;
   /** Whether the cursor is over Mocha. */
   hovered: boolean;
 }
@@ -35,16 +35,13 @@ export interface Appearance<I> {
   draw(painter: SpritePainter<I>, pose: Pose): void;
 }
 
-/** Draws from a validated skin. Until animations play (#21), idle frames follow the breathing phase. */
+/** Draws frames from a validated skin's sprite sheet. */
 export function skinAppearance<I extends SkinImage>(skin: LoadedSkin<I>): Appearance<I> {
   const { frameSize, animations } = skin.manifest;
-  const idle = animations.idle.frames;
   // The ground is where the feet rest in the first idle frame.
-  const groundY = idle[0].anchors?.feet?.y;
+  const groundY = animations.idle.frames[0].anchors?.feet?.y;
   return {
-    draw(painter, pose) {
-      // A negative or fractional phase would miss the array; show the first frame.
-      const frame = idle[pose.phase % idle.length] ?? idle[0];
+    draw(painter, { frame, hovered }) {
       // Behind the sprite, so the feet stand on it.
       const feet = frame.anchors?.feet;
       if (feet && groundY !== undefined) drawShadow(painter, shadowRows(feet, groundY));
@@ -61,16 +58,19 @@ export function skinAppearance<I extends SkinImage>(skin: LoadedSkin<I>): Appear
         source.height,
       );
       // Frames without an eye anchor have the eye closed: no pupil.
-      if (frame.anchors?.eye) drawPupil(painter, frame.anchors.eye, pose.hovered);
+      if (frame.anchors?.eye) drawPupil(painter, frame.anchors.eye, hovered);
     },
   };
 }
 
-/** Last resort when no skin can be loaded: the blocky placeholder drawn in code. */
+/**
+ * Last resort when no skin can be loaded: the blocky placeholder drawn in
+ * code. Its frames (PLACEHOLDER_ANIMATIONS) use the index as the bob offset.
+ */
 export function placeholderAppearance<I>(): Appearance<I> {
   return {
-    draw(painter, pose) {
-      drawPlaceholderMocha(painter, { offsetY: pose.phase % 2, hovered: pose.hovered });
+    draw(painter, { frame, hovered }) {
+      drawPlaceholderMocha(painter, { offsetY: frame.index % 2, hovered });
     },
   };
 }
