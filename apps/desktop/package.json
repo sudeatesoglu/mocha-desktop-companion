@@ -1,5 +1,6 @@
 {
   "name": "@mocha/desktop",
+  "productName": "Mocha",
   "version": "0.0.0",
   "private": true,
   "description": "Mocha's Electron desktop app.",

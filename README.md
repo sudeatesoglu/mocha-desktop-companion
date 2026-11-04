@@ -69,6 +69,16 @@ To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/co
 
 Install the recommended VS Code extensions when prompted (Biome, EditorConfig). TypeScript, JavaScript, JSON and CSS files are formatted and fixed on save using the shared settings in `.vscode/`.
 
+## Your data
+
+Mocha is local-first: nothing leaves your machine. Settings, such as where you placed Mocha on the screen, are stored in a small JSON file in the app's data folder:
+
+| OS | Location |
+| --- | --- |
+| macOS | `~/Library/Application Support/Mocha/settings.json` |
+
+Deleting the file resets Mocha to its defaults.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, commit conventions and Git hooks.
