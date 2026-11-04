@@ -12,3 +12,11 @@ allowBuilds:
   # Pulled in by electron-builder for Windows installers. Its install
   # script only copies a Windows 7-Zip binary; not needed for macOS builds.
   electron-winstaller: false
+
+auditConfig:
+  ignoreGhsas:
+    # minimatch ReDoS (fixed in 11.0.1). Only reached through electron-builder,
+    # which requires minimatch ^10 and runs at build time on this project's
+    # own glob patterns, never on untrusted input, and is not shipped in the
+    # app. Remove once electron-builder accepts minimatch 11.
+    - GHSA-g3hv-75wg-m249
