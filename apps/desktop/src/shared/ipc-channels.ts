@@ -13,6 +13,8 @@ export const IpcChannel = {
   DragOverlay: 'overlay:drag',
   /** Main → overlay: cursor position relative to the window, sent when it changes. */
   OverlayCursor: 'overlay:cursor',
+  /** Main → overlay: Mocha was paused (true) or resumed (false) from the tray. */
+  OverlayPaused: 'overlay:paused',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -31,4 +33,6 @@ export interface MochaBridge {
   dragOverlay(phase: 'start' | 'end'): void;
   /** Overlay only: cursor position relative to the window. Returns an unsubscribe function. */
   onCursorMove(callback: (point: { x: number; y: number }) => void): () => void;
+  /** Overlay only: pause state changes. Returns an unsubscribe function. */
+  onPausedChange(callback: (paused: boolean) => void): () => void;
 }

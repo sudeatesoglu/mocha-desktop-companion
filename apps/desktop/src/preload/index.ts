@@ -14,6 +14,11 @@ const bridge: MochaBridge = {
     ipcRenderer.on(IpcChannel.OverlayCursor, listener);
     return () => ipcRenderer.removeListener(IpcChannel.OverlayCursor, listener);
   },
+  onPausedChange: (callback) => {
+    const listener = (_event: unknown, paused: boolean) => callback(paused);
+    ipcRenderer.on(IpcChannel.OverlayPaused, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlayPaused, listener);
+  },
 };
 
 contextBridge.exposeInMainWorld('mocha', bridge);

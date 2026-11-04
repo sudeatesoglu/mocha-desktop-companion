@@ -68,6 +68,8 @@ export interface Effects {
   update(stepMs: number): boolean;
   /** Paints active effects around the head anchor (skipped without one). */
   draw(painter: PixelPainter, head: { x: number; y: number } | undefined): void;
+  /** Removes every effect at once. */
+  clear(): void;
 }
 
 export function createEffects(): Effects {
@@ -76,6 +78,10 @@ export function createEffects(): Effects {
   return {
     add(kind) {
       active.set(kind, 0);
+    },
+
+    clear() {
+      active.clear();
     },
 
     update(stepMs) {
