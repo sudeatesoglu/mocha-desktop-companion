@@ -3,6 +3,6 @@ import { APP_NAME, greet } from './index.ts';
 
 describe('greet', () => {
   it('introduces the companion by name', () => {
-    expect(greet('Soda')).toBe(`Hi Soda, I'm ${APP_NAME}!`);
+    expect(greet('Ada')).toBe(`Hi Ada, I'm ${APP_NAME}!`);
   });
 });
