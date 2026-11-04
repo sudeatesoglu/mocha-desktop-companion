@@ -69,6 +69,19 @@ To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/co
 
 Install the recommended VS Code extensions when prompted (Biome, EditorConfig). TypeScript, JavaScript, JSON and CSS files are formatted and fixed on save using the shared settings in `.vscode/`.
 
+## Using Mocha
+
+Mocha lives in a corner of your screen and has no Dock icon. Everything else happens directly on Mocha or from its menu-bar icon:
+
+| Do | How |
+| --- | --- |
+| Pet Mocha | Move the cursor onto it |
+| Make it dizzy | Click it four times quickly |
+| Move it | Drag it; it remembers the spot |
+| Pause or resume | Menu-bar icon → Pause Mocha / Resume Mocha |
+| Put it back in the corner | Menu-bar icon → Reset Position |
+| Quit | Menu-bar icon → Quit Mocha |
+
 ## Your data
 
 Mocha is local-first: nothing leaves your machine. Settings, such as where you placed Mocha on the screen, are stored in a small JSON file in the app's data folder:

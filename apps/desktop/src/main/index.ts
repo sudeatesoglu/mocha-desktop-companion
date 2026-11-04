@@ -1,13 +1,16 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { app, screen, session } from 'electron';
+import { app, Menu, nativeImage, screen, session, Tray } from 'electron';
 import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
+import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
+import { trayIconBitmap } from './tray/tray-icon.ts';
+import { trayMenuTemplate } from './tray/tray-menu.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
 import { initialOverlayPosition, placeOnDisplays } from './windows/overlay-placement.ts';
 import { createWindowDragger } from './windows/window-dragger.ts';
@@ -26,6 +29,16 @@ const every = (ms: number, callback: () => void) => {
 };
 
 const workAreas = () => screen.getAllDisplays().map((display) => display.workArea);
+
+// Kept at module level: a tray that is garbage-collected disappears.
+let tray: Tray | undefined;
+
+function createTrayIcon() {
+  const { width, height, data } = trayIconBitmap(2);
+  const icon = nativeImage.createFromBitmap(Buffer.from(data), { width, height, scaleFactor: 2 });
+  icon.setTemplateImage(true); // let macOS tint it for light and dark menu bars
+  return icon;
+}
 
 // Only one Mocha at a time: a second launch exits immediately.
 if (!app.requestSingleInstanceLock()) {
@@ -94,14 +107,55 @@ if (!app.requestSingleInstanceLock()) {
     screen.on('display-removed', onDisplaysChanged);
     screen.on('display-metrics-changed', onDisplaysChanged);
 
-    const stopCursorTracking = startCursorTracker({
-      getCursor: () => screen.getCursorScreenPoint(),
-      getOrigin: () => window.getContentBounds(),
-      send: (point) => window.webContents.send(IpcChannel.OverlayCursor, point),
-      every,
+    const startTracking = () =>
+      startCursorTracker({
+        getCursor: () => screen.getCursorScreenPoint(),
+        getOrigin: () => window.getContentBounds(),
+        send: (point) => window.webContents.send(IpcChannel.OverlayCursor, point),
+        every,
+      });
+    let stopCursorTracking: (() => void) | undefined = startTracking();
+
+    // Pausing stops everything Mocha does: animation (in the overlay) and
+    // cursor polling (here). Every dependent part subscribes to the change.
+    const pause = createPauseController();
+    pause.onChange((paused) => {
+      window.webContents.send(IpcChannel.OverlayPaused, paused);
+      if (paused) {
+        stopCursorTracking?.();
+        stopCursorTracking = undefined;
+      } else {
+        stopCursorTracking ??= startTracking();
+      }
+      updateTrayMenu();
     });
+
+    app.setAboutPanelOptions({
+      applicationName: 'Mocha',
+      applicationVersion: app.getVersion(),
+      credits: 'A pixel-art raven that keeps you company.',
+    });
+    tray = new Tray(createTrayIcon());
+    tray.setToolTip('Mocha');
+    function updateTrayMenu() {
+      tray?.setContextMenu(
+        Menu.buildFromTemplate(
+          trayMenuTemplate(
+            { paused: pause.paused },
+            {
+              togglePause: () => pause.toggle(),
+              resetPosition: () =>
+                settle(initialOverlayPosition(undefined, screen.getPrimaryDisplay().workArea, [])),
+              quit: () => app.quit(),
+            },
+          ),
+        ),
+      );
+    }
+    updateTrayMenu();
+
     window.on('closed', () => {
-      stopCursorTracking();
+      stopCursorTracking?.();
       screen.off('display-removed', onDisplaysChanged);
       screen.off('display-metrics-changed', onDisplaysChanged);
     });

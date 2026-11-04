@@ -102,6 +102,7 @@ const reactions = createReactionDetector();
 const effects = createEffects();
 
 function react(reaction: Reaction | undefined): void {
+  if (paused) return; // resting Mocha does not react
   // A dizzy spell outlasts the petting cooldown; do not cut it short.
   if (reaction === 'pet' && animator.current === 'dizzy') return;
   if (reaction === 'pet') {
@@ -131,6 +132,20 @@ function updateGaze(): boolean {
   return true;
 }
 
+// Draws one frame. Defined as a const so TypeScript keeps `context`
+// narrowed to non-null inside it.
+const render = (): void => {
+  context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+  updateGaze(); // the eye may have moved with the frame
+  appearance.draw(context, { frame: animator.frame, hovered: interactive, gaze });
+  // Read the pixels once per drawing, not on every mouse move, and before
+  // effects: a heart or a star is not part of Mocha's body.
+  pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+  effects.draw(context, appearance.head(animator.frame));
+  // Mocha may have moved under a still cursor.
+  refreshHitTest();
+};
+
 const loop = createGameLoop({
   // 50 ms steps: frames of 50 ms or more are always shown at least once,
   // while the loop still sleeps between steps.
@@ -143,17 +158,7 @@ const loop = createGameLoop({
     const affected = effects.update(stepMs);
     return animated || affected;
   },
-  render() {
-    context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    updateGaze(); // the eye may have moved with the frame
-    appearance.draw(context, { frame: animator.frame, hovered: interactive, gaze });
-    // Read the pixels once per drawing, not on every mouse move, and before
-    // effects: a heart or a star is not part of Mocha's body.
-    pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-    effects.draw(context, appearance.head(animator.frame));
-    // Mocha may have moved under a still cursor.
-    refreshHitTest();
-  },
+  render,
 });
 
 // Input path: a new gaze is drawn on the next frame, not the next step.
@@ -200,9 +205,27 @@ document.addEventListener('mouseleave', () => {
 });
 
 // Do no work at all while the window is hidden.
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) loop.stop();
-  else loop.start();
+// Paused from the tray: Mocha falls asleep and the loop stops completely.
+let paused = false;
+
+/** Runs the loop only while visible and not paused: no work otherwise. */
+function syncLoop(): void {
+  if (!paused && !document.hidden) loop.start();
+  else loop.stop();
+}
+
+window.mocha.onPausedChange((next) => {
+  paused = next;
+  effects.clear();
+  animator.play(paused ? 'sleep' : 'idle');
+  if (paused) {
+    loop.stop();
+    render(); // one last frame so the sleeping pose shows
+  } else {
+    syncLoop();
+  }
 });
+
+document.addEventListener('visibilitychange', syncLoop);
 
 loop.start();

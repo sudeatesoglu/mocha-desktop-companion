@@ -117,6 +117,18 @@ describe('createEffects', () => {
     expect(painter.pixels).toHaveLength(11);
   });
 
+  it('can be cleared at once', () => {
+    const effects = createEffects();
+    effects.add('heart');
+    effects.add('stars');
+
+    effects.clear();
+
+    const painter = recordingPainter();
+    effects.draw(painter, HEAD);
+    expect(painter.pixels).toEqual([]);
+  });
+
   it('draws nothing when there is no head anchor', () => {
     const effects = createEffects();
     effects.add('heart');
