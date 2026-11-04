@@ -200,8 +200,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/core
       electron:
-        specifier: 44.10.0
-        version: 44.10.0(supports-color@7.2.0)
+        specifier: 45.1.0
+        version: 45.1.0(supports-color@7.2.0)
       electron-builder:
         specifier: 26.18.0
         version: 26.18.0(electron-builder-squirrel-windows@26.18.0)(supports-color@7.2.0)
@@ -459,8 +459,8 @@ packages:
     resolution: {integrity: sha512-aalGyl7dbB5PArRebDIX43ZvBlXrYm9uWzGJ26t+4SzJVPsOuvfILGGbw5X4yX7i50YEmJ8zvbiWnqH/AAnZqg==}
     engines: {node: '>=22'}
 
-  '@electron-internal/extract-zip@1.0.8':
-    resolution: {integrity: sha512-8iajeLFbzNwM0m3AsQZSZgYREWglAImyGvvFSWU34FgMW8sHlzdwj9QKvv9dgN7jMP591EFUF/sLOC3Jl9YIjQ==}
+  '@electron-internal/extract-zip@1.0.7':
+    resolution: {integrity: sha512-+ZdkmRVBonPJwpZBFQr9y4pY8DP6lgbm+Pj5pQzSFrnDGiBAi3Pee1jivAsgK61Ct4W8SGUHVtl7FNbm5c6rgg==}
     engines: {node: '>=22.12.0'}
 
   '@electron/asar@3.4.1':
@@ -1194,8 +1194,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@44.10.0:
-    resolution: {integrity: sha512-ss4pCfrQKV4TWkuVYtWB4HmeysPZgB96cSYNKYZv1UVCRP4vQMGNW5oopFbvx6Bbfce1XtP5pm5RDuKehp0svQ==}
+  electron@45.1.0:
+    resolution: {integrity: sha512-i7qKVAh/KR5v1pf56NhGGX2QYHcdjvLgS7koL6ui50c+zUDGLRunR95nXcTpHPURKOQ4GDBG8BmXiDgOQ8DD0A==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -1922,8 +1922,8 @@ packages:
   semver-compare@1.0.0:
     resolution: {integrity: sha512-YM3/ITh2MJ5MtzaM429anh+x2jiLVjqILF4m4oyQB18W7Ggea7BfqdH/wGMK7dDiMghv/6WG7znWMwUDzJiXow==}
 
-  semver@5.7.3:
-    resolution: {integrity: sha512-kM18BPOqTi0+TB68703/GJRpAML5Me+IDQsR1J26YB3EFKKNEyHIVZuWDX7+WKQB3tHwDwgk24BfhdpWUbytvQ==}
+  semver@5.7.2:
+    resolution: {integrity: sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==}
     hasBin: true
 
   semver@6.3.1:
@@ -2051,8 +2051,8 @@ packages:
   truncate-utf8-bytes@1.0.2:
     resolution: {integrity: sha512-95Pu1QXQvruGEhv62XCMO3Mm90GscOCClvrIUwCM0PYOXK3kaF3l3sIHxx71ThJfcbM2O5Au6SO3AWCSEfW4mQ==}
 
-  tslib@2.9.1:
-    resolution: {integrity: sha512-a4Ux9VKuIMHsOS7ENbEq6hK2ZGYIT27Rtl0E4eD9KqwxhKiQeMZE/9xb3IdYwWaSOyIBQLExhQgXDTYoiCxnWA==}
+  tslib@2.8.1:
+    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
   type-fest@0.13.1:
     resolution: {integrity: sha512-34R7HTnG0XIJcBSn5XhDd7nNFPRcXYRZrBB2O2jdKqYODldSzBAqzsWoZYYvduky73toYS/ESqxPvkDf/F0XMg==}
@@ -2536,7 +2536,7 @@ snapshots:
 
   '@conventional-changelog/template@1.4.0': {}
 
-  '@electron-internal/extract-zip@1.0.8': {}
+  '@electron-internal/extract-zip@1.0.7': {}
 
   '@electron/asar@3.4.1':
     dependencies:
@@ -2674,22 +2674,22 @@ snapshots:
     dependencies:
       '@peculiar/utils': 2.0.3
       asn1js: 3.1.0
-      tslib: 2.9.1
+      tslib: 2.8.1
 
   '@peculiar/json-schema@1.1.12':
     dependencies:
-      tslib: 2.9.1
+      tslib: 2.8.1
 
   '@peculiar/utils@2.0.3':
     dependencies:
-      tslib: 2.9.1
+      tslib: 2.8.1
 
   '@peculiar/webcrypto@1.7.2':
     dependencies:
       '@peculiar/asn1-schema': 2.11.1
       '@peculiar/json-schema': 1.1.12
       '@peculiar/utils': 2.0.3
-      tslib: 2.9.1
+      tslib: 2.8.1
       webcrypto-core: 1.9.2
 
   '@rolldown/binding-android-arm-eabi@1.2.14':
@@ -2959,7 +2959,7 @@ snapshots:
     dependencies:
       pvtsutils: 1.3.6
       pvutils: 1.2.0
-      tslib: 2.9.1
+      tslib: 2.8.1
 
   assertion-error@2.0.1: {}
 
@@ -3291,9 +3291,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@44.10.0(supports-color@7.2.0):
+  electron@45.1.0(supports-color@7.2.0):
     dependencies:
-      '@electron-internal/extract-zip': 1.0.8
+      '@electron-internal/extract-zip': 1.0.7
       '@electron/get': 5.1.0(supports-color@7.2.0)
       '@types/node': 24.19.2
     transitivePeerDependencies:
@@ -3855,7 +3855,7 @@ snapshots:
       bytestreamjs: 2.0.1
       pvtsutils: 1.3.6
       pvutils: 1.2.0
-      tslib: 2.9.1
+      tslib: 2.8.1
 
   plist@3.1.0:
     dependencies:
@@ -3898,7 +3898,7 @@ snapshots:
 
   pvtsutils@1.3.6:
     dependencies:
-      tslib: 2.9.1
+      tslib: 2.8.1
 
   pvutils@1.2.0: {}
 
@@ -3986,7 +3986,7 @@ snapshots:
   semver-compare@1.0.0:
     optional: true
 
-  semver@5.7.3: {}
+  semver@5.7.2: {}
 
   semver@6.3.1: {}
 
@@ -4086,7 +4086,7 @@ snapshots:
 
   tiny-async-pool@1.3.0:
     dependencies:
-      semver: 5.7.3
+      semver: 5.7.2
 
   tinybench@6.2.2: {}
 
@@ -4109,7 +4109,7 @@ snapshots:
     dependencies:
       utf8-byte-length: 1.0.5
 
-  tslib@2.9.1: {}
+  tslib@2.8.1: {}
 
   type-fest@0.13.1:
     optional: true
@@ -4208,7 +4208,7 @@ snapshots:
       '@peculiar/json-schema': 1.1.12
       '@peculiar/utils': 2.0.3
       asn1js: 3.1.0
-      tslib: 2.9.1
+      tslib: 2.8.1
 
   which@2.0.2:
     dependencies:
