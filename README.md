@@ -56,6 +56,7 @@ Run from the repository root; they cover every workspace package.
 | `pnpm test:coverage` | Run tests with a coverage report (`coverage/`), enforcing 80% thresholds |
 | `pnpm typecheck` | Type-check the root config files and every package |
 | `pnpm build` | Build every package that has a `build` script (desktop output goes to `apps/desktop/out/`) |
+| `pnpm package` | Build macOS DMGs for Apple Silicon and Intel into `apps/desktop/release/` |
 
 To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/core test`.
 
@@ -68,6 +69,16 @@ To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/co
 ### Editor setup
 
 Install the recommended VS Code extensions when prompted (Biome, EditorConfig). TypeScript, JavaScript, JSON and CSS files are formatted and fixed on save using the shared settings in `.vscode/`.
+
+## Installing
+
+Mocha is not on the App Store and not yet signed with an Apple Developer ID (planned for v1.0), so macOS asks you to confirm it once.
+
+1. Build the installer with `pnpm package`, or download a DMG from a release. Use `Mocha-<version>-arm64.dmg` on Apple Silicon and `Mocha-<version>.dmg` on Intel Macs.
+2. Open the DMG and drag **Mocha** into **Applications**.
+3. Open Mocha from Applications. A DMG you built yourself opens directly. If you downloaded it, macOS blocks it the first time: open **System Settings → Privacy & Security**, scroll to the message about Mocha and click **Open Anyway**.
+
+macOS asks because it cannot verify the developer of an unsigned app, not because it found a problem. Only allow apps whose source you trust; Mocha's source is this repository.
 
 ## Using Mocha
 

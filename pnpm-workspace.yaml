@@ -9,3 +9,6 @@ allowBuilds:
   # Its postinstall only runs `lefthook install`; we do that ourselves in the
   # root `prepare` script, so the third-party script never needs to run.
   lefthook: false
+  # Pulled in by electron-builder for Windows installers. Its install
+  # script only copies a Windows 7-Zip binary; not needed for macOS builds.
+  electron-winstaller: false

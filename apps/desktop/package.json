@@ -14,15 +14,15 @@
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate:skin": "node scripts/generate-default-skin.mjs"
-  },
-  "dependencies": {
-    "@mocha/core": "workspace:*",
-    "zod": "4.6.7"
+    "generate:skin": "node scripts/generate-default-skin.mjs",
+    "package": "electron-vite build && electron-builder --mac --config electron-builder.yml"
   },
   "devDependencies": {
+    "@mocha/core": "workspace:*",
     "electron": "44.10.0",
+    "electron-builder": "26.18.0",
     "electron-vite": "6.0.0",
-    "vite": "8.3.5"
+    "vite": "8.3.5",
+    "zod": "4.6.7"
   }
 }

@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "pnpm --filter @mocha/desktop dev",
     "build": "pnpm --recursive --if-present build",
+    "package": "pnpm --filter @mocha/desktop package",
     "typecheck": "tsc -p tsconfig.json && pnpm --recursive typecheck",
     "lint": "biome check --error-on-warnings .",
     "lint:fix": "biome check --write .",
