@@ -1,5 +1,7 @@
 # Mocha 🐾
 
+[![CI](https://github.com/sudeatesoglu/mocha-desktop-companion/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/sudeatesoglu/mocha-desktop-companion/actions/workflows/ci.yml)
+
 > A cute desktop companion that lives in the corner of your screen, keeps you company and helps you build healthier work habits.
 
 **Status:** 🚧 Planning. No usable release yet.

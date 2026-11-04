@@ -78,6 +78,19 @@ In an emergency you can bypass hooks with `git commit --no-verify`. CI re-runs t
 
 Hooks are not installed when there is no `.git` directory (e.g. a source tarball) or when the `CI` environment variable is set.
 
+## Continuous integration
+
+The [CI workflow](.github/workflows/ci.yml) runs on every pull request into `dev` or `main` and on pushes to those branches:
+
+| Job | Checks |
+| --- | --- |
+| Lint, typecheck, test, build | `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage` (80% thresholds), `pnpm build` |
+| Commit messages and PR title | commitlint on every commit in the pull request and on its title (pull requests only) |
+
+A pull request can only be merged when all checks pass.
+
+Workflow security: every action is pinned to a full commit SHA, the job token is read-only, checkout credentials are not persisted, and untrusted text such as the PR title reaches scripts only through environment variables.
+
 ## Dependencies
 
 - Add a dependency to the package that uses it: `pnpm --filter <package> add <name>`. Shared tooling (TypeScript, Biome, Vitest, commitlint) lives in the root `package.json`.
