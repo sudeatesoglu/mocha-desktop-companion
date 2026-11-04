@@ -42,6 +42,12 @@ export function overlayWindowOptions(
     fullscreenable: false,
     skipTaskbar: true,
     title: 'Mocha',
+    // Never take keyboard focus: clicking Mocha must not steal typing from
+    // the app the user is working in.
+    focusable: false,
+    // Deliver the first click on the unfocused window to the page instead of
+    // spending it on activating the window (macOS only; ignored elsewhere).
+    acceptFirstMouse: true,
     // NSPanel can float above other apps' fullscreen Spaces. macOS only.
     ...(platform === 'darwin' ? { type: 'panel' } : {}),
   };

@@ -40,6 +40,13 @@ describe('overlayWindowOptions', () => {
     });
   });
 
+  it('never takes keyboard focus, but still receives the first click', () => {
+    expect(overlayWindowOptions('darwin', position)).toMatchObject({
+      focusable: false,
+      acceptFirstMouse: true,
+    });
+  });
+
   it('uses a floating panel on macOS', () => {
     expect(overlayWindowOptions('darwin', position).type).toBe('panel');
   });
