@@ -17,6 +17,23 @@ Thanks for your interest in Mocha! This guide explains how work flows through th
 6. **Address review feedback** in new commits. Update the PR description if the final change differs from the original.
 7. Pull requests into `dev` are **squash-merged**, so the PR title becomes the commit message and must follow the commit convention.
 
+## Branches and releases
+
+| Branch | Role | Receives | Merge method |
+| --- | --- | --- | --- |
+| `dev` | Integration, default branch | Feature and fix pull requests | Squash (one commit per pull request, linear history) |
+| `main` | Production, every commit is releasable | Pull requests from `dev` (and `hotfix/*`) | Merge commit (keeps the `dev` history) |
+
+Both branches are protected by repository rulesets, defined as code in [`.github/rulesets/`](.github/rulesets): no direct pushes, no force pushes, no deletion, a pull request with both CI checks green and up to date with its base, and resolved review conversations. Apply changes to these files with `node scripts/apply-rulesets.mjs` (requires the GitHub CLI with admin access).
+
+Releasing:
+
+1. Update `CHANGELOG.md` and the package versions on `dev` (Semantic Versioning).
+2. Open a pull request from `dev` to `main` and merge it with a merge commit.
+3. Tag the merge commit on `main` as `vX.Y.Z` and publish a GitHub Release with the DMGs from `pnpm package` and their SHA-256 checksums.
+
+Merging to `main` never deploys anything by itself; only publishing a release does.
+
 ## Commit messages
 
 Commits follow [Conventional Commits 1.0](https://www.conventionalcommits.org/en/v1.0.0/). This is enforced by [commitlint](https://commitlint.js.org) in a `commit-msg` Git hook and in CI.
