@@ -13,6 +13,15 @@ updates:
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
+    ignore:
+      # Node types must match the Node major we run (see .node-version), or
+      # APIs missing at runtime would type-check.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
+      # A new Electron major changes the platform the overlay depends on;
+      # upgrading is planned work with manual testing, not an automatic bump.
+      - dependency-name: electron
+        update-types: [version-update:semver-major]
     commit-message:
       prefix: build
       prefix-development: build
