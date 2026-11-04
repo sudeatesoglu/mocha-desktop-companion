@@ -54,7 +54,7 @@ describe('parseSkinManifest', () => {
       ANIMATION_NAMES.map((name) => [name, { loop: false, frames: [frame] }]),
     );
 
-    expect(parseSkinManifest(manifest({ animations, author: 'Soda' })).ok).toBe(true);
+    expect(parseSkinManifest(manifest({ animations, author: 'Test Artist' })).ok).toBe(true);
   });
 
   it('requires an idle animation, which every other state falls back to', () => {
