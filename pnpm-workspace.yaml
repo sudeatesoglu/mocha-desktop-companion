@@ -1,0 +1,22 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Dependency lifecycle scripts (postinstall, etc.) are blocked by default
+# because they run arbitrary code on install. Every package that ships one
+# must be listed here explicitly: true = allowed, false = reviewed and denied.
+allowBuilds:
+  # Its postinstall only runs `lefthook install`; we do that ourselves in the
+  # root `prepare` script, so the third-party script never needs to run.
+  lefthook: false
+  # Pulled in by electron-builder for Windows installers. Its install
+  # script only copies a Windows 7-Zip binary; not needed for macOS builds.
+  electron-winstaller: false
+
+auditConfig:
+  ignoreGhsas:
+    # minimatch ReDoS (fixed in 11.0.1). Only reached through electron-builder,
+    # which requires minimatch ^10 and runs at build time on this project's
+    # own glob patterns, never on untrusted input, and is not shipped in the
+    # app. Remove once electron-builder accepts minimatch 11.
+    - GHSA-g3hv-75wg-m249

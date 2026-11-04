@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  // No "types": core is platform-free. Using a Node or DOM global here is a
+  // type error, which keeps the functional core portable and easy to test.
+  "include": ["src"]
+}

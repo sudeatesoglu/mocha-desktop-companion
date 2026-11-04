@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Main process, preload script and build configs: Node + Electron APIs.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/main", "src/preload", "src/shared", "*.config.ts"]
+}

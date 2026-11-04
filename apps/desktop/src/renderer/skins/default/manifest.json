@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "name": "Mocha (placeholder)",
+  "image": "sprite.png",
+  "frameSize": {
+    "width": 48,
+    "height": 48
+  },
+  "animations": {
+    "idle": {
+      "loop": true,
+      "frames": [
+        {
+          "index": 0,
+          "durationMs": 800,
+          "anchors": {
+            "eye": {
+              "x": 18,
+              "y": 19
+            },
+            "beak": {
+              "x": 5,
+              "y": 20
+            },
+            "head": {
+              "x": 23,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 1,
+          "durationMs": 800,
+          "anchors": {
+            "eye": {
+              "x": 18,
+              "y": 20
+            },
+            "beak": {
+              "x": 5,
+              "y": 21
+            },
+            "head": {
+              "x": 23,
+              "y": 6
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        }
+      ]
+    },
+    "blink": {
+      "loop": false,
+      "frames": [
+        {
+          "index": 2,
+          "durationMs": 60,
+          "anchors": {
+            "beak": {
+              "x": 5,
+              "y": 20
+            },
+            "head": {
+              "x": 23,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 3,
+          "durationMs": 100,
+          "anchors": {
+            "beak": {
+              "x": 5,
+              "y": 20
+            },
+            "head": {
+              "x": 23,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 2,
+          "durationMs": 60,
+          "anchors": {
+            "beak": {
+              "x": 5,
+              "y": 20
+            },
+            "head": {
+              "x": 23,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        }
+      ]
+    },
+    "look": {
+      "loop": true,
+      "frames": [
+        {
+          "index": 0,
+          "durationMs": 1000,
+          "anchors": {
+            "eye": {
+              "x": 18,
+              "y": 19
+            },
+            "beak": {
+              "x": 5,
+              "y": 20
+            },
+            "head": {
+              "x": 23,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        }
+      ]
+    },
+    "hop": {
+      "loop": false,
+      "frames": [
+        {
+          "index": 4,
+          "durationMs": 80,
+          "anchors": {
+            "eye": {
+              "x": 18,
+              "y": 21
+            },
+            "beak": {
+              "x": 5,
+              "y": 22
+            },
+            "head": {
+              "x": 23,
+              "y": 7
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 5,
+          "durationMs": 220,
+          "anchors": {
+            "eye": {
+              "x": 18,
+              "y": 15
+            },
+            "beak": {
+              "x": 5,
+              "y": 16
+            },
+            "head": {
+              "x": 23,
+              "y": 1
+            },
+            "feet": {
+              "x": 24,
+              "y": 42
+            }
+          }
+        },
+        {
+          "index": 4,
+          "durationMs": 80,
+          "anchors": {
+            "eye": {
+              "x": 18,
+              "y": 21
+            },
+            "beak": {
+              "x": 5,
+              "y": 22
+            },
+            "head": {
+              "x": 23,
+              "y": 7
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        }
+      ]
+    },
+    "sleep": {
+      "loop": true,
+      "frames": [
+        {
+          "index": 6,
+          "durationMs": 1200,
+          "anchors": {
+            "beak": {
+              "x": 5,
+              "y": 21
+            },
+            "head": {
+              "x": 23,
+              "y": 6
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 7,
+          "durationMs": 1200,
+          "anchors": {
+            "beak": {
+              "x": 5,
+              "y": 21
+            },
+            "head": {
+              "x": 23,
+              "y": 6
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        }
+      ]
+    },
+    "dizzy": {
+      "loop": false,
+      "frames": [
+        {
+          "index": 8,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 4,
+              "y": 20
+            },
+            "head": {
+              "x": 22,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 9,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 6,
+              "y": 20
+            },
+            "head": {
+              "x": 24,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 8,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 4,
+              "y": 20
+            },
+            "head": {
+              "x": 22,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 9,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 6,
+              "y": 20
+            },
+            "head": {
+              "x": 24,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 8,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 4,
+              "y": 20
+            },
+            "head": {
+              "x": 22,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 9,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 6,
+              "y": 20
+            },
+            "head": {
+              "x": 24,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 8,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 4,
+              "y": 20
+            },
+            "head": {
+              "x": 22,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 9,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 6,
+              "y": 20
+            },
+            "head": {
+              "x": 24,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 8,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 4,
+              "y": 20
+            },
+            "head": {
+              "x": 22,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 9,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 6,
+              "y": 20
+            },
+            "head": {
+              "x": 24,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 8,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 4,
+              "y": 20
+            },
+            "head": {
+              "x": 22,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 9,
+          "durationMs": 150,
+          "anchors": {
+            "beak": {
+              "x": 6,
+              "y": 20
+            },
+            "head": {
+              "x": 24,
+              "y": 5
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        }
+      ]
+    }
+  }
+}

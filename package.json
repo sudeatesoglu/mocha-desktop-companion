@@ -1,0 +1,40 @@
+{
+  "name": "mocha-desktop-companion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A cute desktop companion that lives in the corner of your screen and helps you build healthier work habits.",
+  "license": "UNLICENSED",
+  "author": "Sude Ateşoğlu",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sudeatesoglu/mocha-desktop-companion.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": "^24.0.0"
+  },
+  "packageManager": "pnpm@12.14.0",
+  "scripts": {
+    "dev": "pnpm --filter @mocha/desktop dev",
+    "build": "pnpm --recursive --if-present build",
+    "package": "pnpm --filter @mocha/desktop package",
+    "typecheck": "tsc -p tsconfig.json && pnpm --recursive typecheck",
+    "lint": "biome check --error-on-warnings .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepare": "node scripts/install-git-hooks.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@commitlint/types": "21.2.3",
+    "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": "5.0.5",
+    "lefthook": "2.2.2",
+    "typescript": "^7.0.2",
+    "vitest": "5.0.5"
+  }
+}

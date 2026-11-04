@@ -14,6 +14,99 @@ Mocha is a small, Tamagotchi-like character that sits in the bottom-right corner
 - **Delightful, not annoying:** gentle nudges, never nagging.
 - **Small and focused:** ship a lovable core first, grow from there.
 
+## Getting started
+
+### Prerequisites
+
+| Tool | Version | Notes |
+| --- | --- | --- |
+| [Node.js](https://nodejs.org) | 24 LTS | Pinned in `.node-version` (read by fnm, mise and asdf; with nvm run `nvm install 24 && nvm use 24`) |
+| [pnpm](https://pnpm.io) | 12.x | Exact version pinned in `package.json` (`packageManager`); pnpm switches to it automatically |
+
+### Setup
+
+```bash
+git clone https://github.com/sudeatesoglu/mocha-desktop-companion.git
+cd mocha-desktop-companion
+pnpm install   # also installs Git hooks (Lefthook)
+```
+
+### Repository layout
+
+This is a [pnpm workspace](https://pnpm.io/workspaces) (see [ADR-0005](docs/adr/0005-pnpm-workspace-layout.md)):
+
+| Path | Package | Contents |
+| --- | --- | --- |
+| `packages/core` | `@mocha/core` | Pure game and habit logic. No Electron, DOM or Node APIs, enforced by its tsconfig |
+| `apps/desktop` | `@mocha/desktop` | The Electron app: main process, sandboxed preload bridge and renderer, built with [electron-vite](https://electron-vite.org) |
+| `docs/adr/` | | Architecture Decision Records |
+| `docs/skins.md` | | How skins (sprite sheet + manifest) are made and validated |
+
+### Scripts
+
+Run from the repository root; they cover every workspace package.
+
+| Command | Description |
+| --- | --- |
+| `pnpm dev` | Start the desktop app with hot reload (downloads the Electron binary on first run) |
+| `pnpm lint` | Check linting, formatting and import order (read-only, fails on warnings) |
+| `pnpm lint:fix` | Apply safe lint fixes, formatting and import order |
+| `pnpm test` | Run unit tests once |
+| `pnpm test:watch` | Run tests in watch mode |
+| `pnpm test:coverage` | Run tests with a coverage report (`coverage/`), enforcing 80% thresholds |
+| `pnpm typecheck` | Type-check the root config files and every package |
+| `pnpm build` | Build every package that has a `build` script (desktop output goes to `apps/desktop/out/`) |
+| `pnpm package` | Build macOS DMGs for Apple Silicon and Intel into `apps/desktop/release/` |
+
+To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/core test`.
+
+### Testing conventions
+
+- Tests live next to the code they cover: `foo.ts` → `foo.test.ts`.
+- Keep business logic in `@mocha/core` (no Electron or OS APIs) so it can be unit-tested in isolation. Platform code only calls into it.
+- Coverage must stay at or above 80% for lines, branches, functions and statements.
+
+### Editor setup
+
+Install the recommended VS Code extensions when prompted (Biome, EditorConfig). TypeScript, JavaScript, JSON and CSS files are formatted and fixed on save using the shared settings in `.vscode/`.
+
+## Installing
+
+Mocha is not on the App Store and not yet signed with an Apple Developer ID (planned for v1.0), so macOS asks you to confirm it once.
+
+1. Build the installer with `pnpm package`, or download a DMG from a release. Use `Mocha-<version>-arm64.dmg` on Apple Silicon and `Mocha-<version>.dmg` on Intel Macs.
+2. Open the DMG and drag **Mocha** into **Applications**.
+3. Open Mocha from Applications. A DMG you built yourself opens directly. If you downloaded it, macOS blocks it the first time: open **System Settings → Privacy & Security**, scroll to the message about Mocha and click **Open Anyway**.
+
+macOS asks because it cannot verify the developer of an unsigned app, not because it found a problem. Only allow apps whose source you trust; Mocha's source is this repository.
+
+## Using Mocha
+
+Mocha lives in a corner of your screen and has no Dock icon. Everything else happens directly on Mocha or from its menu-bar icon:
+
+| Do | How |
+| --- | --- |
+| Pet Mocha | Move the cursor onto it |
+| Make it dizzy | Click it four times quickly |
+| Move it | Drag it; it remembers the spot |
+| Pause or resume | Menu-bar icon → Pause Mocha / Resume Mocha |
+| Put it back in the corner | Menu-bar icon → Reset Position |
+| Quit | Menu-bar icon → Quit Mocha |
+
+## Your data
+
+Mocha is local-first: nothing leaves your machine. Settings, such as where you placed Mocha on the screen, are stored in a small JSON file in the app's data folder:
+
+| OS | Location |
+| --- | --- |
+| macOS | `~/Library/Application Support/Mocha/settings.json` |
+
+Deleting the file resets Mocha to its defaults.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, commit conventions and Git hooks.
+
 ## Roadmap
 
-The project scope and roadmap are being planned. See the [Issues](https://github.com/sudeatesoglu/mocha-desktop-companion/issues) for progress.
+See [CHANGELOG.md](CHANGELOG.md) for what each release contains and the [milestones](https://github.com/sudeatesoglu/mocha-desktop-companion/milestones) for what comes next.

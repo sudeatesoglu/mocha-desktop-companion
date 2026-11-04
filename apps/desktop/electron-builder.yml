@@ -1,0 +1,44 @@
+# Packaging for the desktop app (see docs/adr/0006-package-with-electron-builder.md).
+appId: io.github.sudeatesoglu.mocha
+productName: Mocha
+
+directories:
+  output: release
+
+# electron-vite bundles every dependency into out/, so the packaged app
+# needs no node_modules at all.
+files:
+  - out/**
+  - package.json
+npmRebuild: false
+asar: true
+
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  # Ad-hoc signature: required for Apple Silicon to run the app at all.
+  # Developer ID signing and notarization come with v1.0.
+  identity: '-'
+  # The hardened runtime only protects together with a Developer ID
+  # signature (anyone can create an ad-hoc one), and with ad-hoc signing it
+  # can stop the app from loading its own frameworks. Enabled in v1.0.
+  hardenedRuntime: false
+  extendInfo:
+    # A menu-bar app: no Dock icon from the very first moment of launch.
+    LSUIElement: true
+
+dmg:
+  title: Mocha
+
+# Electron fuses are switches baked into the binary at package time. They
+# turn off features an attacker could use to run their own code with the
+# app's identity (ADR-0002, least privilege).
+electronFuses:
+  runAsNode: false # ELECTRON_RUN_AS_NODE cannot turn the app into plain Node
+  enableNodeOptionsEnvironmentVariable: false # NODE_OPTIONS is ignored
+  enableNodeCliInspectArguments: false # --inspect cannot attach a debugger
+  enableEmbeddedAsarIntegrityValidation: true # a modified app.asar is refused
+  onlyLoadAppFromAsar: true # code outside app.asar is never loaded
+  enableCookieEncryption: true

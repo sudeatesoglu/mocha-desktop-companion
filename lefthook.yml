@@ -1,0 +1,15 @@
+# Git hooks, installed by `pnpm install` (see scripts/install-git-hooks.mjs).
+# Skip in an emergency with `git commit --no-verify`; CI runs the same checks.
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome
+      # No glob: Biome itself skips unsupported files (files.ignoreUnknown).
+      run: pnpm exec biome check --write --error-on-warnings --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: pnpm exec commitlint --edit {1}
