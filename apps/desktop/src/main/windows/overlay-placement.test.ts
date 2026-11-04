@@ -52,6 +52,18 @@ describe('placeOnDisplays', () => {
     expect(far).toEqual({ x: -1920, y: 880 - SIZE });
   });
 
+  it('does not depend on the order in which displays are listed', () => {
+    for (const position of [
+      { x: -1000, y: 300 },
+      { x: 500, y: 300 },
+      { x: -5000, y: 5000 },
+    ]) {
+      expect(placeOnDisplays(position, SIZE, [MONITOR, LAPTOP])).toEqual(
+        placeOnDisplays(position, SIZE, [LAPTOP, MONITOR]),
+      );
+    }
+  });
+
   it('leaves the position alone when no display is known', () => {
     expect(placeOnDisplays({ x: 7, y: 9 }, SIZE, [])).toEqual({ x: 7, y: 9 });
   });

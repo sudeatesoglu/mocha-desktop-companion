@@ -68,9 +68,13 @@ if (!app.requestSingleInstanceLock()) {
     };
 
     /** Keeps Mocha fully visible and remembers where it is. */
+    let remembered = saved.overlayPosition;
     const settle = (position: { x: number; y: number }) => {
       const placed = placeOnDisplays(position, OVERLAY_SIZE, workAreas());
       window.setPosition(placed.x, placed.y);
+      // Display events can fire often; write only when the position changed.
+      if (remembered?.x === placed.x && remembered.y === placed.y) return;
+      remembered = placed;
       void settings.update({ overlayPosition: placed });
     };
 
@@ -82,6 +86,8 @@ if (!app.requestSingleInstanceLock()) {
       onDrop: settle,
     });
     registerOverlayHandlers(window, dragger, trustedUrls, console);
+    // If the renderer dies mid-drag, its "end" never arrives: stop following.
+    window.webContents.on('render-process-gone', () => dragger.end());
 
     // A monitor was unplugged or rearranged: bring Mocha back on screen.
     const onDisplaysChanged = () => settle(windowPosition());
