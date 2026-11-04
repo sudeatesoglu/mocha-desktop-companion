@@ -14,6 +14,7 @@ import { createEffects } from './effects.ts';
 import { isOpaqueAt, type Point } from './hit-test.ts';
 import { loadImage } from './load-image.ts';
 import { PLACEHOLDER_ANIMATIONS } from './placeholder-sprite.ts';
+import { createPressGesture } from './press-gesture.ts';
 import { loadSkin } from './skin-loader.ts';
 import defaultManifest from './skins/default/manifest.json';
 import defaultSpriteUrl from './skins/default/sprite.png';
@@ -82,7 +83,13 @@ function setInteractive(next: boolean): void {
   loop.invalidate();
 }
 
+// Click or drag: decided by how far the pointer moves while pressed.
+const press = createPressGesture();
+
 function refreshHitTest(): void {
+  // Stay interactive while pressed: becoming click-through mid-drag would
+  // lose the release, and the drag would never end.
+  if (press.pressed) return;
   setInteractive(pointer !== undefined && isOpaqueAt(pixels, pointer, OVERLAY_SCALE));
 }
 
@@ -164,8 +171,29 @@ window.addEventListener('mousemove', (event) => {
   if (!wasOver && interactive) react(reactions.hover());
 });
 
-// Mouse buttons only reach the page while it is interactive, i.e. over Mocha.
-window.addEventListener('mousedown', () => react(reactions.click()));
+// Pointer buttons only reach the page while it is interactive, i.e. over
+// Mocha. Capturing the pointer keeps the events coming while dragging.
+canvas.addEventListener('pointerdown', (event) => {
+  if (event.button !== 0) return;
+  canvas.setPointerCapture(event.pointerId);
+  press.down({ x: event.screenX, y: event.screenY });
+});
+canvas.addEventListener('pointermove', (event) => {
+  if (press.move({ x: event.screenX, y: event.screenY }) === 'drag-start') {
+    window.mocha.dragOverlay('start');
+  }
+});
+
+function release(outcome: 'click' | 'drag-end' | undefined): void {
+  if (outcome === 'click') react(reactions.click());
+  if (outcome === 'drag-end') {
+    window.mocha.dragOverlay('end');
+    refreshHitTest(); // the window moved; the cursor may be off Mocha now
+  }
+}
+canvas.addEventListener('pointerup', () => release(press.up()));
+canvas.addEventListener('pointercancel', () => release(press.cancel()));
+canvas.addEventListener('lostpointercapture', () => release(press.cancel()));
 document.addEventListener('mouseleave', () => {
   pointer = undefined;
   refreshHitTest();

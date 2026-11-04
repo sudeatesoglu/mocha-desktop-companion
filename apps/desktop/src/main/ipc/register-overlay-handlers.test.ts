@@ -23,9 +23,15 @@ describe('registerOverlayHandlers', () => {
     setIgnoreMouseEvents,
   } as unknown as OverlayTarget;
   const logger = { warn: vi.fn() };
+  const dragger = { start: vi.fn(), end: vi.fn() };
 
-  const send = (sender: unknown, payload: unknown, url = TRUSTED) => {
-    const handler = ipc.handlers.get(IpcChannel.SetOverlayInteractive);
+  const send = (
+    sender: unknown,
+    payload: unknown,
+    url = TRUSTED,
+    channel: string = IpcChannel.SetOverlayInteractive,
+  ) => {
+    const handler = ipc.handlers.get(channel);
     if (!handler) throw new Error('handler not registered');
     handler({ sender, senderFrame: { url } }, payload);
   };
@@ -33,7 +39,7 @@ describe('registerOverlayHandlers', () => {
   beforeEach(() => {
     ipc.handlers.clear();
     vi.clearAllMocks();
-    registerOverlayHandlers(overlay, [TRUSTED], logger);
+    registerOverlayHandlers(overlay, dragger, [TRUSTED], logger);
   });
 
   it('makes the overlay clickable while the cursor is over Mocha', () => {
@@ -70,5 +76,36 @@ describe('registerOverlayHandlers', () => {
     send(overlayContents, true, 'https://example.com/');
 
     expect(setIgnoreMouseEvents).not.toHaveBeenCalled();
+  });
+
+  describe(IpcChannel.DragOverlay, () => {
+    const drag = (payload: unknown, sender: unknown = overlayContents) =>
+      send(sender, payload, TRUSTED, IpcChannel.DragOverlay);
+
+    it('starts and ends a drag', () => {
+      drag('start');
+      drag('end');
+
+      expect(dragger.start).toHaveBeenCalledOnce();
+      expect(dragger.end).toHaveBeenCalledOnce();
+    });
+
+    it.each([
+      ['an unknown phase', 'fling'],
+      ['a non-string', 1],
+      ['nothing', undefined],
+    ])('rejects %s', (_case, payload) => {
+      drag(payload);
+
+      expect(dragger.start).not.toHaveBeenCalled();
+      expect(dragger.end).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('ignores drag messages from another window of the app', () => {
+      drag('start', otherContents);
+
+      expect(dragger.start).not.toHaveBeenCalled();
+    });
   });
 });

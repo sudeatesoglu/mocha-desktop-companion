@@ -7,6 +7,7 @@ const bridge: MochaBridge = {
   reportError: (report) => ipcRenderer.send(IpcChannel.ReportRendererError, report),
   setOverlayInteractive: (interactive) =>
     ipcRenderer.send(IpcChannel.SetOverlayInteractive, interactive),
+  dragOverlay: (phase) => ipcRenderer.send(IpcChannel.DragOverlay, phase),
   onCursorMove: (callback) => {
     // Pass only the point on, never the IPC event (it exposes the sender).
     const listener = (_event: unknown, point: { x: number; y: number }) => callback(point);
