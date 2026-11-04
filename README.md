@@ -109,4 +109,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, commit conventions and 
 
 ## Roadmap
 
-The project scope and roadmap are being planned. See the [Issues](https://github.com/sudeatesoglu/mocha-desktop-companion/issues) for progress.
+See [CHANGELOG.md](CHANGELOG.md) for what each release contains and the [milestones](https://github.com/sudeatesoglu/mocha-desktop-companion/milestones) for what comes next.
