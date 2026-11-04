@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { checkSkinImage, frameSource, parseSkinManifest } from './skin-manifest.ts';
+import {
+  ANIMATION_NAMES,
+  checkSkinImage,
+  frameSource,
+  parseSkinManifest,
+} from './skin-manifest.ts';
 
 /** A minimal valid manifest; tests override one field at a time. */
 function manifest(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -46,10 +51,7 @@ describe('parseSkinManifest', () => {
       },
     };
     const animations = Object.fromEntries(
-      ['idle', 'blink', 'look', 'hop', 'sleep'].map((name) => [
-        name,
-        { loop: false, frames: [frame] },
-      ]),
+      ANIMATION_NAMES.map((name) => [name, { loop: false, frames: [frame] }]),
     );
 
     expect(parseSkinManifest(manifest({ animations, author: 'Soda' })).ok).toBe(true);

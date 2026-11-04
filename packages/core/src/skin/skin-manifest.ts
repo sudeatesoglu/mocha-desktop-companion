@@ -9,7 +9,7 @@ import { z } from 'zod';
 export const SKIN_SCHEMA_VERSION = 1;
 
 /** Animations a skin can provide. Only `idle` is required; the rest fall back to it. */
-export const ANIMATION_NAMES = ['idle', 'blink', 'look', 'hop', 'sleep'] as const;
+export const ANIMATION_NAMES = ['idle', 'blink', 'look', 'hop', 'sleep', 'dizzy'] as const;
 export type AnimationName = (typeof ANIMATION_NAMES)[number];
 
 const MAX_FRAME_SIDE = 256;
@@ -72,6 +72,7 @@ const manifestSchema = z
       look: animationSchema.optional(),
       hop: animationSchema.optional(),
       sleep: animationSchema.optional(),
+      dizzy: animationSchema.optional(),
     }),
   })
   .superRefine((manifest, context) => {

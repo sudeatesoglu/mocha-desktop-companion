@@ -75,6 +75,14 @@ describe('skinAppearance', () => {
     expect(fills).toEqual([`${PUPIL_COLOR} 17,20 2x2`]);
   });
 
+  it('reports the head anchor of the frame', () => {
+    const appearance = skinAppearance(skin);
+    const withHead = { index: 0, durationMs: 100, anchors: { head: { x: 23, y: 5 } } };
+
+    expect(appearance.head(withHead)).toEqual({ x: 23, y: 5 });
+    expect(appearance.head(OPEN)).toBeUndefined();
+  });
+
   it('reports the eye center for open eyes only', () => {
     const appearance = skinAppearance(skin);
 
@@ -166,12 +174,14 @@ describe('skinAppearance shadow', () => {
 });
 
 describe('placeholderAppearance', () => {
-  it('reports its eye center, following the bob', () => {
+  it('reports its eye center and head, following the bob', () => {
     const appearance = placeholderAppearance<FakeImage>();
     const [still, bobbed] = PLACEHOLDER_ANIMATIONS.idle.frames;
 
     expect(appearance.eyeCenter(still)).toEqual({ x: 24, y: 13 });
     expect(appearance.eyeCenter(bobbed ?? still)).toEqual({ x: 24, y: 14 });
+    expect(appearance.head(still)).toEqual({ x: 24, y: 8 });
+    expect(appearance.head(bobbed ?? still)).toEqual({ x: 24, y: 9 });
   });
 
   it('draws the blocky placeholder, bobbing with the frame index', () => {
