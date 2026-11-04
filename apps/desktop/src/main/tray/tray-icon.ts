@@ -43,11 +43,16 @@ export interface Bitmap {
 export function trayIconBitmap(scale: 1 | 2): Bitmap {
   const size = TRAY_ICON_POINTS * scale;
   const data = new Uint8Array(size * size * 4);
-  for (let y = 0; y < size; y++) {
-    const row = MASK[Math.floor(y / scale)] ?? '';
-    for (let x = 0; x < size; x++) {
-      if (row[Math.floor(x / scale)] === '#') data[(y * size + x) * 4 + 3] = 255;
-    }
-  }
+  MASK.forEach((row, my) => {
+    [...row].forEach((cell, mx) => {
+      if (cell !== '#') return;
+      // Each mask point becomes a scale x scale block of opaque pixels.
+      for (let dy = 0; dy < scale; dy++) {
+        for (let dx = 0; dx < scale; dx++) {
+          data[((my * scale + dy) * size + mx * scale + dx) * 4 + 3] = 255;
+        }
+      }
+    });
+  });
   return { width: size, height: size, data };
 }
