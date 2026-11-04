@@ -23,6 +23,7 @@ const config: UserConfig = {
         'readme',
         'ci',
         'deps',
+        'deps-dev', // Dependabot: development dependencies
         'release',
         'config',
         'test',
