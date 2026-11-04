@@ -14,7 +14,8 @@ vi.mock('electron', () => ({
 }));
 
 const TRUSTED = 'file:///app/out/renderer/index.html';
-const fromUrl = (url: string) => ({ senderFrame: { url } });
+const WINDOW = { id: 1 };
+const fromUrl = (url: string, sender: object = WINDOW) => ({ sender, senderFrame: { url } });
 
 function handlerFor(channel: string): Handler {
   const handler = ipc.handlers.get(channel);
@@ -24,11 +25,13 @@ function handlerFor(channel: string): Handler {
 
 describe('registerIpcHandlers', () => {
   const logger = { warn: vi.fn() };
+  let time = 0;
 
   beforeEach(() => {
     ipc.handlers.clear();
     logger.warn.mockClear();
-    registerIpcHandlers([TRUSTED], logger);
+    time = 0;
+    registerIpcHandlers([TRUSTED], logger, () => time);
   });
 
   it('registers the app-wide channels (overlay channels live in their own module)', () => {
@@ -63,5 +66,50 @@ describe('registerIpcHandlers', () => {
       expect(error).not.toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledOnce();
     });
+
+    it('throttles a flood of reports from one window and summarizes what was dropped', () => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const report = handlerFor(IpcChannel.ReportRendererError);
+
+      for (let i = 0; i < 25; i++) report(fromUrl(TRUSTED), { message: `boom ${i}` });
+      expect(error).toHaveBeenCalledTimes(10); // the allowed burst
+
+      time += 1_000;
+      report(fromUrl(TRUSTED), { message: 'later' });
+
+      expect(logger.warn).toHaveBeenCalledWith('[renderer] 15 error reports dropped (rate limit)');
+      expect(error).toHaveBeenLastCalledWith('[renderer]', 'later', '');
+    });
+
+    it('throttles a flood of invalid reports too, so warnings cannot fill the log', () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const report = handlerFor(IpcChannel.ReportRendererError);
+
+      for (let i = 0; i < 25; i++) report(fromUrl(TRUSTED), { message: 42 });
+
+      expect(logger.warn).toHaveBeenCalledTimes(10); // one per allowed message
+    });
+
+    it('limits each window on its own', () => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const report = handlerFor(IpcChannel.ReportRendererError);
+      for (let i = 0; i < 20; i++) report(fromUrl(TRUSTED), { message: 'loop' });
+
+      report(fromUrl(TRUSTED, { id: 2 }), { message: 'from another window' });
+
+      expect(error).toHaveBeenLastCalledWith('[renderer]', 'from another window', '');
+    });
+  });
+});
+
+describe('registerIpcHandlers with the real clock', () => {
+  it('works without an injected clock', () => {
+    ipc.handlers.clear();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    registerIpcHandlers([TRUSTED], { warn: vi.fn() });
+
+    handlerFor(IpcChannel.ReportRendererError)(fromUrl(TRUSTED), { message: 'boom' });
+
+    expect(error).toHaveBeenCalledWith('[renderer]', 'boom', '');
   });
 });
