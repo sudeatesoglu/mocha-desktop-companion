@@ -75,7 +75,22 @@ jobs:
           pnpm test:coverage
 
       - name: Package
+        env:
+          # electron-builder skips signing on pull request builds to protect
+          # signing secrets. The signature here is ad-hoc (no secret), and an
+          # unsigned bundle is broken because the fuses modify the binary.
+          CSC_FOR_PULL_REQUEST: "true"
         run: pnpm package
+
+      # Fail on a broken bundle instead of shipping it: both apps must carry
+      # a complete, valid signature.
+      - name: Verify the app bundles
+        working-directory: apps/desktop/release
+        run: |
+          for app in mac-arm64/Mocha.app mac/Mocha.app; do
+            codesign --verify --deep --strict "$app"
+            echo "$app: signature valid"
+          done
 
       - name: Compute checksums
         working-directory: apps/desktop/release
