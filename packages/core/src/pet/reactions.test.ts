@@ -84,6 +84,37 @@ describe('createReactionDetector', () => {
     });
   });
 
+  describe('slipping (Space switch)', () => {
+    it('slips when the desktop moves under Mocha', () => {
+      expect(createReactionDetector(options).spaceChanged()).toBe('slip');
+    });
+
+    it('slips at most once per cooldown when the user swipes repeatedly', () => {
+      const detector = createReactionDetector({ ...options, slipCooldownMs: 1200 });
+      detector.spaceChanged();
+
+      detector.update(1199);
+      expect(detector.spaceChanged()).toBeUndefined();
+
+      detector.update(1);
+      expect(detector.spaceChanged()).toBe('slip');
+    });
+
+    it('starts the petting cooldown too, so a hop does not cut the slip short', () => {
+      const detector = createReactionDetector(options);
+      detector.spaceChanged();
+
+      expect(detector.hover()).toBeUndefined();
+    });
+
+    it('slips even right after being petted: the floor moving wins', () => {
+      const detector = createReactionDetector(options);
+      detector.hover();
+
+      expect(detector.spaceChanged()).toBe('slip');
+    });
+  });
+
   it('uses sensible defaults', () => {
     const detector = createReactionDetector();
 
@@ -94,6 +125,7 @@ describe('createReactionDetector', () => {
     ['a negative cooldown', { petCooldownMs: -1 }],
     ['fewer than two clicks for dizziness', { dizzyClicks: 1 }],
     ['a zero click window', { dizzyWindowMs: 0 }],
+    ['a negative slip cooldown', { slipCooldownMs: -1 }],
   ])('rejects %s', (_case, invalid) => {
     expect(() => createReactionDetector({ ...options, ...invalid })).toThrow(RangeError);
   });
