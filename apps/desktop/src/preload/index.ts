@@ -19,6 +19,11 @@ const bridge: MochaBridge = {
     ipcRenderer.on(IpcChannel.OverlayPaused, listener);
     return () => ipcRenderer.removeListener(IpcChannel.OverlayPaused, listener);
   },
+  onSpaceChanged: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on(IpcChannel.OverlaySpaceChanged, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlaySpaceChanged, listener);
+  },
 };
 
 contextBridge.exposeInMainWorld('mocha', bridge);

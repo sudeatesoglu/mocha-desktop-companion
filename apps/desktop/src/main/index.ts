@@ -1,7 +1,7 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { app, Menu, nativeImage, screen, session, Tray } from 'electron';
+import { app, Menu, nativeImage, screen, session, systemPreferences, Tray } from 'electron';
 import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
@@ -9,6 +9,7 @@ import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
+import { watchSpaceChanges } from './space/space-watcher.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
 import { trayMenuTemplate } from './tray/tray-menu.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
@@ -154,7 +155,13 @@ if (!app.requestSingleInstanceLock()) {
     }
     updateTrayMenu();
 
+    // The desktop slides under Mocha when the user switches Spaces.
+    const stopWatchingSpaces = watchSpaceChanges(process.platform, systemPreferences, () =>
+      window.webContents.send(IpcChannel.OverlaySpaceChanged),
+    );
+
     window.on('closed', () => {
+      stopWatchingSpaces();
       stopCursorTracking?.();
       screen.off('display-removed', onDisplaysChanged);
       screen.off('display-metrics-changed', onDisplaysChanged);

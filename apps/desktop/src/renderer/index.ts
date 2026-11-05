@@ -111,6 +111,11 @@ function react(reaction: Reaction | undefined): void {
   } else if (reaction === 'dizzy') {
     animator.play('dizzy');
     effects.add('stars');
+  } else if (reaction === 'slip') {
+    // A dizzy Mocha is already off balance; let that play out.
+    if (animator.current === 'dizzy') return;
+    animator.play('slip');
+    effects.add('dust');
   } else {
     return;
   }
@@ -163,6 +168,9 @@ const loop = createGameLoop({
   },
   render,
 });
+
+// The floor moved: the user swiped to another Space.
+window.mocha.onSpaceChanged(() => react(reactions.spaceChanged()));
 
 // Input path: a new gaze is drawn on the next frame, not the next step.
 window.mocha.onCursorMove((point) => {
