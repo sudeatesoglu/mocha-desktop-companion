@@ -15,7 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:skin": "node scripts/generate-default-skin.mjs",
-    "package": "electron-vite build && electron-builder --mac --config electron-builder.yml"
+    "package": "electron-vite build && electron-builder --mac --publish never --config electron-builder.yml"
   },
   "devDependencies": {
     "@mocha/core": "workspace:*",
