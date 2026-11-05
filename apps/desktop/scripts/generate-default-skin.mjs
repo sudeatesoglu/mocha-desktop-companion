@@ -76,6 +76,44 @@ function sway(grid, dx, split = 40) {
   return result;
 }
 
+/** Draws a 1px ink line (Bresenham). */
+function line(grid, x0, y0, x1, y1) {
+  const dx = Math.abs(x1 - x0);
+  const dy = -Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let error = dx + dy;
+  for (;;) {
+    set(grid, x0, y0, 'K');
+    if (x0 === x1 && y0 === y1) return;
+    const e2 = 2 * error;
+    if (e2 >= dy) {
+      error += dy;
+      x0 += sx;
+    }
+    if (e2 <= dx) {
+      error += dx;
+      y0 += sy;
+    }
+  }
+}
+
+/**
+ * Losing footing: the body (rows above the legs) shifts by (bodyDx, bodyDy)
+ * and the legs are redrawn as `legs`, a list of [x0, y0, x1, y1] strokes.
+ * Redrawing the legs changes the silhouette, which a 48px sprite needs for
+ * a pose to read at all.
+ */
+function stumble(grid, bodyDx, bodyDy, legs, legTop = 43) {
+  const result = blank();
+  for (let y = 0; y < legTop; y++) {
+    const source = grid[y - bodyDy];
+    if (source) result[y] = Array.from({ length: SIZE }, (_, x) => source[x - bodyDx] ?? null);
+  }
+  for (const [x0, y0, x1, y1] of legs) line(result, x0, y0, x1, y1);
+  return result;
+}
+
 /** Moves the whole sprite up by `by` pixels. */
 function lift(grid, by) {
   return grid.map((_, y) => (grid[y + by] ? [...grid[y + by]] : Array(SIZE).fill(null)));
@@ -179,7 +217,33 @@ const FRAMES = [
   sleepB, // 7 sleep
   sway(dizzyEye(base), -1), // 8 dizzy: sway left
   sway(dizzyEye(base), 1), // 9 dizzy: sway right
+  // 10 slip: feet shoot forward (Mocha faces left), body thrown back
+  stumble(base, 2, 1, [
+    [23, 43, 18, 46],
+    [16, 46, 18, 46],
+    [28, 43, 23, 46],
+    [21, 46, 23, 46],
+  ]),
+  // 11 slip: one foot finds the floor, the other kicks in the air
+  stumble(base, -1, 0, [
+    [21, 43, 21, 46],
+    [20, 46, 22, 46],
+    [26, 43, 30, 44],
+    [30, 44, 32, 44],
+  ]),
 ];
+
+/** Slip anchors: the body shifted by (dx, dy), the feet by feetDx. */
+const slipAnchors = (dx, dy, feetDx) => {
+  const { eye, beak, head, feet } = anchors(dy);
+  const move = ({ x, y }) => ({ x: x + dx, y });
+  return {
+    eye: move(eye),
+    beak: move(beak),
+    head: move(head),
+    feet: { x: feet.x + feetDx, y: feet.y },
+  };
+};
 
 /** Dizzy anchors: crossed-out eye (no pupil), head swaying with the body. */
 const dizzyAnchors = (dx) => {
@@ -222,6 +286,17 @@ const manifest = {
       frames: [
         { index: 6, durationMs: 1200, anchors: closedAnchors(1) },
         { index: 7, durationMs: 1200, anchors: closedAnchors(1) },
+      ],
+    },
+    // Feet slide out, Mocha wobbles twice and catches itself.
+    slip: {
+      loop: false,
+      frames: [
+        { index: 10, durationMs: 150, anchors: slipAnchors(2, 1, -4) },
+        { index: 11, durationMs: 150, anchors: slipAnchors(-1, 0, -3) },
+        { index: 10, durationMs: 120, anchors: slipAnchors(2, 1, -4) },
+        { index: 11, durationMs: 120, anchors: slipAnchors(-1, 0, -3) },
+        { index: 1, durationMs: 200, anchors: anchors(1) },
       ],
     },
     // Six sways left and right, then back to idle.
