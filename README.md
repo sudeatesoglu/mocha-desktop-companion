@@ -82,6 +82,14 @@ Mocha is not on the App Store and not yet signed with an Apple Developer ID (pla
 
 macOS asks because it cannot verify the developer of an unsigned app, not because it found a problem. Only allow apps whose source you trust; Mocha's source is this repository.
 
+To check that a downloaded DMG is exactly what the release workflow built:
+
+```bash
+shasum -a 256 -c SHA256SUMS.txt          # the file is intact
+gh attestation verify Mocha-<version>-arm64.dmg --repo sudeatesoglu/mocha-desktop-companion
+                                         # it was built by this repository's workflow
+```
+
 ## Using Mocha
 
 Mocha lives in a corner of your screen and has no Dock icon. Everything else happens directly on Mocha or from its menu-bar icon:

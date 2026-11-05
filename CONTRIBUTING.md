@@ -28,9 +28,12 @@ Both branches are protected by repository rulesets, defined as code in [`.github
 
 Releasing:
 
-1. Update `CHANGELOG.md` and the package versions on `dev` (Semantic Versioning).
+1. On `dev`, update `CHANGELOG.md` and the package versions (Semantic Versioning).
 2. Open a pull request from `dev` to `main` and merge it with a merge commit.
-3. Tag the merge commit on `main` as `vX.Y.Z` and publish a GitHub Release with the DMGs from `pnpm package` and their SHA-256 checksums.
+3. Publish a GitHub Release for the merge commit on `main`, tagged `vX.Y.Z`, for example `gh release create vX.Y.Z --target main --title "vX.Y.Z: <name>" --notes-file notes.md`.
+4. The [release workflow](.github/workflows/release.yml) then checks that the tag is on `main` and matches the app version, runs the full verification, builds the DMGs on a macOS runner, signs their build provenance and attaches them with `SHA256SUMS.txt` to the release.
+
+The workflow is split by privilege: the job that runs the build tools has a read-only token; only a separate job, which runs no build tools, may write to the release. Changes to the workflow or to `electron-builder.yml` are packaged on their pull request as a dry run, without publishing.
 
 Merging to `main` never deploys anything by itself; only publishing a release does.
 
