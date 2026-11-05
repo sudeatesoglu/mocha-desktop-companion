@@ -141,7 +141,10 @@ const render = (): void => {
   // Read the pixels once per drawing, not on every mouse move, and before
   // effects: a heart or a star is not part of Mocha's body.
   pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-  effects.draw(context, appearance.head(animator.frame));
+  effects.draw(context, {
+    head: appearance.head(animator.frame),
+    feet: appearance.feet(animator.frame),
+  });
   // Mocha may have moved under a still cursor.
   refreshHitTest();
 };
