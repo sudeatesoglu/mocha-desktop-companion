@@ -84,6 +84,7 @@ The placeholder uses an eight-color ink palette. Skins may use any colors, but s
 | `hop` | When petted: the cursor arrives on Mocha (at most every 1.5 s) | No |
 | `sleep` | While the user is away | No |
 | `dizzy` | After four quick clicks on Mocha (within 1.5 s) | No |
+| `slip` | When the user switches Spaces on macOS: the floor moves under Mocha (at most every 1.5 s) | No |
 
 Every animation has a `loop` flag and at least one frame. A looping animation repeats until another one is requested; a one-shot animation (`"loop": false`) plays once and returns to `idle`. A missing optional animation falls back to `idle`, and a skin without `blink` simply never blinks.
 
@@ -102,7 +103,7 @@ Every animation has a `loop` flag and at least one frame. A looping animation re
 | `eye` | Top-left pixel of the 2×2 pupil when Mocha looks straight ahead; the app moves it by one pixel toward the cursor. Omit it on frames where the eye is closed: no pupil is drawn. |
 | `beak` | Tip of the beak, where food and speech bubbles attach. |
 | `head` | Top of the head (or hat). The app draws its effects around it: a heart rising to the right, stars circling it. Keep about 12 pixels to the right of and 5 pixels above the anchor free of important detail. |
-| `feet` | Bottom center of the feet (the left of the two middle pixels). The app draws a ground shadow there. The ground line is the `feet` position in the first `idle` frame; when a frame lifts the feet above it, the shadow stays on the ground and shrinks. Omit it to cast no shadow. |
+| `feet` | Bottom center of the feet (the left of the two middle pixels). The app draws a ground shadow and, during a slip, dust puffs there. The ground line is the `feet` position in the first `idle` frame; when a frame lifts the feet above it, the shadow stays on the ground and shrinks. Omit it to cast no shadow. |
 
 Anchors move with the drawing. If a frame lowers the head by one pixel, its anchors move down by one pixel too, so effects stay attached.
 
