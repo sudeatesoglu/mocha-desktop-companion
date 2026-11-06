@@ -212,7 +212,10 @@ function renderScene(skin, { durationMs, start, gazeAt, seed = 1 }) {
     const eye = appearance.eyeCenter(animator.frame);
     const gaze = gazeAt && eye ? gazeOffset(eye, gazeAt(t)) : { x: 0, y: 0 };
     appearance.draw(canvas, { frame: animator.frame, hovered: false, gaze });
-    effects.draw(canvas, appearance.head(animator.frame));
+    effects.draw(canvas, {
+      head: appearance.head(animator.frame),
+      feet: appearance.feet(animator.frame),
+    });
 
     const last = frames.at(-1);
     if (last && Buffer.compare(last.pixels, canvas.pixels) === 0) {
