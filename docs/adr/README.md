@@ -25,3 +25,4 @@ Accepted records are immutable. When a decision changes, write a new ADR that su
 | [0004](0004-canvas-2d-renderer-with-fixed-timestep-loop.md) | Hand-written Canvas 2D renderer with a fixed-timestep loop | Accepted |
 | [0005](0005-pnpm-workspace-layout.md) | pnpm workspace with a platform-free core package | Accepted |
 | [0006](0006-package-with-electron-builder.md) | Package with electron-builder as a fully bundled, fused app | Accepted |
+| [0007](0007-store-data-with-node-sqlite.md) | Store data with the built-in node:sqlite | Accepted |

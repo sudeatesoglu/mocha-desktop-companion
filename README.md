@@ -73,7 +73,7 @@ See the [changelog](CHANGELOG.md) for what each release contains.
 <summary><b>Your data</b></summary>
 <br>
 
-Mocha is local-first: it has no account and no telemetry. The only file it writes itself is `~/Library/Application Support/Mocha/settings.json`, which holds where you placed it. Deleting that file resets Mocha's position.
+Mocha is local-first: it has no account and no telemetry. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it, and `mocha.db`, reserved for the times of your work stretches and breaks, with nothing about what you do in them. Deleting them resets Mocha.
 
 </details>
 
