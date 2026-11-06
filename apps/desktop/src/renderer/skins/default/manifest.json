@@ -254,6 +254,121 @@
         }
       ]
     },
+    "slip": {
+      "loop": false,
+      "frames": [
+        {
+          "index": 10,
+          "durationMs": 150,
+          "anchors": {
+            "eye": {
+              "x": 20,
+              "y": 20
+            },
+            "beak": {
+              "x": 7,
+              "y": 21
+            },
+            "head": {
+              "x": 25,
+              "y": 6
+            },
+            "feet": {
+              "x": 20,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 11,
+          "durationMs": 150,
+          "anchors": {
+            "eye": {
+              "x": 17,
+              "y": 19
+            },
+            "beak": {
+              "x": 4,
+              "y": 20
+            },
+            "head": {
+              "x": 22,
+              "y": 5
+            },
+            "feet": {
+              "x": 21,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 10,
+          "durationMs": 120,
+          "anchors": {
+            "eye": {
+              "x": 20,
+              "y": 20
+            },
+            "beak": {
+              "x": 7,
+              "y": 21
+            },
+            "head": {
+              "x": 25,
+              "y": 6
+            },
+            "feet": {
+              "x": 20,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 11,
+          "durationMs": 120,
+          "anchors": {
+            "eye": {
+              "x": 17,
+              "y": 19
+            },
+            "beak": {
+              "x": 4,
+              "y": 20
+            },
+            "head": {
+              "x": 22,
+              "y": 5
+            },
+            "feet": {
+              "x": 21,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 1,
+          "durationMs": 200,
+          "anchors": {
+            "eye": {
+              "x": 18,
+              "y": 20
+            },
+            "beak": {
+              "x": 5,
+              "y": 21
+            },
+            "head": {
+              "x": 23,
+              "y": 6
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        }
+      ]
+    },
     "dizzy": {
       "loop": false,
       "frames": [

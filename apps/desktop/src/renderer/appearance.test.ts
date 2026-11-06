@@ -81,6 +81,9 @@ describe('skinAppearance', () => {
 
     expect(appearance.head(withHead)).toEqual({ x: 23, y: 5 });
     expect(appearance.head(OPEN)).toBeUndefined();
+    const withFeet = { index: 0, durationMs: 100, anchors: { feet: { x: 24, y: 46 } } };
+    expect(appearance.feet(withFeet)).toEqual({ x: 24, y: 46 });
+    expect(appearance.feet(OPEN)).toBeUndefined();
   });
 
   it('reports the eye center for open eyes only', () => {
@@ -182,6 +185,7 @@ describe('placeholderAppearance', () => {
     expect(appearance.eyeCenter(bobbed ?? still)).toEqual({ x: 24, y: 14 });
     expect(appearance.head(still)).toEqual({ x: 24, y: 8 });
     expect(appearance.head(bobbed ?? still)).toEqual({ x: 24, y: 9 });
+    expect(appearance.feet(still)).toEqual({ x: 23, y: 40 });
   });
 
   it('draws the blocky placeholder, bobbing with the frame index', () => {

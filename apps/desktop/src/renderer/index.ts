@@ -111,6 +111,11 @@ function react(reaction: Reaction | undefined): void {
   } else if (reaction === 'dizzy') {
     animator.play('dizzy');
     effects.add('stars');
+  } else if (reaction === 'slip') {
+    // A dizzy Mocha is already off balance; let that play out.
+    if (animator.current === 'dizzy') return;
+    animator.play('slip');
+    effects.add('dust');
   } else {
     return;
   }
@@ -141,7 +146,10 @@ const render = (): void => {
   // Read the pixels once per drawing, not on every mouse move, and before
   // effects: a heart or a star is not part of Mocha's body.
   pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-  effects.draw(context, appearance.head(animator.frame));
+  effects.draw(context, {
+    head: appearance.head(animator.frame),
+    feet: appearance.feet(animator.frame),
+  });
   // Mocha may have moved under a still cursor.
   refreshHitTest();
 };
@@ -160,6 +168,9 @@ const loop = createGameLoop({
   },
   render,
 });
+
+// The floor moved: the user swiped to another Space.
+window.mocha.onSpaceChanged(() => react(reactions.spaceChanged()));
 
 // Input path: a new gaze is drawn on the next frame, not the next step.
 window.mocha.onCursorMove((point) => {

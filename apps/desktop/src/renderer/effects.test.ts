@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createEffects } from './effects.ts';
 
 const HEAD = { x: 23, y: 5 };
+const FEET = { x: 24, y: 46 };
 
 /** Records painted pixels as "color x,y". */
 function recordingPainter() {
@@ -21,7 +22,7 @@ describe('createEffects', () => {
   it('draws nothing until an effect is added', () => {
     const painter = recordingPainter();
 
-    createEffects().draw(painter, HEAD);
+    createEffects().draw(painter, { head: HEAD });
 
     expect(painter.pixels).toEqual([]);
   });
@@ -30,24 +31,25 @@ describe('createEffects', () => {
     const effects = createEffects();
     effects.add('heart');
     const first = recordingPainter();
-    effects.draw(first, HEAD);
+    effects.draw(first, { head: HEAD });
 
     effects.update(300);
     const later = recordingPainter();
-    effects.draw(later, HEAD);
+    effects.draw(later, { head: HEAD });
 
     expect(first.pixels.every((pixel) => pixel.startsWith('#c2213a'))).toBe(true);
     expect(first.pixels).toHaveLength(11);
     expect(topOf(later.pixels)).toBe(topOf(first.pixels) - 1);
   });
 
-  it('keeps every pixel inside the 48x48 canvas for the default head position', () => {
+  it('keeps every pixel inside the 48x48 canvas for the default anchors', () => {
     const effects = createEffects();
     effects.add('heart');
     effects.add('stars');
+    effects.add('dust');
     for (let t = 0; t < 1_800; t += 50) {
       const painter = recordingPainter();
-      effects.draw(painter, HEAD);
+      effects.draw(painter, { head: HEAD, feet: FEET });
       for (const pixel of painter.pixels) {
         const [x, y] = (pixel.split(' ')[1] ?? '').split(',').map(Number);
         expect(x).toBeGreaterThanOrEqual(0);
@@ -63,11 +65,11 @@ describe('createEffects', () => {
     const effects = createEffects();
     effects.add('stars');
     const first = recordingPainter();
-    effects.draw(first, HEAD);
+    effects.draw(first, { head: HEAD });
 
     effects.update(150);
     const next = recordingPainter();
-    effects.draw(next, HEAD);
+    effects.draw(next, { head: HEAD });
 
     expect(first.pixels).toHaveLength(10); // two five-pixel stars
     expect(next.pixels).not.toEqual(first.pixels);
@@ -79,8 +81,8 @@ describe('createEffects', () => {
     const here = recordingPainter();
     const lower = recordingPainter();
 
-    effects.draw(here, HEAD);
-    effects.draw(lower, { x: HEAD.x, y: HEAD.y + 2 });
+    effects.draw(here, { head: HEAD });
+    effects.draw(lower, { head: { x: HEAD.x, y: HEAD.y + 2 } });
 
     expect(topOf(lower.pixels)).toBe(topOf(here.pixels) + 2);
   });
@@ -100,7 +102,7 @@ describe('createEffects', () => {
 
     expect(effects.update(100)).toBe(true);
     const painter = recordingPainter();
-    effects.draw(painter, HEAD);
+    effects.draw(painter, { head: HEAD, feet: FEET });
     expect(painter.pixels).toEqual([]);
   });
 
@@ -113,7 +115,7 @@ describe('createEffects', () => {
     effects.update(1_000);
 
     const painter = recordingPainter();
-    effects.draw(painter, HEAD);
+    effects.draw(painter, { head: HEAD, feet: FEET });
     expect(painter.pixels).toHaveLength(11);
   });
 
@@ -125,8 +127,37 @@ describe('createEffects', () => {
     effects.clear();
 
     const painter = recordingPainter();
-    effects.draw(painter, HEAD);
+    effects.draw(painter, { head: HEAD, feet: FEET });
     expect(painter.pixels).toEqual([]);
+  });
+
+  it('kicks up dust at the feet, drifting outward', () => {
+    const effects = createEffects();
+    effects.add('dust');
+    const first = recordingPainter();
+    effects.draw(first, { head: HEAD, feet: FEET });
+
+    effects.update(300);
+    const later = recordingPainter();
+    effects.draw(later, { head: HEAD, feet: FEET });
+
+    const xs = (pixels: string[]) => pixels.map((p) => Number(p.split(' ')[1]?.split(',')[0]));
+    expect(first.pixels.every((pixel) => pixel.startsWith('#a8a1a6'))).toBe(true);
+    expect(Math.min(...xs(later.pixels))).toBeLessThan(Math.min(...xs(first.pixels)));
+    expect(Math.max(...xs(later.pixels))).toBeGreaterThan(Math.max(...xs(first.pixels)));
+    expect(Math.max(...first.pixels.map((p) => Number(p.split(',')[1])))).toBe(FEET.y);
+  });
+
+  it('draws each effect only when its own anchor exists', () => {
+    const effects = createEffects();
+    effects.add('heart');
+    effects.add('dust');
+    const painter = recordingPainter();
+
+    effects.draw(painter, { feet: FEET }); // no head: no heart
+
+    expect(painter.pixels.every((pixel) => pixel.startsWith('#a8a1a6'))).toBe(true);
+    expect(painter.pixels.length).toBeGreaterThan(0);
   });
 
   it('draws nothing when there is no head anchor', () => {
@@ -134,7 +165,7 @@ describe('createEffects', () => {
     effects.add('heart');
     const painter = recordingPainter();
 
-    effects.draw(painter, undefined);
+    effects.draw(painter, {});
 
     expect(painter.pixels).toEqual([]);
   });

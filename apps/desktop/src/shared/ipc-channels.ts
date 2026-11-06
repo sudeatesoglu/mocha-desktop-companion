@@ -15,6 +15,8 @@ export const IpcChannel = {
   OverlayCursor: 'overlay:cursor',
   /** Main → overlay: Mocha was paused (true) or resumed (false) from the tray. */
   OverlayPaused: 'overlay:paused',
+  /** Main → overlay: the user switched to another Space (macOS). */
+  OverlaySpaceChanged: 'overlay:space-changed',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -35,4 +37,6 @@ export interface MochaBridge {
   onCursorMove(callback: (point: { x: number; y: number }) => void): () => void;
   /** Overlay only: pause state changes. Returns an unsubscribe function. */
   onPausedChange(callback: (paused: boolean) => void): () => void;
+  /** Overlay only: the user switched Spaces. Returns an unsubscribe function. */
+  onSpaceChanged(callback: () => void): () => void;
 }

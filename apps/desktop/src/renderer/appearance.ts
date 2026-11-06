@@ -44,6 +44,8 @@ export interface Appearance<I> {
   eyeCenter(frame: SkinFrame): Point | undefined;
   /** Top of the head, where effects such as hearts attach. */
   head(frame: SkinFrame): Point | undefined;
+  /** Bottom center of the feet, where effects such as dust attach. */
+  feet(frame: SkinFrame): Point | undefined;
 }
 
 /** The pupil is 2x2; its center is one pixel right of and below its top-left anchor. */
@@ -60,6 +62,7 @@ export function skinAppearance<I extends SkinImage>(skin: LoadedSkin<I>): Appear
       return eye ? centerOf(eye) : undefined;
     },
     head: (frame) => frame.anchors?.head,
+    feet: (frame) => frame.anchors?.feet,
     draw(painter, { frame, hovered, gaze }) {
       // Behind the sprite, so the feet stand on it.
       const feet = frame.anchors?.feet;
@@ -94,6 +97,8 @@ export function placeholderAppearance<I>(): Appearance<I> {
     },
     // The placeholder's head block starts at (16, 8); its top center is x 24.
     head: (frame) => ({ x: 24, y: 8 + (frame.index % 2) }),
+    // The placeholder's body ends at y = 40.
+    feet: () => ({ x: 23, y: 40 }),
     draw(painter, { frame, hovered, gaze }) {
       drawPlaceholderMocha(painter, { offsetY: frame.index % 2, hovered, gaze });
     },
