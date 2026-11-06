@@ -8,6 +8,10 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 - Mocha slips, with dust at its feet, after you switch Spaces on macOS ([#63](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/63))
 
+### Removed
+
+- The unused `look` animation from the skin format; the eye follows the cursor through the code-drawn pupil
+
 ## [0.1.0] - 2026-11-05
 
 The first release, "Hello, Mocha": a pixel-art raven that lives on the macOS desktop and reacts to you.

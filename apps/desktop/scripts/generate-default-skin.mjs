@@ -272,7 +272,6 @@ const manifest = {
         { index: 2, durationMs: 60, anchors: closedAnchors(0) },
       ],
     },
-    look: { loop: true, frames: [{ index: 0, durationMs: 1000, anchors: anchors(0) }] },
     hop: {
       loop: false,
       frames: [

@@ -80,7 +80,6 @@ The placeholder uses an eight-color ink palette. Skins may use any colors, but s
 | --- | --- | --- |
 | `idle` | Default state: breathing | Yes |
 | `blink` | While idle, after a random pause of 2.5–6 s | No |
-| `look` | While Mocha watches the cursor | No |
 | `hop` | When petted: the cursor arrives on Mocha (at most every 1.5 s) | No |
 | `sleep` | While the user is away | No |
 | `dizzy` | After four quick clicks on Mocha (within 1.5 s) | No |

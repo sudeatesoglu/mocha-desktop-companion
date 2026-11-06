@@ -115,33 +115,6 @@
         }
       ]
     },
-    "look": {
-      "loop": true,
-      "frames": [
-        {
-          "index": 0,
-          "durationMs": 1000,
-          "anchors": {
-            "eye": {
-              "x": 18,
-              "y": 19
-            },
-            "beak": {
-              "x": 5,
-              "y": 20
-            },
-            "head": {
-              "x": 23,
-              "y": 5
-            },
-            "feet": {
-              "x": 24,
-              "y": 46
-            }
-          }
-        }
-      ]
-    },
     "hop": {
       "loop": false,
       "frames": [
