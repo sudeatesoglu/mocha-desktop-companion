@@ -6,6 +6,7 @@ import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
+import { openDatabase } from './db/open-database.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
@@ -66,6 +67,10 @@ if (!app.requestSingleInstanceLock()) {
       console,
     );
     const saved = await settings.load();
+
+    // Undefined if it cannot be opened: Mocha then runs without history.
+    const database = openDatabase(join(app.getPath('userData'), 'mocha.db'), console);
+    app.on('will-quit', () => database?.close());
 
     const window = createOverlayWindow(
       preloadPath,
