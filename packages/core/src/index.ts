@@ -4,6 +4,16 @@
  * Other packages import only from here, never from internal paths, so the
  * internals can be reorganized without breaking consumers.
  */
+
+export {
+  type BreakConfig,
+  type BreakEvent,
+  type BreakState,
+  breakConfig,
+  DEFAULT_BREAK_CONFIG,
+  reduceBreak,
+  startWorking,
+} from './habits/break-machine.ts';
 export {
   type Cancel,
   createGameLoop,
