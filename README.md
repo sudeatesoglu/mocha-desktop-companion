@@ -111,3 +111,9 @@ Built with Electron, TypeScript and a small hand-written Canvas 2D engine.
 - [Architecture decisions](docs/adr/README.md): why it is built this way
 
 </details>
+
+<div align="center">
+
+Mocha's look is inspired by the ink drawings of [@ravenoushout](https://www.instagram.com/ravenoushout/).
+
+</div>
