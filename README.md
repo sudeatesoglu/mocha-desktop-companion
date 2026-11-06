@@ -1,122 +1,113 @@
-# Mocha 🐾
+<div align="center">
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/hero-dark.png">
+  <img src="docs/assets/readme/hero-light.png" width="240" alt="Mocha, a pixel-art raven in a top hat, breathing and blinking">
+</picture>
+
+# Mocha
+
+**A tiny pixel-art raven that lives on your desktop and keeps you company.**
+
+[![Download for macOS](https://img.shields.io/github/v/release/sudeatesoglu/mocha-desktop-companion?label=download%20for%20macOS&color=c2213a)](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest)
 [![CI](https://github.com/sudeatesoglu/mocha-desktop-companion/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/sudeatesoglu/mocha-desktop-companion/actions/workflows/ci.yml)
 
-> A cute desktop companion that lives in the corner of your screen, keeps you company and helps you build healthier work habits.
+</div>
 
-**Status:** 🚧 Planning. No usable release yet.
+## Meet Mocha
 
-## Idea
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/pet-dark.png">
+        <img src="docs/assets/readme/pet-light.png" width="144" alt="Mocha hops while a heart rises beside its hat">
+      </picture>
+      <br><b>Pet it</b><br>Move your cursor onto Mocha.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/watch-dark.png">
+        <img src="docs/assets/readme/watch-light.png" width="144" alt="Mocha's pupil follows a circling cursor">
+      </picture>
+      <br><b>It watches you</b><br>Its eye follows your cursor anywhere.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/dizzy-dark.png">
+        <img src="docs/assets/readme/dizzy-light.png" width="144" alt="Mocha sways with crossed-out eyes while stars circle its hat">
+      </picture>
+      <br><b>Don't overdo it</b><br>Four quick clicks make it dizzy.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/sleep-dark.png">
+        <img src="docs/assets/readme/sleep-light.png" width="144" alt="Mocha sleeps with its eyes closed as z's float up">
+      </picture>
+      <br><b>Let it rest</b><br>Pause it from the menu bar.
+    </td>
+  </tr>
+</table>
 
-Mocha is a small, Tamagotchi-like character that sits in the bottom-right corner of your desktop. It reacts to what you do: it follows your cursor, notices when you've been staring at the screen for too long and reminds you to take a break, and over time learns your habits to offer a more personal experience.
+Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks pass through everywhere except Mocha itself.
 
-## Principles
+## Install
 
-- **Local-first & private:** your activity data stays on your machine.
-- **Delightful, not annoying:** gentle nudges, never nagging.
-- **Small and focused:** ship a lovable core first, grow from there.
+1. [Download the DMG](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest) for your Mac (`arm64` for Apple Silicon) and drag **Mocha** into **Applications**.
+2. Open it. The first time, macOS blocks it because it is not signed with an Apple Developer ID yet: go to **System Settings → Privacy & Security** and click **Open Anyway**.
+3. Look for the top hat in your menu bar. That is where you pause, reset and quit.
 
-## Getting started
+macOS only for now.
 
-### Prerequisites
+## What's next
 
-| Tool | Version | Notes |
-| --- | --- | --- |
-| [Node.js](https://nodejs.org) | 24 LTS | Pinned in `.node-version` (read by fnm, mise and asdf; with nvm run `nvm install 24 && nvm use 24`) |
-| [pnpm](https://pnpm.io) | 12.x | Exact version pinned in `package.json` (`packageManager`); pnpm switches to it automatically |
+- [x] **v0.1 Hello, Mocha:** lives on your desktop and reacts to you
+- [ ] **v0.2 Healthy habits:** notices long stretches of work and reminds you to take a break
+- [ ] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
+- [ ] **v0.4 Together:** break rituals and working side by side
+- [ ] **v0.5 Make it yours:** decorations and accessories
 
-### Setup
+See the [changelog](CHANGELOG.md) for what each release contains.
+
+<details>
+<summary><b>Your data</b></summary>
+<br>
+
+Mocha is local-first: it has no account and no telemetry. The only file it writes itself is `~/Library/Application Support/Mocha/settings.json`, which holds where you placed it. Deleting that file resets Mocha's position.
+
+</details>
+
+<details>
+<summary><b>Verify a download</b></summary>
+<br>
+
+```bash
+shasum -a 256 -c SHA256SUMS.txt
+```
+
+This checks the file is intact. Releases built by the release workflow (after v0.1.0) can also be traced to this repository:
+
+```bash
+gh attestation verify Mocha-<version>-arm64.dmg --repo sudeatesoglu/mocha-desktop-companion
+```
+
+</details>
+
+<details>
+<summary><b>For developers</b></summary>
+<br>
 
 ```bash
 git clone https://github.com/sudeatesoglu/mocha-desktop-companion.git
 cd mocha-desktop-companion
-pnpm install   # also installs Git hooks (Lefthook)
+pnpm install
+pnpm dev
 ```
 
-### Repository layout
+Built with Electron, TypeScript and a small hand-written Canvas 2D engine.
 
-This is a [pnpm workspace](https://pnpm.io/workspaces) (see [ADR-0005](docs/adr/0005-pnpm-workspace-layout.md)):
+- [Contributing](CONTRIBUTING.md): setup, scripts and workflow
+- [Skin format](docs/skins.md): how to draw your own Mocha
+- [Architecture decisions](docs/adr/README.md): why it is built this way
 
-| Path | Package | Contents |
-| --- | --- | --- |
-| `packages/core` | `@mocha/core` | Pure game and habit logic. No Electron, DOM or Node APIs, enforced by its tsconfig |
-| `apps/desktop` | `@mocha/desktop` | The Electron app: main process, sandboxed preload bridge and renderer, built with [electron-vite](https://electron-vite.org) |
-| `docs/adr/` | | Architecture Decision Records |
-| `docs/skins.md` | | How skins (sprite sheet + manifest) are made and validated |
-
-### Scripts
-
-Run from the repository root; they cover every workspace package.
-
-| Command | Description |
-| --- | --- |
-| `pnpm dev` | Start the desktop app with hot reload (downloads the Electron binary on first run) |
-| `pnpm lint` | Check linting, formatting and import order (read-only, fails on warnings) |
-| `pnpm lint:fix` | Apply safe lint fixes, formatting and import order |
-| `pnpm test` | Run unit tests once |
-| `pnpm test:watch` | Run tests in watch mode |
-| `pnpm test:coverage` | Run tests with a coverage report (`coverage/`), enforcing 80% thresholds |
-| `pnpm typecheck` | Type-check the root config files and every package |
-| `pnpm build` | Build every package that has a `build` script (desktop output goes to `apps/desktop/out/`) |
-| `pnpm package` | Build macOS DMGs for Apple Silicon and Intel into `apps/desktop/release/` |
-
-To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/core test`.
-
-### Testing conventions
-
-- Tests live next to the code they cover: `foo.ts` → `foo.test.ts`.
-- Keep business logic in `@mocha/core` (no Electron or OS APIs) so it can be unit-tested in isolation. Platform code only calls into it.
-- Coverage must stay at or above 80% for lines, branches, functions and statements.
-
-### Editor setup
-
-Install the recommended VS Code extensions when prompted (Biome, EditorConfig). TypeScript, JavaScript, JSON and CSS files are formatted and fixed on save using the shared settings in `.vscode/`.
-
-## Installing
-
-Mocha is not on the App Store and not yet signed with an Apple Developer ID (planned for v1.0), so macOS asks you to confirm it once.
-
-1. Build the installer with `pnpm package`, or download a DMG from a release. Use `Mocha-<version>-arm64.dmg` on Apple Silicon and `Mocha-<version>.dmg` on Intel Macs.
-2. Open the DMG and drag **Mocha** into **Applications**.
-3. Open Mocha from Applications. A DMG you built yourself opens directly. If you downloaded it, macOS blocks it the first time: open **System Settings → Privacy & Security**, scroll to the message about Mocha and click **Open Anyway**.
-
-macOS asks because it cannot verify the developer of an unsigned app, not because it found a problem. Only allow apps whose source you trust; Mocha's source is this repository.
-
-To check that a downloaded DMG is exactly what the release workflow built:
-
-```bash
-shasum -a 256 -c SHA256SUMS.txt          # the file is intact
-gh attestation verify Mocha-<version>-arm64.dmg --repo sudeatesoglu/mocha-desktop-companion
-                                         # it was built by this repository's workflow
-```
-
-## Using Mocha
-
-Mocha lives in a corner of your screen and has no Dock icon. Everything else happens directly on Mocha or from its menu-bar icon:
-
-| Do | How |
-| --- | --- |
-| Pet Mocha | Move the cursor onto it |
-| Make it dizzy | Click it four times quickly |
-| Move it | Drag it; it remembers the spot |
-| Pause or resume | Menu-bar icon → Pause Mocha / Resume Mocha |
-| Put it back in the corner | Menu-bar icon → Reset Position |
-| Quit | Menu-bar icon → Quit Mocha |
-
-## Your data
-
-Mocha is local-first: nothing leaves your machine. Settings, such as where you placed Mocha on the screen, are stored in a small JSON file in the app's data folder:
-
-| OS | Location |
-| --- | --- |
-| macOS | `~/Library/Application Support/Mocha/settings.json` |
-
-Deleting the file resets Mocha to its defaults.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, commit conventions and Git hooks.
-
-## Roadmap
-
-See [CHANGELOG.md](CHANGELOG.md) for what each release contains and the [milestones](https://github.com/sudeatesoglu/mocha-desktop-companion/milestones) for what comes next.
+</details>
