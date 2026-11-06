@@ -114,6 +114,6 @@ Built with Electron, TypeScript and a small hand-written Canvas 2D engine.
 
 <div align="center">
 
-Mocha's look is inspired by the ink drawings of [@ravenoushout](https://www.instagram.com/ravenoushout/).
+Mocha grew out of my ink drawings. See more of my art on Instagram: [@ravenoushout](https://www.instagram.com/ravenoushout/).
 
 </div>
