@@ -102,7 +102,7 @@ const reactions = createReactionDetector();
 const effects = createEffects();
 
 function react(reaction: Reaction | undefined): void {
-  if (paused) return; // resting Mocha does not react
+  if (paused || away) return; // resting Mocha does not react
   // A dizzy spell outlasts the petting cooldown; do not cut it short.
   if (reaction === 'pet' && animator.current === 'dizzy') return;
   if (reaction === 'pet') {
@@ -228,13 +228,29 @@ function syncLoop(): void {
 window.mocha.onPausedChange((next) => {
   paused = next;
   effects.clear();
-  animator.play(paused ? 'sleep' : 'idle');
+  animator.play(paused || away ? 'sleep' : 'idle');
   if (paused) {
     loop.stop();
     render(); // one last frame so the sleeping pose shows
   } else {
     syncLoop();
   }
+});
+
+// The user stepped away: Mocha naps until they are back, then greets them.
+let away = false;
+window.mocha.onAwayChange((next) => {
+  if (next === away) return;
+  away = next;
+  if (paused) return; // the pause pose wins; resuming restores the right one
+  effects.clear();
+  if (away) {
+    animator.play('sleep');
+  } else {
+    animator.play('hop');
+    effects.add('heart');
+  }
+  loop.invalidate();
 });
 
 document.addEventListener('visibilitychange', syncLoop);
