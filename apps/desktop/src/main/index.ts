@@ -1,9 +1,22 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { app, Menu, nativeImage, screen, session, systemPreferences, Tray } from 'electron';
+import { DEFAULT_BREAK_CONFIG } from '@mocha/core';
+import {
+  app,
+  Menu,
+  nativeImage,
+  powerMonitor,
+  screen,
+  session,
+  systemPreferences,
+  Tray,
+} from 'electron';
 import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
+import { createActivityTracker } from './activity/activity-tracker.ts';
+import { createBreakController } from './activity/break-controller.ts';
+import { createChangeReporter } from './activity/change-reporter.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { openDatabase } from './db/open-database.ts';
@@ -124,14 +137,44 @@ if (!app.requestSingleInstanceLock()) {
 
     // Pausing stops everything Mocha does: animation (in the overlay) and
     // cursor polling (here). Every dependent part subscribes to the change.
+    // Work and breaks: the system idle time drives the break rules. Only
+    // the duration since the last input is read, never what the input was.
+    const breakConfig = DEFAULT_BREAK_CONFIG;
+    const breaks = createBreakController(breakConfig, Date.now());
+    const awayReporter = createChangeReporter<boolean>((away) =>
+      window.webContents.send(IpcChannel.OverlayAway, away),
+    );
+    const activity = createActivityTracker(
+      {
+        now: () => Date.now(),
+        systemIdleMs: () => powerMonitor.getSystemIdleTime() * 1_000,
+        every,
+        awayAfterMs: breakConfig.idleBreakMs,
+      },
+      (sample) => {
+        breaks.dispatch({ type: 'tick', now: sample.now, idleMs: sample.idleMs });
+        awayReporter.report(sample.away);
+      },
+    );
+    activity.start();
+    const markAway = () => activity.markAway();
+    powerMonitor.on('suspend', markAway);
+    powerMonitor.on('lock-screen', markAway);
+
     const pause = createPauseController();
     pause.onChange((paused) => {
       window.webContents.send(IpcChannel.OverlayPaused, paused);
+      breaks.dispatch({ type: paused ? 'pause' : 'resume', now: Date.now() });
       if (paused) {
         stopCursorTracking?.();
         stopCursorTracking = undefined;
+        activity.stop();
+        // The overlay may still think the user is away: after resuming,
+        // the first sample is sent even if it did not change.
+        awayReporter.reset();
       } else {
         stopCursorTracking ??= startTracking();
+        activity.start();
       }
       updateTrayMenu();
     });
@@ -166,6 +209,9 @@ if (!app.requestSingleInstanceLock()) {
     );
 
     window.on('closed', () => {
+      activity.stop();
+      powerMonitor.off('suspend', markAway);
+      powerMonitor.off('lock-screen', markAway);
       stopWatchingSpaces();
       stopCursorTracking?.();
       screen.off('display-removed', onDisplaysChanged);

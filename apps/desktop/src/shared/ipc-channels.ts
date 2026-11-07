@@ -17,6 +17,8 @@ export const IpcChannel = {
   OverlayPaused: 'overlay:paused',
   /** Main → overlay: the user switched to another Space (macOS). */
   OverlaySpaceChanged: 'overlay:space-changed',
+  /** Main → overlay: the user went away (true) or came back (false). */
+  OverlayAway: 'overlay:away',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -39,4 +41,6 @@ export interface MochaBridge {
   onPausedChange(callback: (paused: boolean) => void): () => void;
   /** Overlay only: the user switched Spaces. Returns an unsubscribe function. */
   onSpaceChanged(callback: () => void): () => void;
+  /** Overlay only: the user went away or came back. Returns an unsubscribe function. */
+  onAwayChange(callback: (away: boolean) => void): () => void;
 }
