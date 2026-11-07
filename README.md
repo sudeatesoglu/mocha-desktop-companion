@@ -54,7 +54,7 @@ Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks 
 ## Install
 
 1. [Download the DMG](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest) for your Mac (`arm64` for Apple Silicon) and drag **Mocha** into **Applications**.
-2. Open it. The first time, macOS blocks it because it is not signed with an Apple Developer ID yet: go to **System Settings → Privacy & Security** and click **Open Anyway**.
+2. Open Mocha. This early version isn't notarized by Apple yet, so the first time you'll need to allow it: **System Settings → Privacy & Security → Open Anyway**.
 3. Look for the top hat in your menu bar. That is where you pause, reset and quit.
 
 macOS only for now.
