@@ -51,6 +51,8 @@ To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/co
 
 The desktop package also has two asset generators: `pnpm --filter @mocha/desktop generate:skin` draws the placeholder skin, and `pnpm --filter @mocha/desktop generate:readme-art` renders the README animations with the app's own drawing code. Run the second one after changing the skin.
 
+To try the break reminder without waiting 50 minutes, shorten the work stretch in development: `MOCHA_DEV_WORK_MS=60000 pnpm dev` shows it after a minute of activity. Packaged builds ignore this variable.
+
 ### Testing conventions
 
 - Tests live next to the code they cover: `foo.ts` → `foo.test.ts`.
