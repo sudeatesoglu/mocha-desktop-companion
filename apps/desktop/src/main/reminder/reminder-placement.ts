@@ -1,3 +1,4 @@
+import type { ReminderSide } from '../../shared/reminder.ts';
 import type { Rect } from '../windows/overlay-window-options.ts';
 
 /** How far the bubble overlaps Mocha's window, so it starts at the beak. */
@@ -14,7 +15,7 @@ export function reminderPosition(
   mocha: Rect,
   size: { width: number; height: number },
   workArea: Rect,
-): { x: number; y: number; side: 'left' | 'right' } {
+): { x: number; y: number; side: ReminderSide } {
   const left = mocha.x - size.width + OVERLAP;
   const right = mocha.x + mocha.width - OVERLAP;
   const fitsLeft = left >= workArea.x;

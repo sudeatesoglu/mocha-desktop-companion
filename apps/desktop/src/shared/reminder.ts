@@ -12,3 +12,11 @@ export interface ReminderInfo {
   /** How long a snooze waits. */
   snoozeMs: number;
 }
+
+export type ReminderSide = 'left' | 'right';
+
+/** Main → reminder: what the bubble says and which side of Mocha it sits on. */
+export interface ReminderShow extends ReminderInfo {
+  /** The bubble's side of Mocha; its tail points the other way, at Mocha. */
+  side: ReminderSide;
+}
