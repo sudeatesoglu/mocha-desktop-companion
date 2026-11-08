@@ -1,0 +1,135 @@
+:root {
+  --paper: #fffaf0;
+  --ink: #2a2230;
+  --accent: #5b4478;
+  --accent-ink: #fffaf0;
+  --hover: #efe6d6;
+  /* Room for the tail between the bubble and Mocha. */
+  --tail: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #2c2633;
+    --ink: #f3ecdf;
+    --accent: #c4a8e4;
+    --accent-ink: #1d1922;
+    --hover: #3b3445;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  /* The window is transparent; only the bubble is visible. */
+  background: transparent;
+  user-select: none;
+  cursor: default;
+  color: var(--ink);
+  font:
+    12px / 1.35 system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.bubble {
+  position: absolute;
+  inset: 4px calc(var(--tail) + 2px) 8px 4px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  /* A hard offset shadow instead of a blur, to match the pixel art. */
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* Nothing to say yet: show nothing rather than an empty bubble. */
+body:not([data-ready]) .bubble {
+  visibility: hidden;
+}
+
+/* Bubble to the right of Mocha: the tail is on the left. */
+body[data-side="right"] .bubble {
+  inset: 4px 7px 8px calc(var(--tail) + 2px);
+}
+
+#message {
+  margin: 0;
+}
+
+.choices {
+  display: flex;
+  gap: 6px;
+}
+
+button {
+  flex: 1 1 auto;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+}
+
+button:hover {
+  background: var(--hover);
+}
+
+button.primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+button:active {
+  translate: 1px 1px;
+}
+
+/*
+ * The tail pointing at Mocha's beak: an ink triangle with a paper triangle
+ * inside it. The paper one starts inside the bubble's border, so the border
+ * line does not cut the tail off. Offsets count from the padding edge.
+ */
+.bubble::before,
+.bubble::after {
+  content: "";
+  position: absolute;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.bubble::before {
+  top: 10px;
+  right: calc(-2px - var(--tail));
+  width: var(--tail);
+  height: 20px;
+  background: var(--ink);
+}
+
+.bubble::after {
+  top: 14px;
+  right: -12px;
+  width: 12px;
+  height: 12px;
+  background: var(--paper);
+}
+
+body[data-side="right"] .bubble::before,
+body[data-side="right"] .bubble::after {
+  right: auto;
+  clip-path: polygon(100% 0, 0 50%, 100% 100%);
+}
+
+body[data-side="right"] .bubble::before {
+  left: calc(-2px - var(--tail));
+}
+
+body[data-side="right"] .bubble::after {
+  left: -12px;
+}
