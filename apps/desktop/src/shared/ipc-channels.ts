@@ -1,3 +1,5 @@
+import type { ReminderChoice, ReminderShow } from './reminder.ts';
+
 /**
  * IPC channel names shared by the main process and the preload script.
  *
@@ -19,6 +21,10 @@ export const IpcChannel = {
   OverlaySpaceChanged: 'overlay:space-changed',
   /** Main → overlay: the user went away (true) or came back (false). */
   OverlayAway: 'overlay:away',
+  /** Main → reminder: what to show (work and break durations). */
+  ReminderShow: 'reminder:show',
+  /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
+  ReminderChoose: 'reminder:choose',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -43,4 +49,12 @@ export interface MochaBridge {
   onSpaceChanged(callback: () => void): () => void;
   /** Overlay only: the user went away or came back. Returns an unsubscribe function. */
   onAwayChange(callback: (away: boolean) => void): () => void;
+}
+
+/** The API the reminder's own preload exposes as `window.reminder`. Nothing else. */
+export interface ReminderBridge {
+  /** What to show; sent again when the bubble moves. Returns an unsubscribe function. */
+  onShow(callback: (show: ReminderShow) => void): () => void;
+  /** The user's answer. */
+  choose(choice: ReminderChoice): void;
 }

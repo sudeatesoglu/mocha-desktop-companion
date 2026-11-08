@@ -1,14 +1,32 @@
+import { resolve } from 'node:path';
 import { defineConfig } from 'electron-vite';
 
+// Each window has its own preload and page: the reminder gets only the
+// reminder API, not the overlay's (least privilege).
 export default defineConfig({
   main: {},
-  // Sandboxed preload scripts cannot load ES modules, so emit CommonJS.
+  // Sandboxed preload scripts cannot load ES modules or other files of
+  // ours, so each one is emitted as a single standalone CommonJS file.
   preload: {
     build: {
+      isolatedEntries: true,
       rollupOptions: {
+        input: {
+          index: resolve('src/preload/index.ts'),
+          reminder: resolve('src/preload/reminder.ts'),
+        },
         output: { format: 'cjs', entryFileNames: '[name].cjs' },
       },
     },
   },
-  renderer: {},
+  renderer: {
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/renderer/index.html'),
+          reminder: resolve('src/renderer/reminder.html'),
+        },
+      },
+    },
+  },
 });

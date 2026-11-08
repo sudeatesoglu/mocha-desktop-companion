@@ -7,6 +7,7 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 ### Added
 
 - Mocha slips, with dust at its feet, after you switch Spaces on macOS ([#63](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/63))
+- When you have worked for 50 minutes, a bubble next to Mocha suggests a 5-minute break; take it, snooze it for 10 minutes or skip it, without losing keyboard focus ([#75](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/75))
 - Mocha naps while you are away (idle, asleep or locked) and greets you when you return ([#74](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/74))
 - A local SQLite database for the coming work and break history ([#72](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/72))
 
