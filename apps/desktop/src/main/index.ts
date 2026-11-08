@@ -1,9 +1,10 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { DEFAULT_BREAK_CONFIG } from '@mocha/core';
+import { DEFAULT_BREAK_CONFIG, breakConfig as makeBreakConfig } from '@mocha/core';
 import {
   app,
+  type BrowserWindow,
   Menu,
   nativeImage,
   powerMonitor,
@@ -14,6 +15,7 @@ import {
 } from 'electron';
 import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
+import { REMINDER_HEIGHT, REMINDER_WIDTH, type ReminderShow } from '../shared/reminder.ts';
 import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
 import { createChangeReporter } from './activity/change-reporter.ts';
@@ -22,11 +24,16 @@ import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { openDatabase } from './db/open-database.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
+import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
+import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
+import { reminderPosition } from './reminder/reminder-placement.ts';
+import { reminderTransition } from './reminder/reminder-transition.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
 import { watchSpaceChanges } from './space/space-watcher.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
 import { trayMenuTemplate } from './tray/tray-menu.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
+import { createReminderWindow } from './windows/create-reminder-window.ts';
 import { initialOverlayPosition, placeOnDisplays } from './windows/overlay-placement.ts';
 import { createWindowDragger } from './windows/window-dragger.ts';
 
@@ -35,8 +42,13 @@ import { createWindowDragger } from './windows/window-dragger.ts';
 
 const preloadPath = join(import.meta.dirname, '../preload/index.cjs');
 const rendererFile = join(import.meta.dirname, '../renderer/index.html');
+const reminderPreloadPath = join(import.meta.dirname, '../preload/reminder.cjs');
+const reminderFile = join(import.meta.dirname, '../renderer/reminder.html');
 // Set by electron-vite in development only.
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL'];
+const reminderUrl = devServerUrl
+  ? new URL('reminder.html', devServerUrl).href
+  : pathToFileURL(reminderFile).href;
 
 const every = (ms: number, callback: () => void) => {
   const id = setInterval(callback, ms);
@@ -139,7 +151,13 @@ if (!app.requestSingleInstanceLock()) {
     // cursor polling (here). Every dependent part subscribes to the change.
     // Work and breaks: the system idle time drives the break rules. Only
     // the duration since the last input is read, never what the input was.
-    const breakConfig = DEFAULT_BREAK_CONFIG;
+    // In development, MOCHA_DEV_WORK_MS shortens the work stretch so the
+    // reminder can be tried without waiting. Packaged builds ignore it.
+    const devWorkMs = devServerUrl ? Number(process.env['MOCHA_DEV_WORK_MS']) : Number.NaN;
+    const breakConfig =
+      devWorkMs > 0 && Number.isFinite(devWorkMs)
+        ? makeBreakConfig({ workMs: devWorkMs })
+        : DEFAULT_BREAK_CONFIG;
     const breaks = createBreakController(breakConfig, Date.now());
     const awayReporter = createChangeReporter<boolean>((away) =>
       window.webContents.send(IpcChannel.OverlayAway, away),
@@ -157,6 +175,64 @@ if (!app.requestSingleInstanceLock()) {
       },
     );
     activity.start();
+
+    // The break reminder: a bubble next to Mocha while a break is due. It
+    // closes on its own when the state leaves "due" (a choice, walking away
+    // or a pause), so the break rules stay the single source of truth.
+    let reminder: BrowserWindow | undefined;
+    let reminderShow: ReminderShow | undefined;
+    const placeReminder = () => {
+      const bounds = window.getBounds();
+      return reminderPosition(
+        bounds,
+        { width: REMINDER_WIDTH, height: REMINDER_HEIGHT },
+        screen.getDisplayMatching(bounds).workArea,
+      );
+    };
+    const openReminder = (state: DueState) => {
+      const placed = placeReminder();
+      reminderShow = { ...reminderInfo(state, breakConfig), side: placed.side };
+      const opened = createReminderWindow(reminderPreloadPath, placed, process.platform);
+      reminder = opened;
+      // The page shows nothing until this arrives, so it never flashes empty.
+      opened.webContents.once('did-finish-load', () =>
+        opened.webContents.send(IpcChannel.ReminderShow, reminderShow),
+      );
+      opened.on('closed', () => {
+        if (reminder === opened) reminder = undefined;
+      });
+      if (devServerUrl) {
+        opened.loadURL(reminderUrl);
+      } else {
+        opened.loadFile(reminderFile);
+      }
+    };
+    const closeReminder = () => {
+      reminder?.close();
+      reminder = undefined;
+    };
+    /** Mocha moved: the bubble follows, switching sides if it must. */
+    const followMocha = () => {
+      if (!reminder || !reminderShow) return;
+      const placed = placeReminder();
+      reminder.setPosition(placed.x, placed.y);
+      if (placed.side === reminderShow.side) return;
+      reminderShow = { ...reminderShow, side: placed.side };
+      reminder.webContents.send(IpcChannel.ReminderShow, reminderShow);
+    };
+    window.on('move', followMocha);
+    breaks.onChange((next, previous) => {
+      const transition = reminderTransition(next, previous);
+      if (transition === 'open' && next.phase === 'due') openReminder(next);
+      if (transition === 'close') closeReminder();
+    });
+    registerReminderHandlers(
+      () => reminder?.webContents,
+      (choice) => breaks.dispatch({ type: choice, now: Date.now() }),
+      [reminderUrl],
+      console,
+    );
+
     const markAway = () => activity.markAway();
     powerMonitor.on('suspend', markAway);
     powerMonitor.on('lock-screen', markAway);
@@ -209,6 +285,7 @@ if (!app.requestSingleInstanceLock()) {
     );
 
     window.on('closed', () => {
+      closeReminder();
       activity.stop();
       powerMonitor.off('suspend', markAway);
       powerMonitor.off('lock-screen', markAway);
