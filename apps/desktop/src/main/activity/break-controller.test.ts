@@ -45,4 +45,17 @@ describe('createBreakController', () => {
 
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it('uses new durations from the next event on', () => {
+    const breaks = createBreakController(DEFAULT_BREAK_CONFIG, 0);
+    breaks.dispatch({ type: 'tick', now: 20 * MINUTE, idleMs: 0 });
+    expect(breaks.state.phase).toBe('working');
+
+    const shorter = { ...DEFAULT_BREAK_CONFIG, workMs: 15 * MINUTE };
+    breaks.setConfig(shorter);
+    breaks.dispatch({ type: 'tick', now: 21 * MINUTE, idleMs: 0 });
+
+    expect(breaks.config).toBe(shorter);
+    expect(breaks.state.phase).toBe('due');
+  });
 });
