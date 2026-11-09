@@ -62,4 +62,22 @@ describe('trayMenuTemplate', () => {
     expect(item(menu, 'About Mocha').role).toBe('about');
     expect(item(menu, 'Quit Mocha').accelerator).toBe('CommandOrControl+Q');
   });
+
+  it('starts with today’s numbers as read-only lines when there is a history', () => {
+    const menu = trayMenuTemplate(
+      {
+        paused: false,
+        today: { activeMs: 135 * 60_000, breaks: 3, longestStretchMs: 52 * 60_000 },
+      },
+      actions(),
+    );
+
+    expect(menu.slice(0, 4)).toEqual([
+      { label: 'Active today: 2h 15m', enabled: false },
+      { label: 'Breaks today: 3', enabled: false },
+      { label: 'Longest stretch: 52m', enabled: false },
+      { type: 'separator' },
+    ]);
+    expect(menu[4]?.label).toBe('Pause Mocha');
+  });
 });
