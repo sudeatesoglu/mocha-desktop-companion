@@ -19,9 +19,11 @@ import { REMINDER_HEIGHT, REMINDER_WIDTH, type ReminderShow } from '../shared/re
 import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
 import { createChangeReporter } from './activity/change-reporter.ts';
+import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-recorder.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { openDatabase } from './db/open-database.ts';
+import { createSessionRepository } from './db/session-repository.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
@@ -95,7 +97,6 @@ if (!app.requestSingleInstanceLock()) {
 
     // Undefined if it cannot be opened: Mocha then runs without history.
     const database = openDatabase(join(app.getPath('userData'), 'mocha.db'), console);
-    app.on('will-quit', () => database?.close());
 
     const window = createOverlayWindow(
       preloadPath,
@@ -159,6 +160,21 @@ if (!app.requestSingleInstanceLock()) {
         ? makeBreakConfig({ workMs: devWorkMs })
         : DEFAULT_BREAK_CONFIG;
     const breaks = createBreakController(breakConfig, Date.now());
+
+    // History: work and break sessions, stored as kinds and timestamps only.
+    // The heartbeat lets the next start close a session a crash left open.
+    const recorder = database
+      ? createSessionRecorder(createSessionRepository(database), console)
+      : undefined;
+    recorder?.begin(breaks.state, Date.now());
+    breaks.onChange((next, previous) => recorder?.record(previous, next, Date.now()));
+    const stopHeartbeat = every(SESSION_HEARTBEAT_MS, () => recorder?.heartbeat(Date.now()));
+    app.on('will-quit', () => {
+      stopHeartbeat();
+      recorder?.finish(Date.now());
+      database?.close();
+    });
+
     const awayReporter = createChangeReporter<boolean>((away) =>
       window.webContents.send(IpcChannel.OverlayAway, away),
     );

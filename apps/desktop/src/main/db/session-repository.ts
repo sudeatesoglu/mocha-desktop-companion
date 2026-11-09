@@ -1,6 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-
-export type SessionKind = 'work' | 'break';
+import type { SessionKind } from '@mocha/core';
 
 export interface Session {
   id: number;
@@ -16,6 +15,11 @@ export interface Session {
 export function createSessionRepository(db: DatabaseSync) {
   const insert = db.prepare('INSERT INTO sessions (kind, started_at) VALUES (?, ?)');
   const finish = db.prepare('UPDATE sessions SET ended_at = ? WHERE id = ?');
+  const seen = db.prepare('UPDATE sessions SET last_seen_at = ? WHERE id = ?');
+  const closeOpen = db.prepare(`
+    UPDATE sessions SET ended_at = MAX(started_at, COALESCE(last_seen_at, started_at))
+    WHERE ended_at IS NULL
+  `);
   const overlapping = db.prepare(`
     SELECT id, kind, started_at AS startedAt, ended_at AS endedAt
     FROM sessions
@@ -30,6 +34,17 @@ export function createSessionRepository(db: DatabaseSync) {
     },
     end(id: number, at: number): void {
       finish.run(at, id);
+    },
+    /** Records that the open session `id` was still going at `at`. */
+    touch(id: number, at: number): void {
+      seen.run(at, id);
+    },
+    /**
+     * Ends sessions a crash or forced quit left open, at the last time they
+     * were seen alive, and returns how many there were.
+     */
+    closeAbandoned(): number {
+      return Number(closeOpen.run().changes);
     },
     /** Sessions overlapping [from, to), including ones still open. */
     overlapping(from: number, to: number): Session[] {

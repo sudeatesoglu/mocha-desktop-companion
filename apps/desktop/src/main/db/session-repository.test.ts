@@ -49,6 +49,29 @@ describe('createSessionRepository', () => {
     expect(sessions.overlapping(0, 10)).toEqual([]); // the table still exists
   });
 
+  it('closes a session left open at the last time it was seen alive', () => {
+    const id = sessions.start('work', 100);
+    sessions.touch(id, 160);
+    sessions.touch(id, 220);
+
+    expect(sessions.closeAbandoned()).toBe(1);
+    expect(sessions.overlapping(0, 1_000)).toEqual([
+      { id, kind: 'work', startedAt: 100, endedAt: 220 },
+    ]);
+  });
+
+  it('closes a session never seen alive at its start and leaves ended ones alone', () => {
+    const ended = sessions.start('work', 0);
+    sessions.end(ended, 50);
+    const open = sessions.start('break', 100);
+
+    expect(sessions.closeAbandoned()).toBe(1);
+    expect(sessions.overlapping(0, 1_000)).toEqual([
+      { id: ended, kind: 'work', startedAt: 0, endedAt: 50 },
+      { id: open, kind: 'break', startedAt: 100, endedAt: 100 },
+    ]);
+  });
+
   it('refuses an end before the start', () => {
     const id = sessions.start('work', 100);
 

@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MIGRATIONS } from './migrations.ts';
 import { openDatabase } from './open-database.ts';
 
 describe('openDatabase', () => {
@@ -46,14 +47,16 @@ describe('openDatabase', () => {
     openDatabase(path, logger)?.close();
 
     const db = openDatabase(path, logger, [
-      { version: 1, sql: '' },
-      { version: 2, sql: 'THIS IS NOT SQL' },
+      ...MIGRATIONS,
+      { version: MIGRATIONS.length + 1, sql: 'THIS IS NOT SQL' },
     ]);
     expect(db).toBeUndefined();
     expect(logger.warn).toHaveBeenCalledOnce();
 
     const reopened = openDatabase(path, logger);
-    expect(reopened?.prepare('PRAGMA user_version').get()).toEqual({ user_version: 1 });
+    expect(reopened?.prepare('PRAGMA user_version').get()).toEqual({
+      user_version: MIGRATIONS.length,
+    });
     reopened?.close();
   });
 

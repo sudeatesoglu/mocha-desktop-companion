@@ -14,6 +14,7 @@ export {
   reduceBreak,
   startWorking,
 } from './habits/break-machine.ts';
+export { type SessionKind, sessionBoundary, sessionKind } from './habits/session-boundary.ts';
 export {
   type Cancel,
   createGameLoop,
