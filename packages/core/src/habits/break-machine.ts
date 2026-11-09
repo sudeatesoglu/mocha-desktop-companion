@@ -12,8 +12,8 @@ export interface BreakConfig {
 }
 
 export const DEFAULT_BREAK_CONFIG: BreakConfig = Object.freeze({
-  workMs: 50 * MINUTE_MS,
-  breakMs: 5 * MINUTE_MS,
+  workMs: 40 * MINUTE_MS,
+  breakMs: 10 * MINUTE_MS,
   snoozeMs: 10 * MINUTE_MS,
   idleBreakMs: 5 * MINUTE_MS,
 });

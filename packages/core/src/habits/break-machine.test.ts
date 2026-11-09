@@ -10,10 +10,18 @@ import {
 } from './break-machine.ts';
 
 const MINUTE = 60_000;
-const config = DEFAULT_BREAK_CONFIG;
 
 /** A moment in minutes since the start of the test. */
 const at = (minutes: number) => minutes * MINUTE;
+
+// The rules are tested with fixed durations, so changing a default does not
+// change what these tests mean.
+const config = breakConfig({
+  workMs: at(50),
+  breakMs: at(5),
+  snoozeMs: at(10),
+  idleBreakMs: at(5),
+});
 const tick = (minutes: number, idleMinutes = 0): BreakEvent => ({
   type: 'tick',
   now: at(minutes),
@@ -26,11 +34,12 @@ function play(events: BreakEvent[], options: BreakConfig = config): BreakState {
 }
 
 describe('defaults', () => {
-  it('reminds after 50 minutes, counts 5 idle minutes as a break, snoozes for 10', () => {
-    expect(config).toMatchObject({
-      workMs: at(50),
-      idleBreakMs: at(5),
+  it('reminds after 40 minutes, suggests 10-minute breaks and snoozes for 10', () => {
+    expect(DEFAULT_BREAK_CONFIG).toEqual({
+      workMs: at(40),
+      breakMs: at(10),
       snoozeMs: at(10),
+      idleBreakMs: at(5),
     });
   });
 });
@@ -213,7 +222,7 @@ describe('configuration', () => {
   });
 
   it('keeps defaults for what is not set', () => {
-    expect(breakConfig({ workMs: at(25) }).snoozeMs).toBe(config.snoozeMs);
+    expect(breakConfig({ workMs: at(25) }).snoozeMs).toBe(DEFAULT_BREAK_CONFIG.snoozeMs);
   });
 
   it.each([
