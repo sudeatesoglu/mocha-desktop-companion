@@ -21,6 +21,12 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX sessions_started_at ON sessions (started_at);
     `,
   },
+  {
+    version: 2,
+    // The last time the app saw an open session alive, so a session left
+    // open by a crash can be closed then instead of at its start.
+    sql: 'ALTER TABLE sessions ADD COLUMN last_seen_at INTEGER',
+  },
 ];
 
 // `PRAGMA user_version` always returns exactly one row.
