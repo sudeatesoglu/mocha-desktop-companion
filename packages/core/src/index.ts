@@ -14,6 +14,7 @@ export {
   reduceBreak,
   startWorking,
 } from './habits/break-machine.ts';
+export { type DailyStats, dailyStats, type SessionRecord } from './habits/daily-stats.ts';
 export {
   isQuietTime,
   MINUTES_PER_DAY,
@@ -56,3 +57,4 @@ export {
   type SkinManifest,
 } from './skin/skin-manifest.ts';
 export { formatDuration } from './time/format-duration.ts';
+export { localDay } from './time/local-day.ts';
