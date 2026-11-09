@@ -1,3 +1,4 @@
+import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
 
 /**
@@ -25,6 +26,10 @@ export const IpcChannel = {
   ReminderShow: 'reminder:show',
   /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
   ReminderChoose: 'reminder:choose',
+  /** Settings → main (invoke): the current preferences. */
+  SettingsLoad: 'settings:load',
+  /** Settings → main (invoke): save and apply preferences; resolves to whether they were saved. */
+  SettingsSave: 'settings:save',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -57,4 +62,11 @@ export interface ReminderBridge {
   onShow(callback: (show: ReminderShow) => void): () => void;
   /** The user's answer. */
   choose(choice: ReminderChoice): void;
+}
+
+/** The API the settings window's own preload exposes as `window.settings`. Nothing else. */
+export interface SettingsBridge {
+  load(): Promise<Preferences>;
+  /** Resolves to false if the main process rejected the values. */
+  save(preferences: Preferences): Promise<boolean>;
 }

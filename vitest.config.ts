@@ -17,7 +17,7 @@ export default defineConfig({
         // need a running Electron app. They are left to end-to-end tests;
         // keep logic out of them so it stays unit-tested.
         'apps/desktop/src/{main,preload,renderer}/index.ts',
-        'apps/desktop/src/{preload,renderer}/reminder.ts',
+        'apps/desktop/src/{preload,renderer}/{reminder,settings}.ts',
       ],
       reporter: ['text', 'html', 'lcov'],
       thresholds: {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_PREFERENCES } from '../../shared/preferences.ts';
 import { createSettingsStore, type SettingsFiles } from './settings-store.ts';
 
 const PATH = '/user-data/settings.json';
@@ -42,6 +43,27 @@ describe('createSettingsStore', () => {
 
       await expect(createSettingsStore(PATH, files, logger).load()).resolves.toEqual({
         overlayPosition: { x: 10, y: -20 },
+      });
+    });
+
+    it('reads valid preferences', async () => {
+      const { files } = memoryFiles(JSON.stringify({ preferences: DEFAULT_PREFERENCES }));
+
+      await expect(createSettingsStore(PATH, files, logger).load()).resolves.toEqual({
+        preferences: DEFAULT_PREFERENCES,
+      });
+    });
+
+    it('drops only invalid preferences and keeps the rest', async () => {
+      const { files } = memoryFiles(
+        JSON.stringify({
+          overlayPosition: { x: 1, y: 2 },
+          preferences: { ...DEFAULT_PREFERENCES, workMinutes: 1_000 },
+        }),
+      );
+
+      await expect(createSettingsStore(PATH, files, logger).load()).resolves.toEqual({
+        overlayPosition: { x: 1, y: 2 },
       });
     });
 

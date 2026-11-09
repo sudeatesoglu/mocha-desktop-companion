@@ -2,6 +2,7 @@ import type { MenuItemConstructorOptions } from 'electron';
 
 export interface TrayActions {
   togglePause(): void;
+  openSettings(): void;
   resetPosition(): void;
   quit(): void;
 }
@@ -21,6 +22,11 @@ export function trayMenuTemplate(
     },
     { label: 'Reset Position', click: () => actions.resetPosition() },
     { type: 'separator' },
+    {
+      label: 'Settings…',
+      accelerator: 'CommandOrControl+,',
+      click: () => actions.openSettings(),
+    },
     // The system About panel, filled from app.setAboutPanelOptions().
     { role: 'about', label: 'About Mocha' },
     { type: 'separator' },

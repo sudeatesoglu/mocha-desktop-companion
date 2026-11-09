@@ -8,6 +8,9 @@ import {
 
 export interface BreakController {
   readonly state: BreakState;
+  readonly config: BreakConfig;
+  /** Applies new durations from the next event on, without a restart. */
+  setConfig(config: BreakConfig): void;
   dispatch(event: BreakEvent): void;
   /** Calls `listener` with the old and new state on every change. Returns an unsubscribe function. */
   onChange(listener: (next: BreakState, previous: BreakState) => void): () => void;
@@ -18,13 +21,20 @@ export interface BreakController {
  * rules from @mocha/core. Parts that react to breaks (the reminder window,
  * the history) subscribe instead of being called one by one.
  */
-export function createBreakController(config: BreakConfig, now: number): BreakController {
+export function createBreakController(initial: BreakConfig, now: number): BreakController {
+  let config = initial;
   let state = startWorking(now);
   const listeners = new Set<(next: BreakState, previous: BreakState) => void>();
 
   return {
     get state() {
       return state;
+    },
+    get config() {
+      return config;
+    },
+    setConfig(next) {
+      config = next;
     },
     dispatch(event) {
       const next = reduceBreak(state, event, config);

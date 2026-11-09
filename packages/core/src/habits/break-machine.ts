@@ -12,8 +12,8 @@ export interface BreakConfig {
 }
 
 export const DEFAULT_BREAK_CONFIG: BreakConfig = Object.freeze({
-  workMs: 50 * MINUTE_MS,
-  breakMs: 5 * MINUTE_MS,
+  workMs: 40 * MINUTE_MS,
+  breakMs: 10 * MINUTE_MS,
   snoozeMs: 10 * MINUTE_MS,
   idleBreakMs: 5 * MINUTE_MS,
 });
@@ -48,8 +48,16 @@ export type BreakState =
   | { readonly phase: 'paused' };
 
 export type BreakEvent =
-  /** Time passed. `idleMs` is how long there has been no user input. */
-  | { readonly type: 'tick'; readonly now: number; readonly idleMs: number }
+  /**
+   * Time passed. `idleMs` is how long there has been no user input; `quiet`
+   * is true during quiet hours, when no break becomes due.
+   */
+  | {
+      readonly type: 'tick';
+      readonly now: number;
+      readonly idleMs: number;
+      readonly quiet?: boolean;
+    }
   | { readonly type: 'accept' | 'snooze' | 'dismiss' | 'pause' | 'resume'; readonly now: number };
 
 /** A new work stretch beginning at `now`. */
@@ -81,16 +89,20 @@ export function reduceBreak(state: BreakState, event: BreakEvent, config: BreakC
       if (event.type !== 'tick') return state;
       const { now, idleMs } = event;
       if (idleMs >= config.idleBreakMs) return awayBreak(state, now, idleMs);
-      const isDue = now - state.workStartedAt >= config.workMs && now >= state.snoozedUntil;
+      const isDue =
+        !event.quiet && now - state.workStartedAt >= config.workMs && now >= state.snoozedUntil;
       return isDue ? { phase: 'due', workStartedAt: state.workStartedAt, dueAt: now } : state;
     }
 
     case 'due':
       switch (event.type) {
         case 'tick':
-          return event.idleMs >= config.idleBreakMs
-            ? awayBreak(state, event.now, event.idleMs)
-            : state;
+          if (event.idleMs >= config.idleBreakMs) return awayBreak(state, event.now, event.idleMs);
+          // Quiet hours began: take the reminder back until they end.
+          if (event.quiet) {
+            return { phase: 'working', workStartedAt: state.workStartedAt, snoozedUntil: 0 };
+          }
+          return state;
         case 'accept':
           return {
             phase: 'onBreak',
