@@ -21,6 +21,7 @@ import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
 import { createChangeReporter } from './activity/change-reporter.ts';
 import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-recorder.ts';
+import { createTodayStats } from './activity/today-stats.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { openDatabase } from './db/open-database.ts';
@@ -174,9 +175,9 @@ if (!app.requestSingleInstanceLock()) {
 
     // History: work and break sessions, stored as kinds and timestamps only.
     // The heartbeat lets the next start close a session a crash left open.
-    const recorder = database
-      ? createSessionRecorder(createSessionRepository(database), console)
-      : undefined;
+    const sessions = database ? createSessionRepository(database) : undefined;
+    const recorder = sessions ? createSessionRecorder(sessions, console) : undefined;
+    const todayStats = sessions ? createTodayStats(sessions, console) : () => undefined;
     recorder?.begin(breaks.state, Date.now());
     breaks.onChange((next, previous) => recorder?.record(previous, next, Date.now()));
     const stopHeartbeat = every(SESSION_HEARTBEAT_MS, () => recorder?.heartbeat(Date.now()));
@@ -312,7 +313,6 @@ if (!app.requestSingleInstanceLock()) {
         stopCursorTracking ??= startTracking();
         activity.start();
       }
-      updateTrayMenu();
     });
 
     app.setAboutPanelOptions({
@@ -322,11 +322,14 @@ if (!app.requestSingleInstanceLock()) {
     });
     tray = new Tray(createTrayIcon());
     tray.setToolTip('Mocha');
-    function updateTrayMenu() {
-      tray?.setContextMenu(
+    // The menu is built when it opens, not kept up to date in the background,
+    // so today's numbers are always current. popUpContextMenu is how macOS
+    // shows a fresh menu; a menu set with setContextMenu would be fixed.
+    const showTrayMenu = () =>
+      tray?.popUpContextMenu(
         Menu.buildFromTemplate(
           trayMenuTemplate(
-            { paused: pause.paused },
+            { paused: pause.paused, today: todayStats(Date.now()) },
             {
               togglePause: () => pause.toggle(),
               openSettings,
@@ -337,8 +340,8 @@ if (!app.requestSingleInstanceLock()) {
           ),
         ),
       );
-    }
-    updateTrayMenu();
+    tray.on('click', showTrayMenu);
+    tray.on('right-click', showTrayMenu);
 
     // The desktop slides under Mocha when the user switches Spaces.
     const stopWatchingSpaces = watchSpaceChanges(process.platform, systemPreferences, () =>
