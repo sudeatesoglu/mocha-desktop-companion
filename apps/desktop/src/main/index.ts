@@ -1,7 +1,7 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { DEFAULT_BREAK_CONFIG, breakConfig as makeBreakConfig } from '@mocha/core';
+import { isQuietTime, minuteOfDay } from '@mocha/core';
 import {
   app,
   type BrowserWindow,
@@ -15,6 +15,7 @@ import {
 } from 'electron';
 import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
+import { DEFAULT_PREFERENCES, type Preferences, toBreakConfig } from '../shared/preferences.ts';
 import { REMINDER_HEIGHT, REMINDER_WIDTH, type ReminderShow } from '../shared/reminder.ts';
 import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
@@ -27,6 +28,7 @@ import { createSessionRepository } from './db/session-repository.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
+import { registerSettingsHandlers } from './ipc/register-settings-handlers.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
 import { reminderPosition } from './reminder/reminder-placement.ts';
 import { reminderTransition } from './reminder/reminder-transition.ts';
@@ -36,6 +38,7 @@ import { trayIconBitmap } from './tray/tray-icon.ts';
 import { trayMenuTemplate } from './tray/tray-menu.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
 import { createReminderWindow } from './windows/create-reminder-window.ts';
+import { createSettingsWindow } from './windows/create-settings-window.ts';
 import { initialOverlayPosition, placeOnDisplays } from './windows/overlay-placement.ts';
 import { createWindowDragger } from './windows/window-dragger.ts';
 
@@ -44,13 +47,17 @@ import { createWindowDragger } from './windows/window-dragger.ts';
 
 const preloadPath = join(import.meta.dirname, '../preload/index.cjs');
 const rendererFile = join(import.meta.dirname, '../renderer/index.html');
-const reminderPreloadPath = join(import.meta.dirname, '../preload/reminder.cjs');
-const reminderFile = join(import.meta.dirname, '../renderer/reminder.html');
 // Set by electron-vite in development only.
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL'];
-const reminderUrl = devServerUrl
-  ? new URL('reminder.html', devServerUrl).href
-  : pathToFileURL(reminderFile).href;
+
+// The reminder and settings windows each have their own preload and page.
+type Page = 'reminder' | 'settings';
+const pagePreload = (page: Page) => join(import.meta.dirname, `../preload/${page}.cjs`);
+const pageFile = (page: Page) => join(import.meta.dirname, `../renderer/${page}.html`);
+const pageUrl = (page: Page) =>
+  devServerUrl ? new URL(`${page}.html`, devServerUrl).href : pathToFileURL(pageFile(page)).href;
+const loadPage = (target: BrowserWindow, page: Page) =>
+  devServerUrl ? target.loadURL(pageUrl(page)) : target.loadFile(pageFile(page));
 
 const every = (ms: number, callback: () => void) => {
   const id = setInterval(callback, ms);
@@ -152,14 +159,18 @@ if (!app.requestSingleInstanceLock()) {
     // cursor polling (here). Every dependent part subscribes to the change.
     // Work and breaks: the system idle time drives the break rules. Only
     // the duration since the last input is read, never what the input was.
+    // The user's durations and quiet hours, changed in the settings window.
+    let preferences = saved.preferences ?? DEFAULT_PREFERENCES;
     // In development, MOCHA_DEV_WORK_MS shortens the work stretch so the
     // reminder can be tried without waiting. Packaged builds ignore it.
     const devWorkMs = devServerUrl ? Number(process.env['MOCHA_DEV_WORK_MS']) : Number.NaN;
-    const breakConfig =
-      devWorkMs > 0 && Number.isFinite(devWorkMs)
-        ? makeBreakConfig({ workMs: devWorkMs })
-        : DEFAULT_BREAK_CONFIG;
-    const breaks = createBreakController(breakConfig, Date.now());
+    const breakConfigFor = (current: Preferences) => {
+      const config = toBreakConfig(current);
+      return devWorkMs > 0 && Number.isFinite(devWorkMs)
+        ? { ...config, workMs: devWorkMs }
+        : config;
+    };
+    const breaks = createBreakController(breakConfigFor(preferences), Date.now());
 
     // History: work and break sessions, stored as kinds and timestamps only.
     // The heartbeat lets the next start close a session a crash left open.
@@ -183,10 +194,15 @@ if (!app.requestSingleInstanceLock()) {
         now: () => Date.now(),
         systemIdleMs: () => powerMonitor.getSystemIdleTime() * 1_000,
         every,
-        awayAfterMs: breakConfig.idleBreakMs,
+        awayAfterMs: breaks.config.idleBreakMs,
       },
       (sample) => {
-        breaks.dispatch({ type: 'tick', now: sample.now, idleMs: sample.idleMs });
+        breaks.dispatch({
+          type: 'tick',
+          now: sample.now,
+          idleMs: sample.idleMs,
+          quiet: isQuietTime(preferences.quietHours, minuteOfDay(sample.now)),
+        });
         awayReporter.report(sample.away);
       },
     );
@@ -207,8 +223,8 @@ if (!app.requestSingleInstanceLock()) {
     };
     const openReminder = (state: DueState) => {
       const placed = placeReminder();
-      reminderShow = { ...reminderInfo(state, breakConfig), side: placed.side };
-      const opened = createReminderWindow(reminderPreloadPath, placed, process.platform);
+      reminderShow = { ...reminderInfo(state, breaks.config), side: placed.side };
+      const opened = createReminderWindow(pagePreload('reminder'), placed, process.platform);
       reminder = opened;
       // The page shows nothing until this arrives, so it never flashes empty.
       opened.webContents.once('did-finish-load', () =>
@@ -217,11 +233,7 @@ if (!app.requestSingleInstanceLock()) {
       opened.on('closed', () => {
         if (reminder === opened) reminder = undefined;
       });
-      if (devServerUrl) {
-        opened.loadURL(reminderUrl);
-      } else {
-        opened.loadFile(reminderFile);
-      }
+      loadPage(opened, 'reminder');
     };
     const closeReminder = () => {
       reminder?.close();
@@ -245,7 +257,39 @@ if (!app.requestSingleInstanceLock()) {
     registerReminderHandlers(
       () => reminder?.webContents,
       (choice) => breaks.dispatch({ type: choice, now: Date.now() }),
-      [reminderUrl],
+      [pageUrl('reminder')],
+      console,
+    );
+
+    // Settings: one window at a time, opened from the tray. Saved values
+    // apply at once: the break rules take the new durations on the next tick.
+    let settingsWindow: BrowserWindow | undefined;
+    const openSettings = () => {
+      // Mocha has no Dock icon, so it is not the active app: bring it forward.
+      app.focus({ steal: true });
+      if (settingsWindow) {
+        settingsWindow.show();
+        settingsWindow.focus();
+        return;
+      }
+      const opened = createSettingsWindow(pagePreload('settings'));
+      settingsWindow = opened;
+      opened.on('closed', () => {
+        if (settingsWindow === opened) settingsWindow = undefined;
+      });
+      loadPage(opened, 'settings');
+    };
+    registerSettingsHandlers(
+      () => settingsWindow?.webContents,
+      {
+        load: () => preferences,
+        save: (next) => {
+          preferences = next;
+          breaks.setConfig(breakConfigFor(next));
+          void settings.update({ preferences: next });
+        },
+      },
+      [pageUrl('settings')],
       console,
     );
 
@@ -285,6 +329,7 @@ if (!app.requestSingleInstanceLock()) {
             { paused: pause.paused },
             {
               togglePause: () => pause.toggle(),
+              openSettings,
               resetPosition: () =>
                 settle(initialOverlayPosition(undefined, screen.getPrimaryDisplay().workArea, [])),
               quit: () => app.quit(),
@@ -302,6 +347,7 @@ if (!app.requestSingleInstanceLock()) {
 
     window.on('closed', () => {
       closeReminder();
+      settingsWindow?.close();
       activity.stop();
       powerMonitor.off('suspend', markAway);
       powerMonitor.off('lock-screen', markAway);
