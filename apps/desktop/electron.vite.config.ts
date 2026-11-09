@@ -14,6 +14,7 @@ export default defineConfig({
         input: {
           index: resolve('src/preload/index.ts'),
           reminder: resolve('src/preload/reminder.ts'),
+          settings: resolve('src/preload/settings.ts'),
         },
         output: { format: 'cjs', entryFileNames: '[name].cjs' },
       },
@@ -25,6 +26,7 @@ export default defineConfig({
         input: {
           index: resolve('src/renderer/index.html'),
           reminder: resolve('src/renderer/reminder.html'),
+          settings: resolve('src/renderer/settings.html'),
         },
       },
     },

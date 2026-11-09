@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Only our own scripts and styles; no inline code, no remote content. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Mocha Settings</title>
+    <link rel="stylesheet" href="./settings.css" />
+  </head>
+  <body>
+    <main>
+      <!-- novalidate: the shared schema gives the messages, not the browser. -->
+      <form id="settings" novalidate>
+        <fieldset>
+          <legend>Breaks</legend>
+          <div class="field">
+            <label for="work-minutes">Work before a break</label>
+            <span class="input">
+              <input id="work-minutes" type="number" inputmode="numeric" step="1" aria-describedby="work-minutes-hint work-minutes-error" />
+              <span class="unit">min</span>
+            </span>
+            <p class="hint" id="work-minutes-hint"></p>
+            <p class="error" id="work-minutes-error"></p>
+          </div>
+          <div class="field">
+            <label for="break-minutes">Break length</label>
+            <span class="input">
+              <input id="break-minutes" type="number" inputmode="numeric" step="1" aria-describedby="break-minutes-hint break-minutes-error" />
+              <span class="unit">min</span>
+            </span>
+            <p class="hint" id="break-minutes-hint"></p>
+            <p class="error" id="break-minutes-error"></p>
+          </div>
+          <div class="field">
+            <label for="snooze-minutes">Snooze for</label>
+            <span class="input">
+              <input id="snooze-minutes" type="number" inputmode="numeric" step="1" aria-describedby="snooze-minutes-hint snooze-minutes-error" />
+              <span class="unit">min</span>
+            </span>
+            <p class="hint" id="snooze-minutes-hint"></p>
+            <p class="error" id="snooze-minutes-error"></p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Quiet hours</legend>
+          <label class="toggle">
+            <input id="quiet-enabled" type="checkbox" />
+            No break reminders between these times
+          </label>
+          <div class="times">
+            <label class="visually-hidden" for="quiet-start">Quiet from</label>
+            <input id="quiet-start" type="time" aria-describedby="quiet-start-error" />
+            <span aria-hidden="true">to</span>
+            <label class="visually-hidden" for="quiet-end">Quiet until</label>
+            <input id="quiet-end" type="time" aria-describedby="quiet-end-error" />
+          </div>
+          <p class="error" id="quiet-start-error"></p>
+          <p class="error" id="quiet-end-error"></p>
+        </fieldset>
+
+        <div class="actions">
+          <button type="button" id="defaults">Restore defaults</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+        <p id="status" role="status" aria-live="polite"></p>
+      </form>
+    </main>
+    <script type="module" src="./settings.ts"></script>
+  </body>
+</html>
