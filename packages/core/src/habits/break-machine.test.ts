@@ -234,3 +234,33 @@ describe('configuration', () => {
     expect(() => breakConfig(overrides)).toThrow(RangeError);
   });
 });
+
+describe('quiet hours', () => {
+  const quietTick = (minutes: number, idleMinutes = 0): BreakEvent => ({
+    type: 'tick',
+    now: at(minutes),
+    idleMs: at(idleMinutes),
+    quiet: true,
+  });
+
+  it('never makes a break due while quiet, and does once the quiet time ends', () => {
+    expect(play([quietTick(50), quietTick(90)]).phase).toBe('working');
+    expect(play([quietTick(90), tick(91)])).toEqual({
+      phase: 'due',
+      workStartedAt: 0,
+      dueAt: at(91),
+    });
+  });
+
+  it('takes back a reminder that is showing when quiet hours begin', () => {
+    expect(play([tick(50), quietTick(55)])).toEqual({
+      phase: 'working',
+      workStartedAt: 0,
+      snoozedUntil: 0,
+    });
+  });
+
+  it('still counts walking away as a break', () => {
+    expect(play([tick(50), quietTick(60, 6)]).phase).toBe('onBreak');
+  });
+});

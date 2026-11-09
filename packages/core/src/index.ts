@@ -14,6 +14,12 @@ export {
   reduceBreak,
   startWorking,
 } from './habits/break-machine.ts';
+export {
+  isQuietTime,
+  MINUTES_PER_DAY,
+  minuteOfDay,
+  type QuietHours,
+} from './habits/quiet-hours.ts';
 export { type SessionKind, sessionBoundary, sessionKind } from './habits/session-boundary.ts';
 export {
   type Cancel,
