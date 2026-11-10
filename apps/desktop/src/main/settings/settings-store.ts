@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { preferencesSchema } from '../../shared/preferences.ts';
 
 const MAX_COORDINATE = 100_000; // far beyond any real desktop
 
@@ -14,6 +15,11 @@ const pointSchema = z.object({
 const settingsSchema = z.object({
   /** Top-left of the overlay window, in screen coordinates. */
   overlayPosition: pointSchema.optional(),
+  /**
+   * Break lengths and quiet hours. If they are invalid (say, written by a
+   * version with other limits), only they fall back to the defaults.
+   */
+  preferences: preferencesSchema.optional().catch(undefined),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;

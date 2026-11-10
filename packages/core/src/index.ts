@@ -4,12 +4,24 @@
  * Other packages import only from here, never from internal paths, so the
  * internals can be reorganized without breaking consumers.
  */
-export const APP_NAME = 'Mocha';
 
-export function greet(name: string): string {
-  return `Hi ${name}, I'm ${APP_NAME}!`;
-}
-
+export {
+  type BreakConfig,
+  type BreakEvent,
+  type BreakState,
+  breakConfig,
+  DEFAULT_BREAK_CONFIG,
+  reduceBreak,
+  startWorking,
+} from './habits/break-machine.ts';
+export { type DailyStats, dailyStats, type SessionRecord } from './habits/daily-stats.ts';
+export {
+  isQuietTime,
+  MINUTES_PER_DAY,
+  minuteOfDay,
+  type QuietHours,
+} from './habits/quiet-hours.ts';
+export { type SessionKind, sessionBoundary, sessionKind } from './habits/session-boundary.ts';
 export {
   type Cancel,
   createGameLoop,
@@ -45,3 +57,4 @@ export {
   type SkinManifest,
 } from './skin/skin-manifest.ts';
 export { formatDuration } from './time/format-duration.ts';
+export { localDay } from './time/local-day.ts';

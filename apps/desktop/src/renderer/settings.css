@@ -1,0 +1,169 @@
+:root {
+  color-scheme: light dark;
+  --paper: #fffaf0;
+  --ink: #2a2230;
+  --muted: #6d6474;
+  --line: #d9cfbf;
+  --accent: #5b4478;
+  --accent-ink: #fffaf0;
+  --error: #a3302a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #221e27;
+    --ink: #f3ecdf;
+    --muted: #a99fb0;
+    --line: #463e50;
+    --accent: #c4a8e4;
+    --accent-ink: #1d1922;
+    --error: #ff8f86;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  accent-color: var(--accent);
+  background: var(--paper);
+  color: var(--ink);
+  font:
+    13px / 1.4 system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+main {
+  padding: 16px 20px;
+}
+
+fieldset {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-weight: 600;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  margin-bottom: 8px;
+}
+
+.hint,
+.error {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  font-size: 11px;
+}
+
+.hint {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--error);
+}
+
+.error:empty {
+  display: none;
+}
+
+.input {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+input[type="number"],
+input[type="time"] {
+  padding: 3px 6px;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 2px solid var(--line);
+  border-radius: 0;
+}
+
+input[type="number"] {
+  width: 56px;
+  text-align: right;
+}
+
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+.unit {
+  color: var(--muted);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.times {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0 24px;
+}
+
+.times input:disabled {
+  opacity: 0.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+button {
+  padding: 4px 12px;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+}
+
+button.primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+button:active {
+  translate: 1px 1px;
+}
+
+#status {
+  min-height: 1.4em;
+  margin: 8px 0 0;
+  text-align: right;
+  color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,3 +1,6 @@
+import type { Preferences } from './preferences.ts';
+import type { ReminderChoice, ReminderShow } from './reminder.ts';
+
 /**
  * IPC channel names shared by the main process and the preload script.
  *
@@ -15,6 +18,18 @@ export const IpcChannel = {
   OverlayCursor: 'overlay:cursor',
   /** Main → overlay: Mocha was paused (true) or resumed (false) from the tray. */
   OverlayPaused: 'overlay:paused',
+  /** Main → overlay: the user switched to another Space (macOS). */
+  OverlaySpaceChanged: 'overlay:space-changed',
+  /** Main → overlay: the user went away (true) or came back (false). */
+  OverlayAway: 'overlay:away',
+  /** Main → reminder: what to show (work and break durations). */
+  ReminderShow: 'reminder:show',
+  /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
+  ReminderChoose: 'reminder:choose',
+  /** Settings → main (invoke): the current preferences. */
+  SettingsLoad: 'settings:load',
+  /** Settings → main (invoke): save and apply preferences; resolves to whether they were saved. */
+  SettingsSave: 'settings:save',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -35,4 +50,23 @@ export interface MochaBridge {
   onCursorMove(callback: (point: { x: number; y: number }) => void): () => void;
   /** Overlay only: pause state changes. Returns an unsubscribe function. */
   onPausedChange(callback: (paused: boolean) => void): () => void;
+  /** Overlay only: the user switched Spaces. Returns an unsubscribe function. */
+  onSpaceChanged(callback: () => void): () => void;
+  /** Overlay only: the user went away or came back. Returns an unsubscribe function. */
+  onAwayChange(callback: (away: boolean) => void): () => void;
+}
+
+/** The API the reminder's own preload exposes as `window.reminder`. Nothing else. */
+export interface ReminderBridge {
+  /** What to show; sent again when the bubble moves. Returns an unsubscribe function. */
+  onShow(callback: (show: ReminderShow) => void): () => void;
+  /** The user's answer. */
+  choose(choice: ReminderChoice): void;
+}
+
+/** The API the settings window's own preload exposes as `window.settings`. Nothing else. */
+export interface SettingsBridge {
+  load(): Promise<Preferences>;
+  /** Resolves to false if the main process rejected the values. */
+  save(preferences: Preferences): Promise<boolean>;
 }

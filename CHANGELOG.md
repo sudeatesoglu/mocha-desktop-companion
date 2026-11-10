@@ -4,6 +4,34 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-10
+
+"Healthy habits": Mocha notices long stretches of work and suggests a break.
+
+### Added
+
+- After 40 minutes of work, a speech bubble next to Mocha suggests a 10-minute break: take it, snooze it for 10 minutes or skip it. The bubble never takes keyboard focus ([#84](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/84))
+- Settings, from the menu bar: work, break and snooze lengths, and quiet hours without reminders. Changes apply at once ([#86](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/86))
+- Today's active time, number of breaks and longest stretch at the top of the menu bar menu, current whenever it opens ([#87](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/87))
+- Mocha naps while you are away (idle, asleep or locked) and greets you when you return ([#83](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/83))
+- A local history of work stretches and breaks, stored as start and end times only. A session cut short by a crash is closed at the last moment Mocha saw it ([#79](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/79), [#85](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/85))
+- Mocha slips, with dust at its feet, after you switch Spaces ([#63](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/63))
+
+### Removed
+
+- The unused `look` animation from the skin format. The eye follows the cursor through the code-drawn pupil ([#69](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/69))
+
+### Security
+
+- Each window gets its own preload with only its own operations, and the reminder and settings windows accept messages only from themselves ([#84](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/84), [#86](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/86))
+- Installers are built by the release workflow, with signed build provenance and checksums ([#62](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/62))
+
+### Known limitations
+
+- Breaks are noticed from keyboard and mouse input only: reading or watching something for 5 minutes without touching anything counts as a break.
+- The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
+- macOS only. Windows and Linux are planned.
+
 ## [0.1.0] - 2026-11-05
 
 The first release, "Hello, Mocha": a pixel-art raven that lives on the macOS desktop and reacts to you.
@@ -38,5 +66,6 @@ The first release, "Hello, Mocha": a pixel-art raven that lives on the macOS des
 - The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
 - macOS only. Windows and Linux are planned.
 
-[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.2.0
 [0.1.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.1.0

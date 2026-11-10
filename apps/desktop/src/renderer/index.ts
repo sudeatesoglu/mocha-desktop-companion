@@ -102,7 +102,7 @@ const reactions = createReactionDetector();
 const effects = createEffects();
 
 function react(reaction: Reaction | undefined): void {
-  if (paused) return; // resting Mocha does not react
+  if (paused || away) return; // resting Mocha does not react
   // A dizzy spell outlasts the petting cooldown; do not cut it short.
   if (reaction === 'pet' && animator.current === 'dizzy') return;
   if (reaction === 'pet') {
@@ -111,6 +111,11 @@ function react(reaction: Reaction | undefined): void {
   } else if (reaction === 'dizzy') {
     animator.play('dizzy');
     effects.add('stars');
+  } else if (reaction === 'slip') {
+    // A dizzy Mocha is already off balance; let that play out.
+    if (animator.current === 'dizzy') return;
+    animator.play('slip');
+    effects.add('dust');
   } else {
     return;
   }
@@ -141,7 +146,10 @@ const render = (): void => {
   // Read the pixels once per drawing, not on every mouse move, and before
   // effects: a heart or a star is not part of Mocha's body.
   pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-  effects.draw(context, appearance.head(animator.frame));
+  effects.draw(context, {
+    head: appearance.head(animator.frame),
+    feet: appearance.feet(animator.frame),
+  });
   // Mocha may have moved under a still cursor.
   refreshHitTest();
 };
@@ -160,6 +168,9 @@ const loop = createGameLoop({
   },
   render,
 });
+
+// The floor moved: the user swiped to another Space.
+window.mocha.onSpaceChanged(() => react(reactions.spaceChanged()));
 
 // Input path: a new gaze is drawn on the next frame, not the next step.
 window.mocha.onCursorMove((point) => {
@@ -217,13 +228,29 @@ function syncLoop(): void {
 window.mocha.onPausedChange((next) => {
   paused = next;
   effects.clear();
-  animator.play(paused ? 'sleep' : 'idle');
+  animator.play(paused || away ? 'sleep' : 'idle');
   if (paused) {
     loop.stop();
     render(); // one last frame so the sleeping pose shows
   } else {
     syncLoop();
   }
+});
+
+// The user stepped away: Mocha naps until they are back, then greets them.
+let away = false;
+window.mocha.onAwayChange((next) => {
+  if (next === away) return;
+  away = next;
+  if (paused) return; // the pause pose wins; resuming restores the right one
+  effects.clear();
+  if (away) {
+    animator.play('sleep');
+  } else {
+    animator.play('hop');
+    effects.add('heart');
+  }
+  loop.invalidate();
 });
 
 document.addEventListener('visibilitychange', syncLoop);

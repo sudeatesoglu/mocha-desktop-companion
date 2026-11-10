@@ -1,7 +1,7 @@
 {
   "name": "@mocha/desktop",
   "productName": "Mocha",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Mocha's Electron desktop app.",
   "license": "UNLICENSED",
@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:skin": "node scripts/generate-default-skin.mjs",
-    "package": "electron-vite build && electron-builder --mac --config electron-builder.yml"
+    "package": "electron-vite build && electron-builder --mac --publish never --config electron-builder.yml",
+    "generate:readme-art": "node scripts/generate-readme-art.mjs"
   },
   "devDependencies": {
     "@mocha/core": "workspace:*",

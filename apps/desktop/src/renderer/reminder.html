@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Only our own scripts and styles; no inline code, no remote content. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Mocha: break reminder</title>
+    <link rel="stylesheet" href="./reminder.css" />
+  </head>
+  <body>
+    <!-- Hidden until the main process says what to show (data-ready). -->
+    <section class="bubble" role="status" aria-live="polite">
+      <p id="message"></p>
+      <div class="choices">
+        <button type="button" id="accept" class="primary"></button>
+        <button type="button" id="snooze"></button>
+        <button type="button" id="dismiss"></button>
+      </div>
+    </section>
+    <script type="module" src="./reminder.ts"></script>
+  </body>
+</html>
