@@ -168,7 +168,7 @@ The [CI workflow](.github/workflows/ci.yml) runs on every pull request into `dev
 | Job | Checks |
 | --- | --- |
 | Lint, typecheck, test, build | `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage` (80% thresholds), `pnpm build` |
-| Commit messages and PR title | commitlint on every commit in the pull request and on its title (pull requests only) |
+| Commit messages and PR title | commitlint on every commit in the pull request and on its title (pull requests only). Release pull requests into `main` lint only the title: their commits were each checked as a pull request title on the way into `dev`. |
 
 A pull request can only be merged when all checks pass.
 

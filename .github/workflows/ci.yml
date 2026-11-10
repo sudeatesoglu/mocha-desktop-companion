@@ -85,7 +85,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # A release pull request (release/* into main) carries the squash
+      # commits of dev, each already checked as its pull request's title,
+      # plus a merge commit commitlint ignores. Re-linting them would fail
+      # on the " (#N)" suffix that squash merges append to the header.
       - name: Lint commit messages
+        if: ${{ !(github.base_ref == 'main' && startsWith(github.head_ref, 'release/')) }}
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
