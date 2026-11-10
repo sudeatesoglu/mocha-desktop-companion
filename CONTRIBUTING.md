@@ -83,16 +83,18 @@ Install the recommended VS Code extensions when prompted (Biome, EditorConfig). 
 | Branch | Role | Receives | Merge method |
 | --- | --- | --- | --- |
 | `dev` | Integration, default branch | Feature and fix pull requests | Squash (one commit per pull request, linear history) |
-| `main` | Production, every commit is releasable | Pull requests from `dev` (and `hotfix/*`) | Merge commit (keeps the `dev` history) |
+| `main` | Production, every commit is releasable | Pull requests from `release/*` (and `hotfix/*`) | Merge commit (keeps the `dev` history) |
+| `release/vX.Y.Z` | Short-lived: `dev` with `main` merged in | Created from `dev` for each release | Deleted after merging into `main` |
 
 Both branches are protected by repository rulesets, defined as code in [`.github/rulesets/`](.github/rulesets): no direct pushes, no force pushes, no deletion, a pull request with both CI checks green and up to date with its base, and resolved review conversations. Apply changes to these files with `node scripts/apply-rulesets.mjs` (requires the GitHub CLI with admin access).
 
 Releasing:
 
 1. On `dev`, update `CHANGELOG.md` and the package versions (Semantic Versioning).
-2. Open a pull request from `dev` to `main` and merge it with a merge commit.
-3. Publish a GitHub Release for the merge commit on `main`, tagged `vX.Y.Z`, for example `gh release create vX.Y.Z --target main --title "vX.Y.Z: <name>" --notes-file notes.md`.
-4. The [release workflow](.github/workflows/release.yml) then checks that the tag is on `main` and matches the app version, runs the full verification, builds the DMGs on a macOS runner, signs their build provenance and attaches them with `SHA256SUMS.txt` to the release.
+2. Create `release/vX.Y.Z` from `dev`, merge `main` into it (`git merge origin/main`) and push it. This adds no content; it only joins the histories. `dev` keeps a linear, squash-only history, so it never contains `main`'s merge commits, and a pull request straight from `dev` would never be up to date with `main`.
+3. Open a pull request from `release/vX.Y.Z` to `main`, merge it with a merge commit and delete the branch.
+4. Publish a GitHub Release for the merge commit on `main`, tagged `vX.Y.Z`, for example `gh release create vX.Y.Z --target main --title "vX.Y.Z: <name>" --notes-file notes.md`.
+5. The [release workflow](.github/workflows/release.yml) then checks that the tag is on `main` and matches the app version, runs the full verification, builds the DMGs on a macOS runner, signs their build provenance and attaches them with `SHA256SUMS.txt` to the release.
 
 The workflow is split by privilege: the job that runs the build tools has a read-only token; only a separate job, which runs no build tools, may write to the release. Changes to the workflow or to `electron-builder.yml` are packaged on their pull request as a dry run, without publishing.
 
