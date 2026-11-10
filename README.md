@@ -51,18 +51,20 @@
 
 Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks pass through everywhere except Mocha itself.
 
+**Breaks, gently.** After 40 minutes of work a speech bubble next to Mocha suggests a 10-minute break. Take it, snooze it or skip it; the bubble never steals your keyboard. Step away and Mocha naps until you're back. Change the lengths or set quiet hours in **Settings**, and see today's active time, breaks and longest stretch at the top of the menu.
+
 ## Install
 
 1. [Download the DMG](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest) for your Mac (`arm64` for Apple Silicon) and drag **Mocha** into **Applications**.
 2. Open Mocha. This early version isn't notarized by Apple yet, so the first time you'll need to allow it: **System Settings → Privacy & Security → Open Anyway**.
-3. Look for the top hat in your menu bar. That is where you pause, reset and quit.
+3. Look for the top hat in your menu bar. That is where you see today's numbers, open Settings, pause and quit.
 
 macOS only for now.
 
 ## What's next
 
 - [x] **v0.1 Hello, Mocha:** lives on your desktop and reacts to you
-- [ ] **v0.2 Healthy habits:** notices long stretches of work and reminds you to take a break
+- [x] **v0.2 Healthy habits:** notices long stretches of work and reminds you to take a break
 - [ ] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
 - [ ] **v0.4 Together:** break rituals and working side by side
 - [ ] **v0.5 Make it yours:** decorations and accessories
