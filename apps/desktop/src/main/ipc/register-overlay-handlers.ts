@@ -15,6 +15,7 @@ export type OverlayTarget = Pick<BrowserWindow, 'webContents' | 'setIgnoreMouseE
 export function registerOverlayHandlers(
   overlay: OverlayTarget,
   dragger: Pick<WindowDragger, 'start' | 'end'>,
+  openTower: () => void,
   trustedUrls: readonly string[],
   logger: IpcLogger,
 ): void {
@@ -52,5 +53,11 @@ export function registerOverlayHandlers(
       (phase) => (phase === 'start' ? dragger.start() : dragger.end()),
       options,
     ),
+  );
+
+  // No payload: the overlay can only ask, not say what to open.
+  fromOverlay(
+    IpcChannel.OpenTower,
+    validated(IpcChannel.OpenTower, z.undefined(), () => openTower(), options),
   );
 }
