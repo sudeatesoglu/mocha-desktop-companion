@@ -1,7 +1,7 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isQuietTime, minuteOfDay } from '@mocha/core';
+import { isQuietTime, minuteOfDay, needsActivity, needsEventsForBreakChange } from '@mocha/core';
 import {
   app,
   type BrowserWindow,
@@ -24,12 +24,14 @@ import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-
 import { createTodayStats } from './activity/today-stats.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
+import { createNeedsRepository } from './db/needs-repository.ts';
 import { openDatabase } from './db/open-database.ts';
 import { createSessionRepository } from './db/session-repository.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
 import { registerSettingsHandlers } from './ipc/register-settings-handlers.ts';
+import { createNeedsKeeper } from './pet/needs-keeper.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
 import { reminderPosition } from './reminder/reminder-placement.ts';
 import { reminderTransition } from './reminder/reminder-transition.ts';
@@ -180,10 +182,30 @@ if (!app.requestSingleInstanceLock()) {
     const todayStats = sessions ? createTodayStats(sessions, console) : () => undefined;
     recorder?.begin(breaks.state, Date.now());
     breaks.onChange((next, previous) => recorder?.record(previous, next, Date.now()));
-    const stopHeartbeat = every(SESSION_HEARTBEAT_MS, () => recorder?.heartbeat(Date.now()));
+
+    // Mocha's needs (ADR-0008): restored with the closed time counted as
+    // rest, moved on by break changes and every activity sample, and saved
+    // with the session heartbeat and on quit.
+    const needs = createNeedsKeeper(
+      database ? createNeedsRepository(database) : undefined,
+      Date.now(),
+      console,
+    );
+    breaks.onChange((next, previous) => {
+      for (const event of needsEventsForBreakChange(previous, next, Date.now())) {
+        needs.dispatch(event);
+      }
+    });
+
+    const stopHeartbeat = every(SESSION_HEARTBEAT_MS, () => {
+      recorder?.heartbeat(Date.now());
+      needs.save();
+    });
     app.on('will-quit', () => {
       stopHeartbeat();
       recorder?.finish(Date.now());
+      needs.dispatch({ type: 'elapse', now: Date.now(), activity: needsActivity(breaks.state) });
+      needs.save();
       database?.close();
     });
 
@@ -204,6 +226,10 @@ if (!app.requestSingleInstanceLock()) {
           idleMs: sample.idleMs,
           quiet: isQuietTime(preferences.quietHours, minuteOfDay(sample.now)),
         });
+        // After the break rules, so a gap that became a break counts as rest.
+        // Date.now() like the break-change listener: the needs clock must not
+        // step back between the two.
+        needs.dispatch({ type: 'elapse', now: Date.now(), activity: needsActivity(breaks.state) });
         awayReporter.report(sample.away);
       },
     );
