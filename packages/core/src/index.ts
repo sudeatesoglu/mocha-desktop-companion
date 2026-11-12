@@ -33,6 +33,17 @@ export { type AnimationPlayer, createAnimationPlayer } from './pet/animation-pla
 export { type BlinkTimer, type BlinkTimerOptions, createBlinkTimer } from './pet/blink-timer.ts';
 export { type Gaze, type GazeOptions, gazeOffset } from './pet/gaze.ts';
 export {
+  DEFAULT_NEEDS_CONFIG,
+  isTired,
+  type NeedsActivity,
+  type NeedsConfig,
+  type NeedsEvent,
+  type NeedsState,
+  reduceNeeds,
+  startNeeds,
+  treatsLeft,
+} from './pet/needs.ts';
+export {
   createPetAnimator,
   type PetAnimator,
   type PetAnimatorOptions,
