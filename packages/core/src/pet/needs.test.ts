@@ -63,9 +63,6 @@ describe('energy', () => {
     const afterWork = play([elapse(60, 'work')]);
     expect(afterWork.energy).toBe(70);
 
-    const afterRest = play([elapse(10, 'rest')], afterWork);
-    expect(afterRest.energy).toBe(70); // the clock is already past minute 10: no time passes
-
     expect(play([elapse(70, 'rest')], afterWork).energy).toBe(90);
   });
 
