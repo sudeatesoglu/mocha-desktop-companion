@@ -49,7 +49,7 @@ Run from the repository root; they cover every workspace package.
 
 To run a script in a single package, use a filter, e.g. `pnpm --filter @mocha/core test`.
 
-The desktop package also has two asset generators: `pnpm --filter @mocha/desktop generate:skin` draws the placeholder skin, and `pnpm --filter @mocha/desktop generate:readme-art` renders the README animations with the app's own drawing code. Run the second one after changing the skin.
+The desktop package also has three asset generators: `pnpm --filter @mocha/desktop generate:skin` draws the placeholder skin, `pnpm --filter @mocha/desktop generate:readme-art` renders the README animations and `pnpm --filter @mocha/desktop generate:icon` renders the app icon (`apps/desktop/resources/icon.png`), the last two with the app's own drawing code. Run them after changing the skin.
 
 To try the break reminder without waiting 40 minutes, shorten the work stretch in development: `MOCHA_DEV_WORK_MS=60000 pnpm dev` shows it after a minute of activity. Packaged builds ignore this variable.
 
