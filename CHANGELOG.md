@@ -6,6 +6,7 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ### Added
 
+- Mocha's Tower: double-click Mocha or choose Open Tower in the menu bar to see its mood and energy ([#103](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/103))
 - Mocha's own app icon: the raven in its top hat in front of a full moon, drawn by the same code as Mocha on the desktop ([#98](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/98))
 
 ## [0.2.0] - 2026-11-10

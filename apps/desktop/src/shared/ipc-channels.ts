@@ -1,5 +1,6 @@
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
+import type { TowerView } from './tower.ts';
 
 /**
  * IPC channel names shared by the main process and the preload script.
@@ -22,6 +23,10 @@ export const IpcChannel = {
   OverlaySpaceChanged: 'overlay:space-changed',
   /** Main → overlay: the user went away (true) or came back (false). */
   OverlayAway: 'overlay:away',
+  /** Overlay → main (send): Mocha was double-clicked; open its Tower. */
+  OpenTower: 'overlay:open-tower',
+  /** Main → tower: Mocha's needs, sent when the page loads and when they change. */
+  TowerNeeds: 'tower:needs',
   /** Main → reminder: what to show (work and break durations). */
   ReminderShow: 'reminder:show',
   /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
@@ -54,6 +59,8 @@ export interface MochaBridge {
   onSpaceChanged(callback: () => void): () => void;
   /** Overlay only: the user went away or came back. Returns an unsubscribe function. */
   onAwayChange(callback: (away: boolean) => void): () => void;
+  /** Overlay only: open Mocha's Tower. */
+  openTower(): void;
 }
 
 /** The API the reminder's own preload exposes as `window.reminder`. Nothing else. */
@@ -69,4 +76,10 @@ export interface SettingsBridge {
   load(): Promise<Preferences>;
   /** Resolves to false if the main process rejected the values. */
   save(preferences: Preferences): Promise<boolean>;
+}
+
+/** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */
+export interface TowerBridge {
+  /** Mocha's needs, now and whenever they change. Returns an unsubscribe function. */
+  onNeeds(callback: (view: TowerView) => void): () => void;
 }

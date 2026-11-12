@@ -2,6 +2,7 @@ import { type DailyStats, formatDuration } from '@mocha/core';
 import type { MenuItemConstructorOptions } from 'electron';
 
 export interface TrayActions {
+  openTower(): void;
   togglePause(): void;
   openSettings(): void;
   resetPosition(): void;
@@ -18,6 +19,7 @@ export function trayMenuTemplate(
 ): MenuItemConstructorOptions[] {
   return [
     ...todayItems(state.today),
+    { label: 'Open Tower', click: () => actions.openTower() },
     {
       label: state.paused ? 'Resume Mocha' : 'Pause Mocha',
       click: () => actions.togglePause(),

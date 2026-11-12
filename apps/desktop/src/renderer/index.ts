@@ -102,6 +102,11 @@ const reactions = createReactionDetector();
 const effects = createEffects();
 
 function react(reaction: Reaction | undefined): void {
+  // Opening the Tower is a request to the app, not a reaction of Mocha's.
+  if (reaction === 'tower') {
+    window.mocha.openTower();
+    return;
+  }
   if (paused || away) return; // resting Mocha does not react
   // A dizzy spell outlasts the petting cooldown; do not cut it short.
   if (reaction === 'pet' && animator.current === 'dizzy') return;
@@ -160,7 +165,8 @@ const loop = createGameLoop({
   stepMs: 50,
   scheduler: createBrowserScheduler(),
   update(stepMs) {
-    reactions.update(stepMs);
+    // A double click settles here, once no third click followed.
+    react(reactions.update(stepMs));
     // Advance both every step; `||` would skip effects when the animator changed.
     const animated = animator.update(stepMs);
     const affected = effects.update(stepMs);

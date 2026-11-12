@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { trayMenuTemplate } from './tray-menu.ts';
 
 const actions = () => ({
+  openTower: vi.fn(),
   togglePause: vi.fn(),
   openSettings: vi.fn(),
   resetPosition: vi.fn(),
@@ -19,12 +20,13 @@ const item = (menu: MenuItemConstructorOptions[], label: string) => {
 const click = (entry: MenuItemConstructorOptions) => (entry.click as (() => void) | undefined)?.();
 
 describe('trayMenuTemplate', () => {
-  it('lists pause, reset, settings, about and quit, in that order', () => {
+  it('lists the Tower, pause, reset, settings, about and quit, in that order', () => {
     const labels = trayMenuTemplate({ paused: false }, actions()).map(
       (entry) => entry.label ?? `(${entry.type})`,
     );
 
     expect(labels).toEqual([
+      'Open Tower',
       'Pause Mocha',
       'Reset Position',
       '(separator)',
@@ -38,18 +40,20 @@ describe('trayMenuTemplate', () => {
   it('offers to resume while paused', () => {
     const menu = trayMenuTemplate({ paused: true }, actions());
 
-    expect(menu[0]?.label).toBe('Resume Mocha');
+    expect(item(menu, 'Resume Mocha')).toBeDefined();
   });
 
   it('wires each item to its action', () => {
     const wired = actions();
     const menu = trayMenuTemplate({ paused: false }, wired);
 
+    click(item(menu, 'Open Tower'));
     click(item(menu, 'Pause Mocha'));
     click(item(menu, 'Reset Position'));
     click(item(menu, 'Settings…'));
     click(item(menu, 'Quit Mocha'));
 
+    expect(wired.openTower).toHaveBeenCalledOnce();
     expect(wired.togglePause).toHaveBeenCalledOnce();
     expect(wired.resetPosition).toHaveBeenCalledOnce();
     expect(wired.openSettings).toHaveBeenCalledOnce();
@@ -78,6 +82,6 @@ describe('trayMenuTemplate', () => {
       { label: 'Longest stretch: 52m', enabled: false },
       { type: 'separator' },
     ]);
-    expect(menu[4]?.label).toBe('Pause Mocha');
+    expect(menu[4]?.label).toBe('Open Tower');
   });
 });

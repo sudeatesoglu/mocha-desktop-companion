@@ -32,6 +32,7 @@ import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
 import { registerSettingsHandlers } from './ipc/register-settings-handlers.ts';
 import { createNeedsKeeper } from './pet/needs-keeper.ts';
+import { towerView } from './pet/tower-view.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
 import { reminderPosition } from './reminder/reminder-placement.ts';
 import { reminderTransition } from './reminder/reminder-transition.ts';
@@ -42,7 +43,9 @@ import { trayMenuTemplate } from './tray/tray-menu.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
 import { createReminderWindow } from './windows/create-reminder-window.ts';
 import { createSettingsWindow } from './windows/create-settings-window.ts';
+import { createTowerWindow } from './windows/create-tower-window.ts';
 import { initialOverlayPosition, placeOnDisplays } from './windows/overlay-placement.ts';
+import { singleWindow } from './windows/single-window.ts';
 import { createWindowDragger } from './windows/window-dragger.ts';
 
 // Composition root: wires Electron to the app's modules. Logic lives in
@@ -53,8 +56,8 @@ const rendererFile = join(import.meta.dirname, '../renderer/index.html');
 // Set by electron-vite in development only.
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL'];
 
-// The reminder and settings windows each have their own preload and page.
-type Page = 'reminder' | 'settings';
+// The reminder, settings and Tower windows each have their own preload and page.
+type Page = 'reminder' | 'settings' | 'tower';
 const pagePreload = (page: Page) => join(import.meta.dirname, `../preload/${page}.cjs`);
 const pageFile = (page: Page) => join(import.meta.dirname, `../renderer/${page}.html`);
 const pageUrl = (page: Page) =>
@@ -140,7 +143,8 @@ if (!app.requestSingleInstanceLock()) {
       every,
       onDrop: settle,
     });
-    registerOverlayHandlers(window, dragger, trustedUrls, console);
+    // The Tower is set up further down; a double click can only arrive later.
+    registerOverlayHandlers(window, dragger, () => openTower(), trustedUrls, console);
     // If the renderer dies mid-drag, its "end" never arrives: stop following.
     window.webContents.on('render-process-gone', () => dragger.end());
 
@@ -290,24 +294,18 @@ if (!app.requestSingleInstanceLock()) {
 
     // Settings: one window at a time, opened from the tray. Saved values
     // apply at once: the break rules take the new durations on the next tick.
-    let settingsWindow: BrowserWindow | undefined;
+    const settingsWindow = singleWindow(() => {
+      const opened = createSettingsWindow(pagePreload('settings'));
+      loadPage(opened, 'settings');
+      return opened;
+    });
     const openSettings = () => {
       // Mocha has no Dock icon, so it is not the active app: bring it forward.
       app.focus({ steal: true });
-      if (settingsWindow) {
-        settingsWindow.show();
-        settingsWindow.focus();
-        return;
-      }
-      const opened = createSettingsWindow(pagePreload('settings'));
-      settingsWindow = opened;
-      opened.on('closed', () => {
-        if (settingsWindow === opened) settingsWindow = undefined;
-      });
-      loadPage(opened, 'settings');
+      settingsWindow.open();
     };
     registerSettingsHandlers(
-      () => settingsWindow?.webContents,
+      () => settingsWindow.current?.webContents,
       {
         load: () => preferences,
         save: (next) => {
@@ -319,6 +317,31 @@ if (!app.requestSingleInstanceLock()) {
       [pageUrl('settings')],
       console,
     );
+
+    // Mocha's Tower: opened from the tray or by double-clicking Mocha. It
+    // gets the needs when its page loads and then only when what it shows
+    // changes, not on every tick.
+    let shownView = '';
+    const sendTowerView = (force: boolean) => {
+      const target = towerWindow.current;
+      if (!target) return;
+      const view = towerView(needs.state, Date.now());
+      const key = JSON.stringify(view);
+      if (!force && key === shownView) return;
+      shownView = key;
+      target.webContents.send(IpcChannel.TowerNeeds, view);
+    };
+    const towerWindow = singleWindow(() => {
+      const opened = createTowerWindow(pagePreload('tower'));
+      opened.webContents.on('did-finish-load', () => sendTowerView(true));
+      loadPage(opened, 'tower');
+      return opened;
+    });
+    function openTower() {
+      app.focus({ steal: true });
+      towerWindow.open();
+    }
+    needs.onChange(() => sendTowerView(false));
 
     const markAway = () => activity.markAway();
     powerMonitor.on('suspend', markAway);
@@ -359,6 +382,7 @@ if (!app.requestSingleInstanceLock()) {
             {
               togglePause: () => pause.toggle(),
               openSettings,
+              openTower,
               resetPosition: () =>
                 settle(initialOverlayPosition(undefined, screen.getPrimaryDisplay().workArea, [])),
               quit: () => app.quit(),
@@ -376,7 +400,8 @@ if (!app.requestSingleInstanceLock()) {
 
     window.on('closed', () => {
       closeReminder();
-      settingsWindow?.close();
+      settingsWindow.close();
+      towerWindow.close();
       activity.stop();
       powerMonitor.off('suspend', markAway);
       powerMonitor.off('lock-screen', markAway);
