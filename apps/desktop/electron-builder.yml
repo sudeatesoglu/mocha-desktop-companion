@@ -15,6 +15,8 @@ asar: true
 
 mac:
   category: public.app-category.productivity
+  # Rendered by scripts/generate-app-icon.mjs; converted to .icns at build time.
+  icon: resources/icon.png
   target:
     - target: dmg
       arch: [arm64, x64]
