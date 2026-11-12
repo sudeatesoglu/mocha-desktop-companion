@@ -1,0 +1,60 @@
+:root {
+  color-scheme: light dark;
+  --paper: #fffaf0;
+  --ink: #2a2230;
+  --muted: #6d6474;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #221e27;
+    --ink: #f3ecdf;
+    --muted: #a99fb0;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font:
+    13px / 1.4 system-ui,
+    -apple-system,
+    sans-serif;
+  user-select: none;
+  cursor: default;
+}
+
+main {
+  padding: 20px;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: 17px;
+}
+
+.needs {
+  margin: 0;
+}
+
+.need {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+dd {
+  margin: 0;
+}
+
+meter {
+  width: 100%;
+}
+
+#status {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
