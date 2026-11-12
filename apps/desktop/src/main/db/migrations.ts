@@ -27,6 +27,22 @@ export const MIGRATIONS: readonly Migration[] = [
     // open by a crash can be closed then instead of at its start.
     sql: 'ALTER TABLE sessions ADD COLUMN last_seen_at INTEGER',
   },
+  {
+    version: 3,
+    // Mocha's needs (ADR-0008): one row with two numbers, the counters of
+    // their caps and timestamps. Nothing about what the user does.
+    sql: `
+      CREATE TABLE needs (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        mood REAL NOT NULL CHECK (mood BETWEEN 0 AND 100),
+        energy REAL NOT NULL CHECK (energy BETWEEN 0 AND 100),
+        updated_at INTEGER NOT NULL,
+        last_pet_at INTEGER,
+        treat_day INTEGER NOT NULL,
+        treats_today INTEGER NOT NULL CHECK (treats_today >= 0)
+      );
+    `,
+  },
 ];
 
 // `PRAGMA user_version` always returns exactly one row.

@@ -43,6 +43,7 @@ export {
   startNeeds,
   treatsLeft,
 } from './pet/needs.ts';
+export { needsActivity, needsEventsForBreakChange } from './pet/needs-from-breaks.ts';
 export {
   createPetAnimator,
   type PetAnimator,
