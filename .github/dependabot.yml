@@ -39,6 +39,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # The same supply-chain wait as for npm packages.
+    cooldown:
+      default-days: 7
+    # "ci(deps): bump ...": commitlint requires a scope.
     commit-message:
       prefix: ci
+      include: scope
     labels: [dependencies, ci]
