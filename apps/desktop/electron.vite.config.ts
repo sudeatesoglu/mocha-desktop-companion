@@ -23,6 +23,9 @@ export default defineConfig({
   },
   renderer: {
     build: {
+      // Emit every image as a file instead of inlining small ones as data:
+      // URLs, so the pages' CSP can allow images from the app only.
+      assetsInlineLimit: 0,
       rollupOptions: {
         input: {
           index: resolve('src/renderer/index.html'),
