@@ -9,11 +9,17 @@ export function towerControls(view: TowerView) {
       label: view.treatsLeft > 0 ? `Treat (${view.treatsLeft} left)` : 'No treats left today',
       disabled: view.resting || view.treatsLeft === 0,
     },
-    rest: { label: view.resting ? 'Resting…' : 'Rest together', disabled: view.resting },
+    // A paused Mocha cannot start a break: the break rules are paused too.
+    rest: {
+      label: view.resting ? 'Resting…' : 'Rest together',
+      disabled: view.resting || view.paused,
+    },
     status: view.resting
       ? 'Resting together. Mocha is napping.'
-      : view.tired
-        ? 'Mocha is tired. A break would help you both.'
-        : '',
+      : view.paused
+        ? 'Mocha is paused. Resume it from the menu bar to rest together.'
+        : view.tired
+          ? 'Mocha is tired. A break would help you both.'
+          : '',
   };
 }

@@ -1,13 +1,14 @@
-import { isTired, type NeedsState, treatsLeft } from '@mocha/core';
+import { type BreakState, isTired, type NeedsState, treatsLeft } from '@mocha/core';
 import type { TowerView } from '../../shared/tower.ts';
 
 /** What the Tower shows of Mocha's needs at `now`: rounded, never raw state. */
-export function towerView(needs: NeedsState, resting: boolean, now: number): TowerView {
+export function towerView(needs: NeedsState, phase: BreakState['phase'], now: number): TowerView {
   return {
     mood: Math.round(needs.mood),
     energy: Math.round(needs.energy),
     tired: isTired(needs),
     treatsLeft: treatsLeft(needs, now),
-    resting,
+    resting: phase === 'onBreak',
+    paused: phase === 'paused',
   };
 }

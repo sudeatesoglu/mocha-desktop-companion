@@ -336,7 +336,7 @@ if (!app.requestSingleInstanceLock()) {
     const sendTowerView = (force: boolean) => {
       const target = towerWindow.current;
       if (!target) return;
-      const view = towerView(needs.state, breaks.state.phase === 'onBreak', Date.now());
+      const view = towerView(needs.state, breaks.state.phase, Date.now());
       const key = JSON.stringify(view);
       if (!force && key === shownView) return;
       shownView = key;

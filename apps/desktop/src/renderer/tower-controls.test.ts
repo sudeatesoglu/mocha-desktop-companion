@@ -8,6 +8,7 @@ const view = (patch: Partial<TowerView>): TowerView => ({
   tired: false,
   treatsLeft: 3,
   resting: false,
+  paused: false,
   ...patch,
 });
 
@@ -32,6 +33,13 @@ describe('towerControls', () => {
     expect(towerControls(view({ tired: true })).status).toBe(
       'Mocha is tired. A break would help you both.',
     );
+  });
+
+  it('does not offer to rest together while Mocha is paused', () => {
+    const controls = towerControls(view({ paused: true, tired: true }));
+
+    expect(controls.rest.disabled).toBe(true);
+    expect(controls.status).toBe('Mocha is paused. Resume it from the menu bar to rest together.');
   });
 
   it('leaves a napping Mocha in peace during a break', () => {
