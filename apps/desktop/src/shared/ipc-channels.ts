@@ -1,6 +1,6 @@
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
-import type { TowerView } from './tower.ts';
+import type { TowerAction, TowerView } from './tower.ts';
 
 /**
  * IPC channel names shared by the main process and the preload script.
@@ -25,8 +25,12 @@ export const IpcChannel = {
   OverlayAway: 'overlay:away',
   /** Overlay → main (send): Mocha was double-clicked; open its Tower. */
   OpenTower: 'overlay:open-tower',
+  /** Overlay → main (send): the user petted Mocha on the desktop. */
+  OverlayPetted: 'overlay:petted',
   /** Main → tower: Mocha's needs, sent when the page loads and when they change. */
   TowerNeeds: 'tower:needs',
+  /** Tower → main (send): pet, treat or rest together. */
+  TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
   ReminderShow: 'reminder:show',
   /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
@@ -61,6 +65,8 @@ export interface MochaBridge {
   onAwayChange(callback: (away: boolean) => void): () => void;
   /** Overlay only: open Mocha's Tower. */
   openTower(): void;
+  /** Overlay only: the user petted Mocha, which lifts its mood. */
+  petted(): void;
 }
 
 /** The API the reminder's own preload exposes as `window.reminder`. Nothing else. */
@@ -82,4 +88,6 @@ export interface SettingsBridge {
 export interface TowerBridge {
   /** Mocha's needs, now and whenever they change. Returns an unsubscribe function. */
   onNeeds(callback: (view: TowerView) => void): () => void;
+  /** Care for Mocha. */
+  act(action: TowerAction): void;
 }

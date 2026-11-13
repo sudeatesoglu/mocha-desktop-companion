@@ -31,6 +31,7 @@ import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
 import { registerSettingsHandlers } from './ipc/register-settings-handlers.ts';
+import { registerTowerHandlers } from './ipc/register-tower-handlers.ts';
 import { createNeedsKeeper } from './pet/needs-keeper.ts';
 import { towerView } from './pet/tower-view.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
@@ -143,8 +144,18 @@ if (!app.requestSingleInstanceLock()) {
       every,
       onDrop: settle,
     });
-    // The Tower is set up further down; a double click can only arrive later.
-    registerOverlayHandlers(window, dragger, () => openTower(), trustedUrls, console);
+    // The Tower and the needs are set up further down; the overlay's page
+    // loads after all of this, so its requests can only arrive later.
+    registerOverlayHandlers(
+      window,
+      dragger,
+      {
+        openTower: () => openTower(),
+        petted: () => needs.dispatch({ type: 'pet', now: Date.now() }),
+      },
+      trustedUrls,
+      console,
+    );
     // If the renderer dies mid-drag, its "end" never arrives: stop following.
     window.webContents.on('render-process-gone', () => dragger.end());
 
@@ -325,7 +336,7 @@ if (!app.requestSingleInstanceLock()) {
     const sendTowerView = (force: boolean) => {
       const target = towerWindow.current;
       if (!target) return;
-      const view = towerView(needs.state, Date.now());
+      const view = towerView(needs.state, breaks.state.phase === 'onBreak', Date.now());
       const key = JSON.stringify(view);
       if (!force && key === shownView) return;
       shownView = key;
@@ -342,6 +353,19 @@ if (!app.requestSingleInstanceLock()) {
       towerWindow.open();
     }
     needs.onChange(() => sendTowerView(false));
+    breaks.onChange(() => sendTowerView(false)); // a break starts or ends
+    registerTowerHandlers(
+      () => towerWindow.current?.webContents,
+      (action) => {
+        const now = Date.now();
+        // Resting goes through the break rules like any break; the needs
+        // follow from the break change.
+        if (action === 'rest') breaks.dispatch({ type: 'startBreak', now });
+        else needs.dispatch({ type: action, now });
+      },
+      [pageUrl('tower')],
+      console,
+    );
 
     const markAway = () => activity.markAway();
     powerMonitor.on('suspend', markAway);

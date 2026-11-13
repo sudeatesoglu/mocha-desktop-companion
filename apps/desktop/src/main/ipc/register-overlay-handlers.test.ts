@@ -25,6 +25,7 @@ describe('registerOverlayHandlers', () => {
   const logger = { warn: vi.fn() };
   const dragger = { start: vi.fn(), end: vi.fn() };
   const openTower = vi.fn();
+  const petted = vi.fn();
 
   const send = (
     sender: unknown,
@@ -40,7 +41,7 @@ describe('registerOverlayHandlers', () => {
   beforeEach(() => {
     ipc.handlers.clear();
     vi.clearAllMocks();
-    registerOverlayHandlers(overlay, dragger, openTower, [TRUSTED], logger);
+    registerOverlayHandlers(overlay, dragger, { openTower, petted }, [TRUSTED], logger);
   });
 
   it('makes the overlay clickable while the cursor is over Mocha', () => {
@@ -131,6 +132,30 @@ describe('registerOverlayHandlers', () => {
       open(undefined, otherContents);
 
       expect(openTower).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(IpcChannel.OverlayPetted, () => {
+    const pet = (payload: unknown, sender: unknown = overlayContents) =>
+      send(sender, payload, TRUSTED, IpcChannel.OverlayPetted);
+
+    it('passes a pet on', () => {
+      pet(undefined);
+
+      expect(petted).toHaveBeenCalledOnce();
+    });
+
+    it('rejects a payload: the overlay cannot say how much a pet counts', () => {
+      pet({ mood: 100 });
+
+      expect(petted).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('ignores a pet from another window of the app', () => {
+      pet(undefined, otherContents);
+
+      expect(petted).not.toHaveBeenCalled();
     });
   });
 });

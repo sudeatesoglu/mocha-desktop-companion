@@ -15,7 +15,7 @@ export type OverlayTarget = Pick<BrowserWindow, 'webContents' | 'setIgnoreMouseE
 export function registerOverlayHandlers(
   overlay: OverlayTarget,
   dragger: Pick<WindowDragger, 'start' | 'end'>,
-  openTower: () => void,
+  requests: { openTower(): void; petted(): void },
   trustedUrls: readonly string[],
   logger: IpcLogger,
 ): void {
@@ -58,6 +58,12 @@ export function registerOverlayHandlers(
   // No payload: the overlay can only ask, not say what to open.
   fromOverlay(
     IpcChannel.OpenTower,
-    validated(IpcChannel.OpenTower, z.undefined(), () => openTower(), options),
+    validated(IpcChannel.OpenTower, z.undefined(), () => requests.openTower(), options),
+  );
+
+  // No payload either: how much a pet counts is decided here (ADR-0008).
+  fromOverlay(
+    IpcChannel.OverlayPetted,
+    validated(IpcChannel.OverlayPetted, z.undefined(), () => requests.petted(), options),
   );
 }

@@ -30,6 +30,7 @@ const bridge: MochaBridge = {
     return () => ipcRenderer.removeListener(IpcChannel.OverlayAway, listener);
   },
   openTower: () => ipcRenderer.send(IpcChannel.OpenTower),
+  petted: () => ipcRenderer.send(IpcChannel.OverlayPetted),
 };
 
 contextBridge.exposeInMainWorld('mocha', bridge);
