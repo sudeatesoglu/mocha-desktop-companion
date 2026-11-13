@@ -8,6 +8,7 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 - Mocha's Tower: double-click Mocha or choose Open Tower in the menu bar to see its mood and energy in its room ([#103](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/103), [#104](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/104))
 - Care for Mocha in the Tower: pet it, give it one of three daily treats, or rest together, which starts a break with Mocha napping. Petting Mocha on the desktop lifts its mood too ([#104](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/104))
+- When its energy is low, Mocha looks tired, on the desktop and in the Tower: heavy eyelids, slow breathing and a moment of nodding off. Skins can provide this as a `tired` animation ([#105](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/105))
 - Mocha's own app icon: the raven in its top hat in front of a full moon, drawn by the same code as Mocha on the desktop ([#98](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/98))
 
 ### Security

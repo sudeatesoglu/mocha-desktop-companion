@@ -95,4 +95,66 @@ describe('createAnimationPlayer', () => {
     expect(player.play('hop')).toBe(true); // falls back to idle frame 0
     expect(player.play('idle')).toBe(false);
   });
+
+  describe('base pose', () => {
+    const WITH_TIRED: Animations = {
+      ...ANIMATIONS,
+      hop: { loop: false, frames: [frame(4, 100)] },
+      tired: { loop: true, frames: [frame(12, 1400), frame(13, 1400)] },
+    };
+
+    it('holds the new base pose at once when the old one is showing', () => {
+      const player = createAnimationPlayer(WITH_TIRED);
+
+      expect(player.setBase('tired')).toBe(true);
+      expect(player.current).toBe('tired');
+      expect(player.base).toBe('tired');
+      expect(player.frame.index).toBe(12);
+    });
+
+    it('lets another animation finish, then returns to the new base pose', () => {
+      const player = createAnimationPlayer(WITH_TIRED);
+      player.play('hop');
+
+      expect(player.setBase('tired')).toBe(false);
+      player.update(100);
+
+      expect(player.current).toBe('tired');
+    });
+
+    it('plays the base pose when idle is requested', () => {
+      const player = createAnimationPlayer(WITH_TIRED);
+      player.setBase('tired');
+      player.play('hop');
+
+      player.play('idle');
+
+      expect(player.current).toBe('tired');
+    });
+
+    it('goes back to idle', () => {
+      const player = createAnimationPlayer(WITH_TIRED);
+      player.setBase('tired');
+
+      expect(player.setBase('idle')).toBe(true);
+      expect(player.current).toBe('idle');
+      expect(player.setBase('idle')).toBe(false); // already the base
+    });
+
+    it('falls back to idle for a pose the skin does not define', () => {
+      const player = createAnimationPlayer(ANIMATIONS);
+
+      expect(player.setBase('tired')).toBe(false);
+      expect(player.base).toBe('idle');
+      expect(player.current).toBe('idle');
+    });
+
+    it('reports an unchanged frame when the new base starts on the same one', () => {
+      const same: Animations = { ...ANIMATIONS, tired: { loop: true, frames: [frame(0, 900)] } };
+      const player = createAnimationPlayer(same);
+
+      expect(player.setBase('tired')).toBe(false);
+      expect(player.current).toBe('tired');
+    });
+  });
 });

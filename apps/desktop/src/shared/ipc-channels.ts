@@ -25,6 +25,8 @@ export const IpcChannel = {
   OverlayAway: 'overlay:away',
   /** Overlay → main (send): Mocha was double-clicked; open its Tower. */
   OpenTower: 'overlay:open-tower',
+  /** Main → overlay: Mocha's energy fell below (true) or rose above (false) the tired line. */
+  OverlayTired: 'overlay:tired',
   /** Overlay → main (send): the user petted Mocha on the desktop. */
   OverlayPetted: 'overlay:petted',
   /** Main → tower: Mocha's needs, sent when the page loads and when they change. */
@@ -63,6 +65,8 @@ export interface MochaBridge {
   onSpaceChanged(callback: () => void): () => void;
   /** Overlay only: the user went away or came back. Returns an unsubscribe function. */
   onAwayChange(callback: (away: boolean) => void): () => void;
+  /** Overlay only: Mocha became tired or rested. Returns an unsubscribe function. */
+  onTiredChange(callback: (tired: boolean) => void): () => void;
   /** Overlay only: open Mocha's Tower. */
   openTower(): void;
   /** Overlay only: the user petted Mocha, which lifts its mood. */

@@ -17,11 +17,14 @@ export interface PetAnimator {
   play(name: AnimationName): boolean;
   /** Advances by `stepMs`. Returns true if the frame changed. */
   update(stepMs: number): boolean;
+  /** Holds the skin's tired pose instead of idle. Returns true if the frame changed. */
+  setTired(tired: boolean): boolean;
 }
 
 /**
  * Mocha's animation behavior: idle by default, blinking now and then while
- * idle, and one-shot animations (like a hop) on request.
+ * idle, and one-shot animations (like a hop) on request. While tired, it
+ * holds the tired pose instead of idle, which has its own slow blinks.
  */
 export function createPetAnimator(
   animations: SkinManifest['animations'],
@@ -44,6 +47,11 @@ export function createPetAnimator(
       // The blink countdown only runs while idle; start a fresh wait after.
       if (player.current !== 'idle') blink.reset();
       return changed;
+    },
+
+    setTired(tired) {
+      blink.reset();
+      return player.setBase(tired ? 'tired' : 'idle');
     },
 
     update(stepMs) {
