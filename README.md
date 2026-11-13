@@ -51,13 +51,15 @@
 
 Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks pass through everywhere except Mocha itself.
 
-**Breaks, gently.** After 40 minutes of work a speech bubble next to Mocha suggests a 10-minute break. Take it, snooze it or skip it; the bubble never steals your keyboard. Step away and Mocha naps until you're back. Change the lengths or set quiet hours in **Settings**, and see today's active time, breaks and longest stretch at the top of the menu.
+**Breaks, gently.** After 40 minutes of work a speech bubble next to Mocha suggests a 10-minute break. Take it, snooze it or skip it; the bubble never steals your keyboard. Mocha naps through every break, including when you step away. Change the lengths or set quiet hours in **Settings**, and see today's active time, breaks and longest stretch at the top of the menu.
+
+**A home of its own.** Double-click Mocha, or choose **Open Tower** in the menu bar, to visit its room. Mocha has a mood and an energy that follow your rest: energy drains while you work and comes back with every break, so a tired Mocha slumps and yawns on your desktop when you need a pause. Nothing bad ever happens if you forget about it. Pet it, give it a treat or rest together.
 
 ## Install
 
 1. [Download the DMG](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest) for your Mac (`arm64` for Apple Silicon) and drag **Mocha** into **Applications**.
 2. Open Mocha. This early version isn't notarized by Apple yet, so the first time you'll need to allow it: **System Settings → Privacy & Security → Open Anyway**.
-3. Look for the top hat in your menu bar. That is where you see today's numbers, open Settings, pause and quit.
+3. Look for the top hat in your menu bar. That is where you see today's numbers, open the Tower and Settings, pause and quit.
 
 macOS only for now.
 
@@ -65,7 +67,7 @@ macOS only for now.
 
 - [x] **v0.1 Hello, Mocha:** lives on your desktop and reacts to you
 - [x] **v0.2 Healthy habits:** notices long stretches of work and reminds you to take a break
-- [ ] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
+- [x] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
 - [ ] **v0.4 Together:** break rituals and working side by side
 - [ ] **v0.5 Make it yours:** decorations and accessories
 
@@ -75,7 +77,7 @@ See the [changelog](CHANGELOG.md) for what each release contains.
 <summary><b>Your data</b></summary>
 <br>
 
-Mocha is local-first: it has no account and no telemetry. To notice when you step away it reads only how long it has been since your last keyboard or mouse input, never what you type, where you click or which apps you use. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it and your break settings, and `mocha.db`, which holds when your work stretches and breaks started and ended, with nothing about what you do in them. Deleting them resets Mocha.
+Mocha is local-first: it has no account and no telemetry. To notice when you step away it reads only how long it has been since your last keyboard or mouse input, never what you type, where you click or which apps you use. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it and your break settings, and `mocha.db`, which holds when your work stretches and breaks started and ended and Mocha's mood and energy, with nothing about what you do in them. Deleting them resets Mocha.
 
 </details>
 

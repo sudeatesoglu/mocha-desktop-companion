@@ -4,6 +4,31 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-14
+
+"The Tower": Mocha gets a home of its own, with a mood and an energy that follow your rest.
+
+### Added
+
+- Mocha's Tower: double-click Mocha or choose Open Tower in the menu bar to see it in its room, with its mood and energy ([#111](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/111), [#114](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/114))
+- Mocha has a mood and an energy that follow your rest and never punish you: energy drains while you work and comes back with every break and overnight, and mood rises with breaks and care and drifts back to neutral. Both are kept across restarts ([#107](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/107), [#110](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/110))
+- Care for Mocha in the Tower: pet it, give it one of three daily treats, or rest together, which starts a break. Petting Mocha on the desktop lifts its mood too ([#114](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/114))
+- When its energy is low, Mocha looks tired, on the desktop and in the Tower: it slumps with its hat slipping over a heavy eye, nods off and jerks awake, and yawns. Skins can provide this as a `tired` animation ([#115](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/115), [#117](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/117))
+- Mocha naps on the desktop during every break, including one you start from the Tower, not only while you are away ([#119](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/119))
+- Mocha's own app icon: the raven in its top hat in front of a full moon, drawn by the same code as Mocha on the desktop ([#99](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/99))
+
+### Security
+
+- The Tower has its own preload and accepts its actions only from itself, and the overlay's requests to open it or report a pet carry no data ([#111](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/111), [#114](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/114))
+- Images are bundled as files instead of inlined data: URLs, so every window's Content Security Policy allows images from the app only ([#114](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/114))
+
+### Known limitations
+
+- The Tower's room, the treat and the tired pose are placeholder art drawn in code, until the hand-drawn versions replace them.
+- Breaks are noticed from keyboard and mouse input only: reading or watching something for 5 minutes without touching anything counts as a break.
+- The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
+- macOS only. Windows and Linux are planned.
+
 ## [0.2.0] - 2026-11-10
 
 "Healthy habits": Mocha notices long stretches of work and suggests a break.
@@ -66,6 +91,7 @@ The first release, "Hello, Mocha": a pixel-art raven that lives on the macOS des
 - The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
 - macOS only. Windows and Linux are planned.
 
-[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.3.0
 [0.2.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.2.0
 [0.1.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.1.0

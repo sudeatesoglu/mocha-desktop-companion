@@ -24,6 +24,9 @@ describe('registerOverlayHandlers', () => {
   } as unknown as OverlayTarget;
   const logger = { warn: vi.fn() };
   const dragger = { start: vi.fn(), end: vi.fn() };
+  const openTower = vi.fn();
+  const petted = vi.fn();
+  const ready = vi.fn();
 
   const send = (
     sender: unknown,
@@ -39,7 +42,7 @@ describe('registerOverlayHandlers', () => {
   beforeEach(() => {
     ipc.handlers.clear();
     vi.clearAllMocks();
-    registerOverlayHandlers(overlay, dragger, [TRUSTED], logger);
+    registerOverlayHandlers(overlay, dragger, { ready, openTower, petted }, [TRUSTED], logger);
   });
 
   it('makes the overlay clickable while the cursor is over Mocha', () => {
@@ -106,6 +109,72 @@ describe('registerOverlayHandlers', () => {
       drag('start', otherContents);
 
       expect(dragger.start).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(IpcChannel.OpenTower, () => {
+    const open = (payload: unknown, sender: unknown = overlayContents) =>
+      send(sender, payload, TRUSTED, IpcChannel.OpenTower);
+
+    it('opens the Tower when the overlay asks', () => {
+      open(undefined);
+
+      expect(openTower).toHaveBeenCalledOnce();
+    });
+
+    it('rejects any payload: the overlay cannot say what to open', () => {
+      open('file:///etc/passwd');
+
+      expect(openTower).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('ignores the request from another window of the app', () => {
+      open(undefined, otherContents);
+
+      expect(openTower).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(IpcChannel.OverlayPetted, () => {
+    const pet = (payload: unknown, sender: unknown = overlayContents) =>
+      send(sender, payload, TRUSTED, IpcChannel.OverlayPetted);
+
+    it('passes a pet on', () => {
+      pet(undefined);
+
+      expect(petted).toHaveBeenCalledOnce();
+    });
+
+    it('rejects a payload: the overlay cannot say how much a pet counts', () => {
+      pet({ mood: 100 });
+
+      expect(petted).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('ignores a pet from another window of the app', () => {
+      pet(undefined, otherContents);
+
+      expect(petted).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(IpcChannel.OverlayReady, () => {
+    const announce = (payload: unknown, sender: unknown = overlayContents) =>
+      send(sender, payload, TRUSTED, IpcChannel.OverlayReady);
+
+    it('asks main for the current state when the page listens', () => {
+      announce(undefined);
+
+      expect(ready).toHaveBeenCalledOnce();
+    });
+
+    it('rejects a payload and other windows', () => {
+      announce({ tired: false });
+      announce(undefined, otherContents);
+
+      expect(ready).not.toHaveBeenCalled();
     });
   });
 });

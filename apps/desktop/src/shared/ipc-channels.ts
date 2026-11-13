@@ -1,5 +1,6 @@
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
+import type { TowerAction, TowerView } from './tower.ts';
 
 /**
  * IPC channel names shared by the main process and the preload script.
@@ -20,8 +21,22 @@ export const IpcChannel = {
   OverlayPaused: 'overlay:paused',
   /** Main → overlay: the user switched to another Space (macOS). */
   OverlaySpaceChanged: 'overlay:space-changed',
-  /** Main → overlay: the user went away (true) or came back (false). */
-  OverlayAway: 'overlay:away',
+  /** Main → overlay: a break started (true) or ended (false); Mocha naps through it. */
+  OverlayResting: 'overlay:resting',
+  /** Overlay → main (send): the page listens now; send it the current state. */
+  OverlayReady: 'overlay:ready',
+  /** Overlay → main (send): Mocha was double-clicked; open its Tower. */
+  OpenTower: 'overlay:open-tower',
+  /** Main → overlay: Mocha's energy fell below (true) or rose above (false) the tired line. */
+  OverlayTired: 'overlay:tired',
+  /** Overlay → main (send): the user petted Mocha on the desktop. */
+  OverlayPetted: 'overlay:petted',
+  /** Main → tower: Mocha's needs, sent when the page loads and when they change. */
+  TowerNeeds: 'tower:needs',
+  /** Tower → main (send): the page listens now; send it the needs. */
+  TowerReady: 'tower:ready',
+  /** Tower → main (send): pet, treat or rest together. */
+  TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
   ReminderShow: 'reminder:show',
   /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
@@ -52,8 +67,16 @@ export interface MochaBridge {
   onPausedChange(callback: (paused: boolean) => void): () => void;
   /** Overlay only: the user switched Spaces. Returns an unsubscribe function. */
   onSpaceChanged(callback: () => void): () => void;
-  /** Overlay only: the user went away or came back. Returns an unsubscribe function. */
-  onAwayChange(callback: (away: boolean) => void): () => void;
+  /** Overlay only: a break started or ended. Returns an unsubscribe function. */
+  onRestingChange(callback: (resting: boolean) => void): () => void;
+  /** Overlay only: the page listens now and wants the current state. */
+  ready(): void;
+  /** Overlay only: Mocha became tired or rested. Returns an unsubscribe function. */
+  onTiredChange(callback: (tired: boolean) => void): () => void;
+  /** Overlay only: open Mocha's Tower. */
+  openTower(): void;
+  /** Overlay only: the user petted Mocha, which lifts its mood. */
+  petted(): void;
 }
 
 /** The API the reminder's own preload exposes as `window.reminder`. Nothing else. */
@@ -69,4 +92,14 @@ export interface SettingsBridge {
   load(): Promise<Preferences>;
   /** Resolves to false if the main process rejected the values. */
   save(preferences: Preferences): Promise<boolean>;
+}
+
+/** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */
+export interface TowerBridge {
+  /** Mocha's needs, now and whenever they change. Returns an unsubscribe function. */
+  onNeeds(callback: (view: TowerView) => void): () => void;
+  /** The page listens now and wants the needs. */
+  ready(): void;
+  /** Care for Mocha. */
+  act(action: TowerAction): void;
 }

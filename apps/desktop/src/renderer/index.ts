@@ -8,16 +8,12 @@ import {
   type Reaction,
 } from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
-import { type Appearance, placeholderAppearance, skinAppearance } from './appearance.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
+import { loadDefaultLook } from './default-skin.ts';
 import { createEffects } from './effects.ts';
 import { isOpaqueAt, type Point } from './hit-test.ts';
 import { loadImage } from './load-image.ts';
-import { PLACEHOLDER_ANIMATIONS } from './placeholder-sprite.ts';
 import { createPressGesture } from './press-gesture.ts';
-import { loadSkin } from './skin-loader.ts';
-import defaultManifest from './skins/default/manifest.json';
-import defaultSpriteUrl from './skins/default/sprite.png';
 
 // Synchronous exceptions fire 'error'; rejected promises fire
 // 'unhandledrejection'. Both are forwarded to the main-process log.
@@ -43,31 +39,10 @@ canvas.style.height = `${OVERLAY_SIZE}px`;
 const context = canvas.getContext('2d', { willReadFrequently: true });
 if (!context) throw new Error('2D canvas context is unavailable');
 
-// The bundled skin's files, by the name the manifest uses. A manifest can
-// only reference files listed here.
-const defaultSkinFiles: Record<string, string> = { 'sprite.png': defaultSpriteUrl };
-
-const skin = await loadSkin(
-  defaultManifest,
-  (fileName) => {
-    const url = defaultSkinFiles[fileName];
-    return url ? loadImage(url) : Promise.reject(new Error('not part of the skin'));
-  },
-  { width: SPRITE_SIZE, height: SPRITE_SIZE },
+// A broken skin is reported, and Mocha appears as the placeholder.
+const { appearance, animations } = await loadDefaultLook(loadImage, (message) =>
+  window.mocha.reportError({ message }),
 );
-
-// Graceful degradation: a broken skin is reported, and Mocha stays on
-// screen as the built-in placeholder instead of disappearing.
-let appearance: Appearance<HTMLImageElement>;
-let animations = PLACEHOLDER_ANIMATIONS;
-if (skin.ok) {
-  appearance = skinAppearance(skin.skin);
-  animations = skin.skin.manifest.animations;
-} else {
-  const message = `Default skin is invalid, using the placeholder: ${skin.errors.join('; ')}`;
-  window.mocha.reportError({ message: message.slice(0, 2_000) });
-  appearance = placeholderAppearance();
-}
 
 // Clicks pass through the window except where Mocha is drawn. The main
 // process is told only when the state changes, not on every mouse move.
@@ -102,12 +77,18 @@ const reactions = createReactionDetector();
 const effects = createEffects();
 
 function react(reaction: Reaction | undefined): void {
-  if (paused || away) return; // resting Mocha does not react
+  // Opening the Tower is a request to the app, not a reaction of Mocha's.
+  if (reaction === 'tower') {
+    window.mocha.openTower();
+    return;
+  }
+  if (paused || resting) return; // a napping Mocha does not react
   // A dizzy spell outlasts the petting cooldown; do not cut it short.
   if (reaction === 'pet' && animator.current === 'dizzy') return;
   if (reaction === 'pet') {
     animator.play('hop');
     effects.add('heart');
+    window.mocha.petted(); // lifts Mocha's mood, within its cap
   } else if (reaction === 'dizzy') {
     animator.play('dizzy');
     effects.add('stars');
@@ -160,7 +141,8 @@ const loop = createGameLoop({
   stepMs: 50,
   scheduler: createBrowserScheduler(),
   update(stepMs) {
-    reactions.update(stepMs);
+    // A double click settles here, once no third click followed.
+    react(reactions.update(stepMs));
     // Advance both every step; `||` would skip effects when the animator changed.
     const animated = animator.update(stepMs);
     const affected = effects.update(stepMs);
@@ -226,9 +208,10 @@ function syncLoop(): void {
 }
 
 window.mocha.onPausedChange((next) => {
+  if (next === paused) return; // main repeats the state when the page loads
   paused = next;
   effects.clear();
-  animator.play(paused || away ? 'sleep' : 'idle');
+  animator.play(paused || resting ? 'sleep' : 'idle');
   if (paused) {
     loop.stop();
     render(); // one last frame so the sleeping pose shows
@@ -237,14 +220,15 @@ window.mocha.onPausedChange((next) => {
   }
 });
 
-// The user stepped away: Mocha naps until they are back, then greets them.
-let away = false;
-window.mocha.onAwayChange((next) => {
-  if (next === away) return;
-  away = next;
+// A break, taken, shared from the Tower or by stepping away: Mocha naps
+// until it ends, then greets the user.
+let resting = false;
+window.mocha.onRestingChange((next) => {
+  if (next === resting) return;
+  resting = next;
   if (paused) return; // the pause pose wins; resuming restores the right one
   effects.clear();
-  if (away) {
+  if (resting) {
     animator.play('sleep');
   } else {
     animator.play('hop');
@@ -253,6 +237,13 @@ window.mocha.onAwayChange((next) => {
   loop.invalidate();
 });
 
+// Low energy: Mocha holds its tired pose instead of idle.
+window.mocha.onTiredChange((tired) => {
+  if (animator.setTired(tired)) loop.invalidate();
+});
+
 document.addEventListener('visibilitychange', syncLoop);
 
 loop.start();
+// Every listener is in place: ask main for the current state.
+window.mocha.ready();

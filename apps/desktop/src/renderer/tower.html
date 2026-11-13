@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Only our own scripts and styles; no inline code, no remote content. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Mocha’s Tower</title>
+    <link rel="stylesheet" href="./tower.css" />
+  </head>
+  <body>
+    <!-- Drawn at art resolution; CSS scales it up without smoothing. -->
+    <canvas id="room" aria-label="Mocha in its room in the Tower"></canvas>
+    <main>
+      <div class="needs">
+        <label for="mood">Mood</label>
+        <meter id="mood" min="0" max="100" value="0"></meter>
+        <label for="energy">Energy</label>
+        <meter id="energy" min="0" max="100" value="0"></meter>
+      </div>
+      <div class="actions">
+        <button type="button" id="pet">Pet</button>
+        <button type="button" id="treat">Treat</button>
+        <button type="button" id="rest" class="primary">Rest together</button>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+    <script type="module" src="./tower.ts"></script>
+  </body>
+</html>

@@ -84,6 +84,7 @@ The placeholder uses an eight-color ink palette. Skins may use any colors, but s
 | `sleep` | While the user is away | No |
 | `dizzy` | After four quick clicks on Mocha (within 1.5 s) | No |
 | `slip` | When the user switches Spaces on macOS: the floor moves under Mocha (at most every 1.5 s) | No |
+| `tired` | Instead of `idle` while Mocha's energy is low; other animations return to it. Mocha does not blink in it, so give it its own slow blinks. Change the silhouette, not just the eye: at 48 px a half-closed eye alone does not read as tired | No |
 
 Every animation has a `loop` flag and at least one frame. A looping animation repeats until another one is requested; a one-shot animation (`"loop": false`) plays once and returns to `idle`. A missing optional animation falls back to `idle`, and a skin without `blink` simply never blinks.
 

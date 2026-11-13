@@ -15,6 +15,7 @@ export default defineConfig({
           index: resolve('src/preload/index.ts'),
           reminder: resolve('src/preload/reminder.ts'),
           settings: resolve('src/preload/settings.ts'),
+          tower: resolve('src/preload/tower.ts'),
         },
         output: { format: 'cjs', entryFileNames: '[name].cjs' },
       },
@@ -22,11 +23,15 @@ export default defineConfig({
   },
   renderer: {
     build: {
+      // Emit every image as a file instead of inlining small ones as data:
+      // URLs, so the pages' CSP can allow images from the app only.
+      assetsInlineLimit: 0,
       rollupOptions: {
         input: {
           index: resolve('src/renderer/index.html'),
           reminder: resolve('src/renderer/reminder.html'),
           settings: resolve('src/renderer/settings.html'),
+          tower: resolve('src/renderer/tower.html'),
         },
       },
     },

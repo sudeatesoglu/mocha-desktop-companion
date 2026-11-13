@@ -9,7 +9,7 @@ import { z } from 'zod';
 export const SKIN_SCHEMA_VERSION = 1;
 
 /** Animations a skin can provide. Only `idle` is required; the rest fall back to it. */
-export const ANIMATION_NAMES = ['idle', 'blink', 'hop', 'sleep', 'dizzy', 'slip'] as const;
+export const ANIMATION_NAMES = ['idle', 'blink', 'hop', 'sleep', 'dizzy', 'slip', 'tired'] as const;
 export type AnimationName = (typeof ANIMATION_NAMES)[number];
 
 const MAX_FRAME_SIDE = 256;
@@ -73,6 +73,8 @@ const manifestSchema = z
       sleep: animationSchema.optional(),
       dizzy: animationSchema.optional(),
       slip: animationSchema.optional(),
+      /** Held instead of idle while Mocha's energy is low. */
+      tired: animationSchema.optional(),
     }),
   })
   .superRefine((manifest, context) => {

@@ -24,11 +24,19 @@ const bridge: MochaBridge = {
     ipcRenderer.on(IpcChannel.OverlaySpaceChanged, listener);
     return () => ipcRenderer.removeListener(IpcChannel.OverlaySpaceChanged, listener);
   },
-  onAwayChange: (callback) => {
-    const listener = (_event: unknown, away: boolean) => callback(away);
-    ipcRenderer.on(IpcChannel.OverlayAway, listener);
-    return () => ipcRenderer.removeListener(IpcChannel.OverlayAway, listener);
+  onRestingChange: (callback) => {
+    const listener = (_event: unknown, resting: boolean) => callback(resting);
+    ipcRenderer.on(IpcChannel.OverlayResting, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlayResting, listener);
   },
+  ready: () => ipcRenderer.send(IpcChannel.OverlayReady),
+  onTiredChange: (callback) => {
+    const listener = (_event: unknown, tired: boolean) => callback(tired);
+    ipcRenderer.on(IpcChannel.OverlayTired, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlayTired, listener);
+  },
+  openTower: () => ipcRenderer.send(IpcChannel.OpenTower),
+  petted: () => ipcRenderer.send(IpcChannel.OverlayPetted),
 };
 
 contextBridge.exposeInMainWorld('mocha', bridge);
