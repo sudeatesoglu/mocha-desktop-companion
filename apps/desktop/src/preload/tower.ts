@@ -10,6 +10,7 @@ const bridge: TowerBridge = {
     ipcRenderer.on(IpcChannel.TowerNeeds, listener);
     return () => ipcRenderer.removeListener(IpcChannel.TowerNeeds, listener);
   },
+  act: (action) => ipcRenderer.send(IpcChannel.TowerAct, action),
 };
 
 contextBridge.exposeInMainWorld('tower', bridge);

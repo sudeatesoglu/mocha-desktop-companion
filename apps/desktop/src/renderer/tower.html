@@ -11,19 +11,20 @@
     <link rel="stylesheet" href="./tower.css" />
   </head>
   <body>
+    <!-- Drawn at art resolution; CSS scales it up without smoothing. -->
+    <canvas id="room" aria-label="Mocha in its room in the Tower"></canvas>
     <main>
-      <h1>Mocha’s Tower</h1>
-      <!-- The room, Mocha and the actions arrive with the next step (#104). -->
-      <dl class="needs">
-        <div class="need">
-          <dt><label for="mood">Mood</label></dt>
-          <dd><meter id="mood" min="0" max="100" low="25" high="75" optimum="100"></meter></dd>
-        </div>
-        <div class="need">
-          <dt><label for="energy">Energy</label></dt>
-          <dd><meter id="energy" min="0" max="100" low="25" high="75" optimum="100"></meter></dd>
-        </div>
-      </dl>
+      <div class="needs">
+        <label for="mood">Mood</label>
+        <meter id="mood" min="0" max="100" value="0"></meter>
+        <label for="energy">Energy</label>
+        <meter id="energy" min="0" max="100" value="0"></meter>
+      </div>
+      <div class="actions">
+        <button type="button" id="pet">Pet</button>
+        <button type="button" id="treat">Treat</button>
+        <button type="button" id="rest" class="primary">Rest together</button>
+      </div>
       <p id="status" role="status" aria-live="polite"></p>
     </main>
     <script type="module" src="./tower.ts"></script>

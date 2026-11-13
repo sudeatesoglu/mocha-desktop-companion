@@ -264,3 +264,28 @@ describe('quiet hours', () => {
     expect(play([tick(50), quietTick(60, 6)]).phase).toBe('onBreak');
   });
 });
+
+describe('starting a break on request', () => {
+  it('starts a break of the configured length while working', () => {
+    expect(play([tick(20), { type: 'startBreak', now: at(20) }])).toEqual({
+      phase: 'onBreak',
+      startedAt: at(20),
+      endsAt: at(25),
+      workStartedAt: 0,
+    });
+  });
+
+  it('works like accepting when a reminder is showing', () => {
+    expect(play([tick(50), { type: 'startBreak', now: at(51) }])).toEqual(
+      play([tick(50), { type: 'accept', now: at(51) }]),
+    );
+  });
+
+  it('changes nothing during a break or while paused', () => {
+    const resting = play([tick(20), { type: 'startBreak', now: at(20) }]);
+    const paused = play([{ type: 'pause', now: at(1) }]);
+
+    expect(reduceBreak(resting, { type: 'startBreak', now: at(21) }, config)).toBe(resting);
+    expect(reduceBreak(paused, { type: 'startBreak', now: at(2) }, config)).toBe(paused);
+  });
+});

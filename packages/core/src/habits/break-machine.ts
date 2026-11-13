@@ -58,7 +58,10 @@ export type BreakEvent =
       readonly idleMs: number;
       readonly quiet?: boolean;
     }
-  | { readonly type: 'accept' | 'snooze' | 'dismiss' | 'pause' | 'resume'; readonly now: number };
+  | {
+      readonly type: 'accept' | 'snooze' | 'dismiss' | 'pause' | 'resume' | 'startBreak';
+      readonly now: number;
+    };
 
 /** A new work stretch beginning at `now`. */
 export function startWorking(now: number): BreakState {
@@ -66,6 +69,16 @@ export function startWorking(now: number): BreakState {
 }
 
 type ActiveWork = Extract<BreakState, { phase: 'working' | 'due' }>;
+
+/** A break of the configured length that starts now. */
+function breakNow(state: ActiveWork, now: number, config: BreakConfig): BreakState {
+  return {
+    phase: 'onBreak',
+    startedAt: now,
+    endsAt: now + config.breakMs,
+    workStartedAt: state.workStartedAt,
+  };
+}
 
 /** The user left: the break began when input stopped, not when we noticed. */
 function awayBreak(state: ActiveWork, now: number, idleMs: number): BreakState {
@@ -86,6 +99,8 @@ export function reduceBreak(state: BreakState, event: BreakEvent, config: BreakC
 
   switch (state.phase) {
     case 'working': {
+      // The user chose to rest before a reminder came ("Rest together").
+      if (event.type === 'startBreak') return breakNow(state, event.now, config);
       if (event.type !== 'tick') return state;
       const { now, idleMs } = event;
       if (idleMs >= config.idleBreakMs) return awayBreak(state, now, idleMs);
@@ -104,12 +119,8 @@ export function reduceBreak(state: BreakState, event: BreakEvent, config: BreakC
           }
           return state;
         case 'accept':
-          return {
-            phase: 'onBreak',
-            startedAt: event.now,
-            endsAt: event.now + config.breakMs,
-            workStartedAt: state.workStartedAt,
-          };
+        case 'startBreak':
+          return breakNow(state, event.now, config);
         case 'snooze':
           return {
             phase: 'working',
