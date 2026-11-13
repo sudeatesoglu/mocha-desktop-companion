@@ -117,6 +117,7 @@ buttons.pet.addEventListener('click', () => act('pet'));
 buttons.treat.addEventListener('click', () => act('treat'));
 buttons.rest.addEventListener('click', () => act('rest'));
 window.tower.onNeeds(show);
+window.tower.ready(); // listening now: ask main for the needs
 
 // No work while the window is hidden.
 const syncLoop = () => (document.hidden ? loop.stop() : loop.start());

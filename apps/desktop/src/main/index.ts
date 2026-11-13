@@ -156,6 +156,7 @@ if (!app.requestSingleInstanceLock()) {
       window,
       dragger,
       {
+        ready: () => syncOverlay(),
         openTower: () => openTower(),
         petted: () => needs.dispatch({ type: 'pet', now: Date.now() }),
       },
@@ -230,26 +231,35 @@ if (!app.requestSingleInstanceLock()) {
       database?.close();
     });
 
-    const awayReporter = createChangeReporter<boolean>((away) =>
-      window.webContents.send(IpcChannel.OverlayAway, away),
+    // Mocha naps on the desktop through every break: one the user took,
+    // "Rest together", or stepping away, which the break rules count too.
+    const restingReporter = createChangeReporter<boolean>((resting) =>
+      window.webContents.send(IpcChannel.OverlayResting, resting),
     );
+    breaks.onChange((next) => restingReporter.report(next.phase === 'onBreak'));
     // Low energy shows on the desktop as Mocha's tired pose.
     const tiredReporter = createChangeReporter<boolean>((tired) =>
       window.webContents.send(IpcChannel.OverlayTired, tired),
     );
     needs.onChange((state) => tiredReporter.report(isTired(state)));
-    // A freshly loaded overlay page knows nothing yet: tell it again.
-    window.webContents.on('did-finish-load', () => {
-      awayReporter.reset();
+    /**
+     * The overlay page said it listens: send it everything it shows, since
+     * a page that loaded or reloaded knows nothing. Waiting for the page to
+     * ask, rather than for Electron's load event, means no message can
+     * arrive before the page listens.
+     */
+    function syncOverlay() {
+      restingReporter.reset();
+      restingReporter.report(breaks.state.phase === 'onBreak');
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
-    });
+      window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
+    }
     const activity = createActivityTracker(
       {
         now: () => Date.now(),
         systemIdleMs: () => powerMonitor.getSystemIdleTime() * 1_000,
         every,
-        awayAfterMs: breaks.config.idleBreakMs,
       },
       (sample) => {
         breaks.dispatch({
@@ -262,7 +272,6 @@ if (!app.requestSingleInstanceLock()) {
         // Date.now() like the break-change listener: the needs clock must not
         // step back between the two.
         needs.dispatch({ type: 'elapse', now: Date.now(), activity: needsActivity(breaks.state) });
-        awayReporter.report(sample.away);
       },
     );
     activity.start();
@@ -347,8 +356,8 @@ if (!app.requestSingleInstanceLock()) {
     );
 
     // Mocha's Tower: opened from the tray or by double-clicking Mocha. It
-    // gets the needs when its page loads and then only when what it shows
-    // changes, not on every tick.
+    // gets the needs when its page says it listens and then only when what
+    // it shows changes, not on every tick.
     let shownView = '';
     const sendTowerView = (force: boolean) => {
       const target = towerWindow.current;
@@ -361,7 +370,6 @@ if (!app.requestSingleInstanceLock()) {
     };
     const towerWindow = singleWindow(() => {
       const opened = createTowerWindow(pagePreload('tower'));
-      opened.webContents.on('did-finish-load', () => sendTowerView(true));
       loadPage(opened, 'tower');
       return opened;
     });
@@ -373,12 +381,15 @@ if (!app.requestSingleInstanceLock()) {
     breaks.onChange(() => sendTowerView(false)); // a break starts or ends
     registerTowerHandlers(
       () => towerWindow.current?.webContents,
-      (action) => {
-        const now = Date.now();
-        // Resting goes through the break rules like any break; the needs
-        // follow from the break change.
-        if (action === 'rest') breaks.dispatch({ type: 'startBreak', now });
-        else needs.dispatch({ type: action, now });
+      {
+        ready: () => sendTowerView(true),
+        act: (action) => {
+          const now = Date.now();
+          // Resting goes through the break rules like any break; the needs
+          // follow from the break change.
+          if (action === 'rest') breaks.dispatch({ type: 'startBreak', now });
+          else needs.dispatch({ type: action, now });
+        },
       },
       [pageUrl('tower')],
       console,
@@ -396,9 +407,6 @@ if (!app.requestSingleInstanceLock()) {
         stopCursorTracking?.();
         stopCursorTracking = undefined;
         activity.stop();
-        // The overlay may still think the user is away: after resuming,
-        // the first sample is sent even if it did not change.
-        awayReporter.reset();
       } else {
         stopCursorTracking ??= startTracking();
         activity.start();

@@ -21,8 +21,10 @@ export const IpcChannel = {
   OverlayPaused: 'overlay:paused',
   /** Main → overlay: the user switched to another Space (macOS). */
   OverlaySpaceChanged: 'overlay:space-changed',
-  /** Main → overlay: the user went away (true) or came back (false). */
-  OverlayAway: 'overlay:away',
+  /** Main → overlay: a break started (true) or ended (false); Mocha naps through it. */
+  OverlayResting: 'overlay:resting',
+  /** Overlay → main (send): the page listens now; send it the current state. */
+  OverlayReady: 'overlay:ready',
   /** Overlay → main (send): Mocha was double-clicked; open its Tower. */
   OpenTower: 'overlay:open-tower',
   /** Main → overlay: Mocha's energy fell below (true) or rose above (false) the tired line. */
@@ -31,6 +33,8 @@ export const IpcChannel = {
   OverlayPetted: 'overlay:petted',
   /** Main → tower: Mocha's needs, sent when the page loads and when they change. */
   TowerNeeds: 'tower:needs',
+  /** Tower → main (send): the page listens now; send it the needs. */
+  TowerReady: 'tower:ready',
   /** Tower → main (send): pet, treat or rest together. */
   TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
@@ -63,8 +67,10 @@ export interface MochaBridge {
   onPausedChange(callback: (paused: boolean) => void): () => void;
   /** Overlay only: the user switched Spaces. Returns an unsubscribe function. */
   onSpaceChanged(callback: () => void): () => void;
-  /** Overlay only: the user went away or came back. Returns an unsubscribe function. */
-  onAwayChange(callback: (away: boolean) => void): () => void;
+  /** Overlay only: a break started or ended. Returns an unsubscribe function. */
+  onRestingChange(callback: (resting: boolean) => void): () => void;
+  /** Overlay only: the page listens now and wants the current state. */
+  ready(): void;
   /** Overlay only: Mocha became tired or rested. Returns an unsubscribe function. */
   onTiredChange(callback: (tired: boolean) => void): () => void;
   /** Overlay only: open Mocha's Tower. */
@@ -92,6 +98,8 @@ export interface SettingsBridge {
 export interface TowerBridge {
   /** Mocha's needs, now and whenever they change. Returns an unsubscribe function. */
   onNeeds(callback: (view: TowerView) => void): () => void;
+  /** The page listens now and wants the needs. */
+  ready(): void;
   /** Care for Mocha. */
   act(action: TowerAction): void;
 }

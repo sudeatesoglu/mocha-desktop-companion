@@ -13,6 +13,7 @@ const towerContents = { id: 5 };
 
 describe('registerTowerHandlers', () => {
   const onAction = vi.fn();
+  const ready = vi.fn();
   const logger = { warn: vi.fn() };
   let current: unknown;
 
@@ -23,7 +24,7 @@ describe('registerTowerHandlers', () => {
     ipc.handlers.clear();
     vi.clearAllMocks();
     current = towerContents;
-    registerTowerHandlers(() => current, onAction, [TRUSTED], logger);
+    registerTowerHandlers(() => current, { ready, act: onAction }, [TRUSTED], logger);
   });
 
   it.each(['pet', 'treat', 'rest'] as const)('passes on "%s" from the Tower', (action) => {
@@ -62,5 +63,23 @@ describe('registerTowerHandlers', () => {
     send(towerContents, 'pet', 'https://example.com/');
 
     expect(onAction).not.toHaveBeenCalled();
+  });
+
+  describe(IpcChannel.TowerReady, () => {
+    const announce = (sender: unknown, payload?: unknown) =>
+      ipc.handlers.get(IpcChannel.TowerReady)?.({ sender, senderFrame: { url: TRUSTED } }, payload);
+
+    it('asks main for the needs when the page listens', () => {
+      announce(towerContents);
+
+      expect(ready).toHaveBeenCalledOnce();
+    });
+
+    it('rejects a payload and other windows', () => {
+      announce(towerContents, { energy: 100 });
+      announce({ id: 1 });
+
+      expect(ready).not.toHaveBeenCalled();
+    });
   });
 });

@@ -11,21 +11,30 @@ import { type IpcLogger, isTrustedSenderUrl, senderUrl, validated } from './vali
  */
 export function registerTowerHandlers(
   currentSender: () => unknown,
-  onAction: (action: TowerAction) => void,
+  handlers: { ready(): void; act(action: TowerAction): void },
   trustedUrls: readonly string[],
   logger: IpcLogger,
 ): void {
-  const act = validated(IpcChannel.TowerAct, z.enum(['pet', 'treat', 'rest']), onAction, {
-    isTrusted: (url) => isTrustedSenderUrl(url, trustedUrls),
-    logger,
-  });
+  const options = { isTrusted: (url: string) => isTrustedSenderUrl(url, trustedUrls), logger };
 
-  ipcMain.on(IpcChannel.TowerAct, (event: IpcMainEvent, payload: unknown) => {
-    const expected = currentSender();
-    if (expected === undefined || event.sender !== expected) {
-      logger.warn(`[ipc] ${IpcChannel.TowerAct}: rejected sender other than the Tower`);
-      return;
-    }
-    act(senderUrl(event), payload);
-  });
+  /** Registers a listener that accepts messages from the open Tower only. */
+  function fromTower(channel: string, listener: (senderUrl: string, payload: unknown) => unknown) {
+    ipcMain.on(channel, (event: IpcMainEvent, payload: unknown) => {
+      const expected = currentSender();
+      if (expected === undefined || event.sender !== expected) {
+        logger.warn(`[ipc] ${channel}: rejected sender other than the Tower`);
+        return;
+      }
+      listener(senderUrl(event), payload);
+    });
+  }
+
+  fromTower(
+    IpcChannel.TowerReady,
+    validated(IpcChannel.TowerReady, z.undefined(), () => handlers.ready(), options),
+  );
+  fromTower(
+    IpcChannel.TowerAct,
+    validated(IpcChannel.TowerAct, z.enum(['pet', 'treat', 'rest']), handlers.act, options),
+  );
 }
