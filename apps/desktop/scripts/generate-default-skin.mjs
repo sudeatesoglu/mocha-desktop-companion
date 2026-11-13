@@ -129,30 +129,68 @@ function zGlyph(grid, x, y, size) {
 
 const EYE = { cx: 19, cy: 20, radius: 2.5 };
 
-function drawRaven() {
+/**
+ * An open beak for a yawn: two mandibles that spread apart from the hinge
+ * towards their tips by `slope` pixels per pixel, with air between them and
+ * the mouth showing only near the hinge.
+ */
+function openBeak(grid, dy, slope) {
+  for (let x = 6; x <= 15; x++) {
+    const spread = Math.round((15 - x) * slope);
+    const top = 19 + dy - spread;
+    const bottom = 21 + dy + spread;
+    set(grid, x, top, 'L');
+    if (x > 7) set(grid, x, top + 1, 'L'); // the upper mandible thins to a point
+    if (x >= 7) set(grid, x, bottom, 'M');
+    if (x >= 12) for (let y = top + 2; y < bottom; y++) set(grid, x, y, 'r');
+  }
+}
+
+/**
+ * The raven. The defaults draw the normal pose; tired poses lower the head
+ * into the shoulders (`headDrop`), slide the hat down over the eye
+ * (`hatSlip`, tilted forward) and open the beak for a yawn (`yawn`, the
+ * slope of the open beak).
+ */
+function drawRaven({ headDrop = 0, hatSlip = 0, yawn = 0 } = {}) {
   const g = blank();
   // tail, body, chest (checker dither) and head
   for (let y = 35; y <= 41; y++) rect(g, 34, y, 44 - (y - 35), y, 'D');
   ellipse(g, 26, 31, 13, 10, 'D');
   ellipse(g, 20, 32, 7, 6, (x, y) => ((x + y) % 2 === 0 ? 'M' : 'D'));
-  ellipse(g, 24, 21, 10, 7, 'D');
+  ellipse(g, 24, 21 + headDrop, 10, 7, 'D');
   // wing: dark ring with dithered feathers
   ellipse(g, 33, 31, 7, 8, 'K');
   ellipse(g, 33, 31, 6, 7, (x, y) => (y > 30 && (x + y) % 3 === 0 ? 'M' : 'D'));
   // beak: light upper half, mid-gray lower half; tip at (5, 20)
-  rect(g, 7, 19, 15, 19, 'L');
-  rect(g, 5, 20, 15, 20, 'L');
-  rect(g, 7, 21, 15, 21, 'M');
+  if (yawn > 0) {
+    openBeak(g, headDrop, yawn);
+  } else {
+    rect(g, 7, 19 + headDrop, 15, 19 + headDrop, 'L');
+    rect(g, 5, 20 + headDrop, 15, 20 + headDrop, 'L');
+    rect(g, 7, 21 + headDrop, 15, 21 + headDrop, 'M');
+  }
   // eye: white disc with an ink ring; the pupil is drawn by the app
-  ellipse(g, EYE.cx, EYE.cy, EYE.radius + 1, EYE.radius + 1, 'K');
-  ellipse(g, EYE.cx, EYE.cy, EYE.radius, EYE.radius, 'W');
+  ellipse(g, EYE.cx, EYE.cy + headDrop, EYE.radius + 1, EYE.radius + 1, 'K');
+  ellipse(g, EYE.cx, EYE.cy + headDrop, EYE.radius, EYE.radius, 'W');
 
   const raven = outline(g);
-  // top hat with a red band, drawn after the outline (it is ink already)
-  rect(raven, 18, 5, 29, 12, 'K');
-  rect(raven, 18, 10, 29, 10, 'R');
-  rect(raven, 18, 11, 29, 11, 'r');
-  rect(raven, 14, 13, 33, 14, 'K');
+  // top hat with a red band, drawn after the outline (it is ink already).
+  // A slipped hat sits lower and leans forward: each step of slip moves the
+  // crown one more pixel towards the beak at the top.
+  const hatY = headDrop + hatSlip;
+  for (let y = 5; y <= 12; y++) {
+    const lean = hatSlip > 0 ? -Math.floor((12 - y) / 4) - (hatSlip > 2 ? 1 : 0) : 0;
+    const color = y === 10 ? 'R' : y === 11 ? 'r' : 'K';
+    rect(raven, 18 + lean, y + hatY, 29 + lean, y + hatY, color);
+  }
+  if (hatSlip > 0) {
+    // The brim tips forward: its front half sits one pixel lower.
+    rect(raven, 14, 14 + hatY, 23, 15 + hatY, 'K');
+    rect(raven, 24, 13 + hatY, 33, 14 + hatY, 'K');
+  } else {
+    rect(raven, 14, 13 + hatY, 33, 14 + hatY, 'K');
+  }
   // legs and toes
   rect(raven, 22, 42, 22, 45, 'K');
   rect(raven, 27, 42, 27, 45, 'K');
@@ -162,15 +200,44 @@ function drawRaven() {
 }
 
 /** Replaces the open eye with a lid; `half` keeps the lower white visible. */
-function closeEye(grid, half) {
+function closeEye(grid, half, dy = 0) {
   const result = clone(grid);
-  for (let y = EYE.cy - 2; y <= EYE.cy + 2; y++) {
+  const cy = EYE.cy + dy;
+  for (let y = cy - 2; y <= cy + 2; y++) {
     for (let x = EYE.cx - 2; x <= EYE.cx + 2; x++) {
       if (result[y][x] !== 'W') continue;
-      if (y === EYE.cy) result[y][x] = 'K';
-      else if (y < EYE.cy || !half) result[y][x] = 'D';
+      if (y === cy) result[y][x] = 'K';
+      else if (y < cy || !half) result[y][x] = 'D';
     }
   }
+  return result;
+}
+
+/** A heavy lid over most of the eye and a pale bag under it. */
+function heavyEye(grid, dy) {
+  const result = clone(grid);
+  const cy = EYE.cy + dy;
+  for (let y = cy - 2; y <= cy + 2; y++) {
+    for (let x = EYE.cx - 2; x <= EYE.cx + 2; x++) {
+      if (result[y][x] !== 'W') continue;
+      if (y === cy + 1) result[y][x] = 'K';
+      else if (y < cy + 1) result[y][x] = 'D';
+    }
+  }
+  rect(result, EYE.cx - 2, cy + 4, EYE.cx + 2, cy + 4, 'M');
+  return result;
+}
+
+/** Eyes squeezed shut in a yawn: an arched ink line on the lid. */
+function squeezedEye(grid, dy) {
+  const result = closeEye(grid, false, dy);
+  const cy = EYE.cy + dy;
+  for (let x = EYE.cx - 2; x <= EYE.cx + 2; x++) result[cy][x] = 'D';
+  set(result, EYE.cx - 2, cy + 1, 'K');
+  set(result, EYE.cx - 1, cy, 'K');
+  set(result, EYE.cx, cy, 'K');
+  set(result, EYE.cx + 1, cy, 'K');
+  set(result, EYE.cx + 2, cy + 1, 'K');
   return result;
 }
 
@@ -199,6 +266,13 @@ const closedAnchors = (dy, feetDy = 0) => {
   const { beak, head, feet } = anchors(dy, feetDy);
   return { beak, head, feet };
 };
+
+// Tired: the silhouette changes, not just the eye, so it reads at 48px.
+const slumped = heavyEye(drawRaven({ headDrop: 2, hatSlip: 2 }), 2);
+const nodding = closeEye(drawRaven({ headDrop: 4, hatSlip: 3 }), false, 4);
+zGlyph(nodding, 37, 8, 4);
+const yawnStart = squeezedEye(drawRaven({ headDrop: 1, hatSlip: 2, yawn: 0.25 }), 1);
+const yawnWide = squeezedEye(drawRaven({ headDrop: 0, hatSlip: 2, yawn: 0.5 }), 0);
 
 const sleepA = squash(closeEye(base, false), 1);
 zGlyph(sleepA, 36, 5, 4);
@@ -231,9 +305,11 @@ const FRAMES = [
     [26, 43, 30, 44],
     [30, 44, 32, 44],
   ]),
-  squash(closeEye(base, true), 1), // 12 tired: heavy lids, slumped
-  squash(closeEye(base, true), 2), // 13 tired: slumped further on the breath out
-  squash(closeEye(base, false), 2), // 14 tired: nodding off for a moment
+  slumped, // 12 tired: head sunk, hat slipping, heavy lid
+  squash(slumped, 1), // 13 tired: slumped further on the breath out
+  nodding, // 14 tired: head drops, eye shut, a small "z"
+  yawnStart, // 15 tired: a yawn begins
+  yawnWide, // 16 tired: the yawn at its widest
 ];
 
 /** Slip anchors: the body shifted by (dx, dy), the feet by feetDx. */
@@ -290,16 +366,23 @@ const manifest = {
         { index: 7, durationMs: 1200, anchors: closedAnchors(1) },
       ],
     },
-    // Low energy: heavy lids, slow breathing and a moment of nodding off.
-    // The lids cover the pupil, so these frames have no eye anchor.
+    // Low energy: slumped and breathing slowly, Mocha nods off, jerks
+    // awake with its eye wide open, then gives a big yawn. The lids cover
+    // the pupil, so only the jerk awake (frame 0) has an eye anchor.
     tired: {
       loop: true,
       frames: [
-        { index: 12, durationMs: 1400, anchors: closedAnchors(1) },
-        { index: 13, durationMs: 1400, anchors: closedAnchors(2) },
-        { index: 12, durationMs: 1400, anchors: closedAnchors(1) },
-        { index: 14, durationMs: 600, anchors: closedAnchors(2) },
-        { index: 13, durationMs: 1400, anchors: closedAnchors(2) },
+        { index: 12, durationMs: 1300, anchors: closedAnchors(2) },
+        { index: 13, durationMs: 1300, anchors: closedAnchors(3) },
+        { index: 12, durationMs: 1300, anchors: closedAnchors(2) },
+        { index: 13, durationMs: 1300, anchors: closedAnchors(3) },
+        { index: 14, durationMs: 1600, anchors: closedAnchors(4) },
+        { index: 0, durationMs: 250, anchors: anchors(0) },
+        { index: 12, durationMs: 1300, anchors: closedAnchors(2) },
+        { index: 13, durationMs: 1300, anchors: closedAnchors(3) },
+        { index: 15, durationMs: 250, anchors: closedAnchors(1) },
+        { index: 16, durationMs: 1100, anchors: closedAnchors(0) },
+        { index: 15, durationMs: 250, anchors: closedAnchors(1) },
       ],
     },
     // Feet slide out, Mocha wobbles twice and catches itself.

@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { loadBundledFile, loadDefaultLook } from './default-skin.ts';
 import { PLACEHOLDER_ANIMATIONS } from './placeholder-sprite.ts';
 
-/** The sprite sheet's real size: 15 frames of 48x48. */
-const sheet = { width: 720, height: 48 };
+/** The sprite sheet's real size: 17 frames of 48x48. */
+const sheet = { width: 816, height: 48 };
 
 describe('loadBundledFile', () => {
   it('loads a file the skin lists, by its bundled URL', async () => {
