@@ -3,6 +3,11 @@
   --paper: #fffaf0;
   --ink: #2a2230;
   --muted: #6d6474;
+  --track: #e9dfcf;
+  --mood: #c0485a;
+  --energy: #d9a441;
+  --accent: #5b4478;
+  --accent-ink: #fffaf0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -10,6 +15,11 @@
     --paper: #221e27;
     --ink: #f3ecdf;
     --muted: #a99fb0;
+    --track: #3a3342;
+    --mood: #e07b8d;
+    --energy: #e8c066;
+    --accent: #c4a8e4;
+    --accent-ink: #1d1922;
   }
 }
 
@@ -24,37 +34,92 @@ body {
     sans-serif;
   user-select: none;
   cursor: default;
+  accent-color: var(--accent);
+}
+
+#room {
+  display: block;
+  width: 360px;
+  height: 240px;
+  /* Nearest-neighbor upscaling keeps pixel edges crisp. */
+  image-rendering: pixelated;
 }
 
 main {
-  padding: 20px;
-}
-
-h1 {
-  margin: 0 0 16px;
-  font-size: 17px;
+  padding: 16px 20px;
 }
 
 .needs {
-  margin: 0;
-}
-
-.need {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 56px 1fr;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 8px 12px;
 }
 
-dd {
-  margin: 0;
-}
-
+/* Square, bordered bars to match the pixel art instead of the system look. */
 meter {
+  appearance: none;
+  box-sizing: border-box;
   width: 100%;
+  height: 14px;
+  background: var(--track);
+  border: 2px solid var(--ink);
+}
+
+meter::-webkit-meter-bar {
+  height: 100%;
+  background: var(--track);
+  border: 0;
+  border-radius: 0;
+}
+
+meter::-webkit-meter-optimum-value {
+  border-radius: 0;
+  background: var(--mood);
+}
+
+#energy::-webkit-meter-optimum-value {
+  background: var(--energy);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+button {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  padding: 6px 8px;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+}
+
+button.primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+button:active:not(:disabled) {
+  translate: 1px 1px;
+}
+
+button:disabled {
+  opacity: 0.45;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 #status {
+  min-height: 1.4em;
   margin: 12px 0 0;
   color: var(--muted);
 }
