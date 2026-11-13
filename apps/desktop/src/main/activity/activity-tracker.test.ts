@@ -23,7 +23,6 @@ describe('createActivityTracker', () => {
           tick = callback;
           return stopPolling;
         },
-        awayAfterMs: 5 * MINUTE,
       },
       (sample) => samples.push(sample),
     );
@@ -39,24 +38,21 @@ describe('createActivityTracker', () => {
 
   it('polls once a second while running', () => {
     const every = vi.fn(() => () => {});
-    createActivityTracker(
-      { now: () => 0, systemIdleMs: () => 0, every, awayAfterMs: MINUTE },
-      () => {},
-    ).start();
+    createActivityTracker({ now: () => 0, systemIdleMs: () => 0, every }, () => {}).start();
 
     expect(every).toHaveBeenCalledWith(ACTIVITY_POLL_MS, expect.any(Function));
   });
 
-  it('reports the system idle time and whether the user is away', () => {
+  it('reports the system idle time', () => {
     tracker().start();
 
     systemIdleMs = 4 * MINUTE;
     tick?.();
-    expect(last()).toEqual({ now: 0, idleMs: 4 * MINUTE, away: false });
+    expect(last()).toEqual({ now: 0, idleMs: 4 * MINUTE });
 
     systemIdleMs = 5 * MINUTE;
     tick?.();
-    expect(last()?.away).toBe(true);
+    expect(last()?.idleMs).toBe(5 * MINUTE);
   });
 
   it('counts the whole sleep as idle even if the system idle time restarts on wake', () => {
@@ -69,7 +65,7 @@ describe('createActivityTracker', () => {
     systemIdleMs = 0;
     tick?.();
 
-    expect(last()).toEqual({ now: 40 * MINUTE, idleMs: 30 * MINUTE, away: true });
+    expect(last()).toEqual({ now: 40 * MINUTE, idleMs: 30 * MINUTE });
   });
 
   it('goes back to the system idle time once the user is back', () => {
@@ -84,7 +80,7 @@ describe('createActivityTracker', () => {
     systemIdleMs = 1_000;
     tick?.();
 
-    expect(last()).toEqual({ now: 30 * MINUTE + 1_000, idleMs: 1_000, away: false });
+    expect(last()).toEqual({ now: 30 * MINUTE + 1_000, idleMs: 1_000 });
   });
 
   it('keeps counting a locked screen while the user has not touched anything', () => {
@@ -97,7 +93,7 @@ describe('createActivityTracker', () => {
     tick?.();
     tick?.();
 
-    expect(last()).toMatchObject({ idleMs: 8 * MINUTE, away: true });
+    expect(last()).toMatchObject({ idleMs: 8 * MINUTE });
   });
 
   it('keeps the first moment of absence when sleep follows a lock', () => {

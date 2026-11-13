@@ -2,8 +2,6 @@ export interface ActivitySample {
   now: number;
   /** How long there has been no input, including time asleep or locked. */
   idleMs: number;
-  /** The user counts as away (idle for at least `awayAfterMs`). */
-  away: boolean;
 }
 
 export interface ActivityTrackerDeps {
@@ -12,7 +10,6 @@ export interface ActivityTrackerDeps {
   systemIdleMs(): number;
   /** Runs `callback` every `ms` milliseconds until the returned function is called. */
   every(ms: number, callback: () => void): () => void;
-  awayAfterMs: number;
 }
 
 export interface ActivityTracker {
@@ -48,7 +45,7 @@ export function createActivityTracker(
     const absentMs = awaySince === undefined ? 0 : Math.max(0, now - awaySince);
     const idleMs = Math.max(systemIdleMs, absentMs);
 
-    onSample({ now, idleMs, away: idleMs >= deps.awayAfterMs });
+    onSample({ now, idleMs });
 
     // Input after the absence began: the user is back.
     if (awaySince !== undefined && systemIdleMs < absentMs) awaySince = undefined;

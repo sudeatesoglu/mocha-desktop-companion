@@ -82,7 +82,7 @@ function react(reaction: Reaction | undefined): void {
     window.mocha.openTower();
     return;
   }
-  if (paused || away) return; // resting Mocha does not react
+  if (paused || resting) return; // a napping Mocha does not react
   // A dizzy spell outlasts the petting cooldown; do not cut it short.
   if (reaction === 'pet' && animator.current === 'dizzy') return;
   if (reaction === 'pet') {
@@ -208,9 +208,10 @@ function syncLoop(): void {
 }
 
 window.mocha.onPausedChange((next) => {
+  if (next === paused) return; // main repeats the state when the page loads
   paused = next;
   effects.clear();
-  animator.play(paused || away ? 'sleep' : 'idle');
+  animator.play(paused || resting ? 'sleep' : 'idle');
   if (paused) {
     loop.stop();
     render(); // one last frame so the sleeping pose shows
@@ -219,14 +220,15 @@ window.mocha.onPausedChange((next) => {
   }
 });
 
-// The user stepped away: Mocha naps until they are back, then greets them.
-let away = false;
-window.mocha.onAwayChange((next) => {
-  if (next === away) return;
-  away = next;
+// A break, taken, shared from the Tower or by stepping away: Mocha naps
+// until it ends, then greets the user.
+let resting = false;
+window.mocha.onRestingChange((next) => {
+  if (next === resting) return;
+  resting = next;
   if (paused) return; // the pause pose wins; resuming restores the right one
   effects.clear();
-  if (away) {
+  if (resting) {
     animator.play('sleep');
   } else {
     animator.play('hop');
@@ -243,3 +245,5 @@ window.mocha.onTiredChange((tired) => {
 document.addEventListener('visibilitychange', syncLoop);
 
 loop.start();
+// Every listener is in place: ask main for the current state.
+window.mocha.ready();

@@ -26,6 +26,7 @@ describe('registerOverlayHandlers', () => {
   const dragger = { start: vi.fn(), end: vi.fn() };
   const openTower = vi.fn();
   const petted = vi.fn();
+  const ready = vi.fn();
 
   const send = (
     sender: unknown,
@@ -41,7 +42,7 @@ describe('registerOverlayHandlers', () => {
   beforeEach(() => {
     ipc.handlers.clear();
     vi.clearAllMocks();
-    registerOverlayHandlers(overlay, dragger, { openTower, petted }, [TRUSTED], logger);
+    registerOverlayHandlers(overlay, dragger, { ready, openTower, petted }, [TRUSTED], logger);
   });
 
   it('makes the overlay clickable while the cursor is over Mocha', () => {
@@ -156,6 +157,24 @@ describe('registerOverlayHandlers', () => {
       pet(undefined, otherContents);
 
       expect(petted).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(IpcChannel.OverlayReady, () => {
+    const announce = (payload: unknown, sender: unknown = overlayContents) =>
+      send(sender, payload, TRUSTED, IpcChannel.OverlayReady);
+
+    it('asks main for the current state when the page listens', () => {
+      announce(undefined);
+
+      expect(ready).toHaveBeenCalledOnce();
+    });
+
+    it('rejects a payload and other windows', () => {
+      announce({ tired: false });
+      announce(undefined, otherContents);
+
+      expect(ready).not.toHaveBeenCalled();
     });
   });
 });
