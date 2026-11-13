@@ -66,4 +66,18 @@ describe('createPetAnimator', () => {
     expect(animator.current).toBe('hop');
     expect(animator.frame.index).toBe(4);
   });
+
+  it('holds the tired pose instead of idle, without blinking', () => {
+    const animator = createPetAnimator(
+      { ...ANIMATIONS, tired: { loop: true, frames: [frame(12, 1400), frame(13, 1400)] } },
+      options,
+    );
+
+    expect(animator.setTired(true)).toBe(true);
+    animator.update(1_000); // the blink timer would fire now while idle
+
+    expect(animator.current).toBe('tired');
+    expect(animator.setTired(false)).toBe(true);
+    expect(animator.current).toBe('idle');
+  });
 });
