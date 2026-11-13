@@ -231,6 +231,9 @@ const FRAMES = [
     [26, 43, 30, 44],
     [30, 44, 32, 44],
   ]),
+  squash(closeEye(base, true), 1), // 12 tired: heavy lids, slumped
+  squash(closeEye(base, true), 2), // 13 tired: slumped further on the breath out
+  squash(closeEye(base, false), 2), // 14 tired: nodding off for a moment
 ];
 
 /** Slip anchors: the body shifted by (dx, dy), the feet by feetDx. */
@@ -285,6 +288,18 @@ const manifest = {
       frames: [
         { index: 6, durationMs: 1200, anchors: closedAnchors(1) },
         { index: 7, durationMs: 1200, anchors: closedAnchors(1) },
+      ],
+    },
+    // Low energy: heavy lids, slow breathing and a moment of nodding off.
+    // The lids cover the pupil, so these frames have no eye anchor.
+    tired: {
+      loop: true,
+      frames: [
+        { index: 12, durationMs: 1400, anchors: closedAnchors(1) },
+        { index: 13, durationMs: 1400, anchors: closedAnchors(2) },
+        { index: 12, durationMs: 1400, anchors: closedAnchors(1) },
+        { index: 14, durationMs: 600, anchors: closedAnchors(2) },
+        { index: 13, durationMs: 1400, anchors: closedAnchors(2) },
       ],
     },
     // Feet slide out, Mocha wobbles twice and catches itself.
