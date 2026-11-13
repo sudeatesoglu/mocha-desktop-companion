@@ -93,6 +93,7 @@ function show(view: TowerView): void {
   buttons.rest.disabled = controls.rest.disabled;
   buttons.rest.textContent = controls.rest.label;
   status.textContent = controls.status;
+  if (animator.setTired(view.tired)) loop.invalidate();
 
   // Mocha naps through a break and greets the user when it ends.
   if (view.resting !== resting) {

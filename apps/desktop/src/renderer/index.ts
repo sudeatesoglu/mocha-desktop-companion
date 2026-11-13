@@ -235,6 +235,11 @@ window.mocha.onAwayChange((next) => {
   loop.invalidate();
 });
 
+// Low energy: Mocha holds its tired pose instead of idle.
+window.mocha.onTiredChange((tired) => {
+  if (animator.setTired(tired)) loop.invalidate();
+});
+
 document.addEventListener('visibilitychange', syncLoop);
 
 loop.start();

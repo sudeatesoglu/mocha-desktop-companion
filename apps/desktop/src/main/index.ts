@@ -1,7 +1,13 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isQuietTime, minuteOfDay, needsActivity, needsEventsForBreakChange } from '@mocha/core';
+import {
+  isQuietTime,
+  isTired,
+  minuteOfDay,
+  needsActivity,
+  needsEventsForBreakChange,
+} from '@mocha/core';
 import {
   app,
   type BrowserWindow,
@@ -227,6 +233,17 @@ if (!app.requestSingleInstanceLock()) {
     const awayReporter = createChangeReporter<boolean>((away) =>
       window.webContents.send(IpcChannel.OverlayAway, away),
     );
+    // Low energy shows on the desktop as Mocha's tired pose.
+    const tiredReporter = createChangeReporter<boolean>((tired) =>
+      window.webContents.send(IpcChannel.OverlayTired, tired),
+    );
+    needs.onChange((state) => tiredReporter.report(isTired(state)));
+    // A freshly loaded overlay page knows nothing yet: tell it again.
+    window.webContents.on('did-finish-load', () => {
+      awayReporter.reset();
+      tiredReporter.reset();
+      tiredReporter.report(isTired(needs.state));
+    });
     const activity = createActivityTracker(
       {
         now: () => Date.now(),
