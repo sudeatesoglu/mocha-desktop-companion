@@ -1,5 +1,7 @@
+import type { RitualId, RitualPose } from '@mocha/core';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
+import type { RitualShow } from './ritual.ts';
 import type { FocusMinutes, TowerAction, TowerView } from './tower.ts';
 
 /**
@@ -27,6 +29,8 @@ export const IpcChannel = {
   OverlayReady: 'overlay:ready',
   /** Overlay → main (send): Mocha was double-clicked; open its Tower. */
   OpenTower: 'overlay:open-tower',
+  /** Main → overlay: the pose of the ritual done together, or null when none runs. */
+  OverlayRitual: 'overlay:ritual',
   /** Main → overlay: a focus session started (true) or ended (false): Mocha reads along. */
   OverlayFocusing: 'overlay:focusing',
   /** Main → overlay: Mocha's energy fell below (true) or rose above (false) the tired line. */
@@ -45,6 +49,16 @@ export const IpcChannel = {
   ReminderShow: 'reminder:show',
   /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
   ReminderChoose: 'reminder:choose',
+  /** Ritual → main (send): the page listens now; send it where it sits. */
+  RitualReady: 'ritual:ready',
+  /** Main → ritual: which side of Mocha the bubble sits on. */
+  RitualShow: 'ritual:show',
+  /** Ritual → main (send): the user started a ritual. */
+  RitualStart: 'ritual:start',
+  /** Ritual → main (send): the ritual ran to its end. */
+  RitualFinish: 'ritual:finish',
+  /** Ritual → main (send): close the bubble ("Just rest", "Stop" or done). */
+  RitualClose: 'ritual:close',
   /** Settings → main (invoke): the current preferences. */
   SettingsLoad: 'settings:load',
   /** Settings → main (invoke): save and apply preferences; resolves to whether they were saved. */
@@ -75,6 +89,8 @@ export interface MochaBridge {
   onRestingChange(callback: (resting: boolean) => void): () => void;
   /** Overlay only: the page listens now and wants the current state. */
   ready(): void;
+  /** Overlay only: a ritual started (its pose) or ended (null). Returns an unsubscribe function. */
+  onRitualChange(callback: (pose: RitualPose | null) => void): () => void;
   /** Overlay only: a focus session started or ended. Returns an unsubscribe function. */
   onFocusingChange(callback: (focusing: boolean) => void): () => void;
   /** Overlay only: Mocha became tired or rested. Returns an unsubscribe function. */
@@ -110,4 +126,15 @@ export interface TowerBridge {
   act(action: TowerAction): void;
   /** Starts a focus session of `minutes`, or ends the running one (null). */
   focus(minutes: FocusMinutes | null): void;
+}
+
+/** The API the ritual bubble's own preload exposes as `window.ritual`. Nothing else. */
+export interface RitualBridge {
+  /** The page listens now and wants to know where it sits. */
+  ready(): void;
+  /** Where the bubble sits; sent again when it moves. Returns an unsubscribe function. */
+  onShow(callback: (show: RitualShow) => void): () => void;
+  start(ritual: RitualId): void;
+  finish(): void;
+  close(): void;
 }

@@ -24,6 +24,7 @@ const config: NeedsConfig = {
   petCooldownMs: 5 * MINUTE,
   treatMood: 6,
   treatsPerDay: 3,
+  ritualMood: 5,
   energyDrainPerHour: 30,
   energyRestorePerHour: 120,
   tiredBelow: 25,
@@ -106,6 +107,10 @@ describe('mood', () => {
 
   it('never runs out on its own', () => {
     expect(play([elapse(30 * 24 * 60, 'work')]).mood).toBeCloseTo(60, 5);
+  });
+
+  it('rises with a ritual done together', () => {
+    expect(play([{ type: 'ritualCompleted' }]).mood).toBe(65);
   });
 
   it('stays at or below 100', () => {
@@ -194,9 +199,11 @@ describe('time', () => {
           ? { type: 'elapse', now, activity: activities[Math.floor(random() * 3)] ?? 'work' }
           : roll < 0.7
             ? { type: 'breakCompleted', durationMs: random() * HOUR }
-            : roll < 0.85
+            : roll < 0.8
               ? { type: 'pet', now }
-              : { type: 'treat', now };
+              : roll < 0.9
+                ? { type: 'treat', now }
+                : { type: 'ritualCompleted' };
       state = reduceNeeds(state, event, config);
       expect(state.mood).toBeGreaterThanOrEqual(0);
       expect(state.mood).toBeLessThanOrEqual(100);

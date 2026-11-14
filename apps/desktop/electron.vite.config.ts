@@ -14,6 +14,7 @@ export default defineConfig({
         input: {
           index: resolve('src/preload/index.ts'),
           reminder: resolve('src/preload/reminder.ts'),
+          ritual: resolve('src/preload/ritual.ts'),
           settings: resolve('src/preload/settings.ts'),
           tower: resolve('src/preload/tower.ts'),
         },
@@ -30,6 +31,7 @@ export default defineConfig({
         input: {
           index: resolve('src/renderer/index.html'),
           reminder: resolve('src/renderer/reminder.html'),
+          ritual: resolve('src/renderer/ritual.html'),
           settings: resolve('src/renderer/settings.html'),
           tower: resolve('src/renderer/tower.html'),
         },
