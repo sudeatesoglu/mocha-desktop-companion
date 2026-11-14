@@ -289,3 +289,89 @@ describe('starting a break on request', () => {
     expect(reduceBreak(paused, { type: 'startBreak', now: at(2) }, config)).toBe(paused);
   });
 });
+
+describe('focus sessions', () => {
+  const focus = (minutes: number, length: number): BreakEvent => ({
+    type: 'startFocus',
+    now: at(minutes),
+    durationMs: at(length),
+  });
+
+  it('starts a session that keeps the work stretch it is part of', () => {
+    expect(play([tick(10), focus(10, 25)])).toEqual({
+      phase: 'focusing',
+      startedAt: at(10),
+      endsAt: at(35),
+      workStartedAt: 0,
+    });
+  });
+
+  it('brings no reminder during the session, even past the work stretch', () => {
+    expect(play([focus(30, 40), tick(55), tick(69)]).phase).toBe('focusing');
+  });
+
+  it('starts the break when the session ends, quiet hours or not', () => {
+    const quietEnd: BreakEvent = { type: 'tick', now: at(55), idleMs: 0, quiet: true };
+
+    expect(play([focus(30, 25), quietEnd])).toEqual({
+      phase: 'onBreak',
+      startedAt: at(55),
+      endsAt: at(60),
+      workStartedAt: 0,
+    });
+  });
+
+  it('ends early on request, and the usual rules take over', () => {
+    const stopped = play([focus(30, 40), { type: 'endFocus', now: at(45) }]);
+
+    expect(stopped).toEqual({ phase: 'working', workStartedAt: 0, snoozedUntil: 0 });
+    expect(reduceBreak(stopped, tick(50), config).phase).toBe('due'); // 50 minutes of work
+  });
+
+  it('counts walking away as a break, as outside a session', () => {
+    expect(play([focus(10, 40), tick(20, 6)])).toMatchObject({
+      phase: 'onBreak',
+      startedAt: at(14),
+    });
+  });
+
+  it('ends for a pause, a shared rest or a new session', () => {
+    const session = play([focus(10, 40)]);
+
+    expect(reduceBreak(session, { type: 'pause', now: at(11) }, config)).toEqual({
+      phase: 'paused',
+    });
+    expect(reduceBreak(session, { type: 'startBreak', now: at(12) }, config).phase).toBe('onBreak');
+    expect(reduceBreak(session, focus(13, 25), config)).toMatchObject({
+      phase: 'focusing',
+      endsAt: at(38),
+    });
+  });
+
+  it('starts from a reminder and from a break, which it ends', () => {
+    expect(play([tick(50), focus(51, 25)])).toMatchObject({ phase: 'focusing', workStartedAt: 0 });
+    expect(play([tick(20), { type: 'startBreak', now: at(20) }, focus(22, 25)])).toMatchObject({
+      phase: 'focusing',
+      workStartedAt: at(22),
+    });
+  });
+
+  it('ignores reminder answers and endFocus outside a session', () => {
+    const session = play([focus(10, 40)]);
+    const working = play([tick(10)]);
+
+    expect(reduceBreak(session, { type: 'snooze', now: at(11) }, config)).toBe(session);
+    expect(reduceBreak(working, { type: 'endFocus', now: at(11) }, config)).toBe(working);
+  });
+
+  it('refuses a session without a usable length, and starts none while paused', () => {
+    const working = play([tick(10)]);
+    const paused = play([{ type: 'pause', now: at(1) }]);
+
+    expect(reduceBreak(working, focus(10, 0), config)).toBe(working);
+    expect(
+      reduceBreak(working, { type: 'startFocus', now: at(10), durationMs: Number.NaN }, config),
+    ).toBe(working);
+    expect(reduceBreak(paused, focus(2, 25), config)).toBe(paused);
+  });
+});

@@ -6,6 +6,7 @@ export function needsActivity(state: BreakState): NeedsActivity {
   switch (state.phase) {
     case 'working':
     case 'due':
+    case 'focusing':
       return 'work';
     case 'onBreak':
       return 'rest';
