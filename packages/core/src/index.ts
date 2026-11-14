@@ -21,6 +21,17 @@ export {
   minuteOfDay,
   type QuietHours,
 } from './habits/quiet-hours.ts';
+export {
+  RITUALS,
+  type Ritual,
+  type RitualId,
+  type RitualPose,
+  type RitualProgress,
+  type RitualStep,
+  ritualById,
+  ritualDuration,
+  ritualProgress,
+} from './habits/rituals.ts';
 export { type SessionKind, sessionBoundary, sessionKind } from './habits/session-boundary.ts';
 export {
   type Cancel,
