@@ -237,6 +237,11 @@ window.mocha.onRestingChange((next) => {
   loop.invalidate();
 });
 
+// A focus session: Mocha reads next to the user until it ends.
+window.mocha.onFocusingChange((focusing) => {
+  if (animator.setFocus(focusing)) loop.invalidate();
+});
+
 // Low energy: Mocha holds its tired pose instead of idle.
 window.mocha.onTiredChange((tired) => {
   if (animator.setTired(tired)) loop.invalidate();
