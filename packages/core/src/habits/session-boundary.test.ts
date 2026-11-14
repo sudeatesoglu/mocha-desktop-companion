@@ -11,6 +11,7 @@ describe('sessionKind', () => {
   it.each([
     [working, 'work'],
     [due, 'work'],
+    [{ phase: 'focusing', startedAt: 0, endsAt: 25, workStartedAt: 0 } as BreakState, 'work'],
     [onBreak, 'break'],
     [paused, undefined],
   ])('maps %o to %s', (state, kind) => {

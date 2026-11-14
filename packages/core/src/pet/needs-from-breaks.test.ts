@@ -17,6 +17,7 @@ describe('needsActivity', () => {
   it.each([
     [working, 'work'],
     [due, 'work'],
+    [{ phase: 'focusing', startedAt: 0, endsAt: MINUTE, workStartedAt: 0 } as BreakState, 'work'],
     [onBreak, 'rest'],
     [paused, 'paused'],
   ])('maps %o to %s', (state, activity) => {

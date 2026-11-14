@@ -7,6 +7,7 @@ export function sessionKind(state: BreakState): SessionKind | undefined {
   switch (state.phase) {
     case 'working':
     case 'due':
+    case 'focusing':
       return 'work';
     case 'onBreak':
       return 'break';

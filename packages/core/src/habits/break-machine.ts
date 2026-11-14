@@ -45,6 +45,15 @@ export type BreakState =
       /** The work stretch this break ended. */
       readonly workStartedAt: number;
     }
+  | {
+      /** A focus session the user started: its end replaces the work timer. */
+      readonly phase: 'focusing';
+      readonly startedAt: number;
+      /** When the session ends and a break starts. */
+      readonly endsAt: number;
+      /** The work stretch the session is part of. */
+      readonly workStartedAt: number;
+    }
   | { readonly phase: 'paused' };
 
 export type BreakEvent =
@@ -58,8 +67,17 @@ export type BreakEvent =
       readonly idleMs: number;
       readonly quiet?: boolean;
     }
+  /** The user starts a focus session of `durationMs` ("Focus with Mocha"). */
+  | { readonly type: 'startFocus'; readonly now: number; readonly durationMs: number }
   | {
-      readonly type: 'accept' | 'snooze' | 'dismiss' | 'pause' | 'resume' | 'startBreak';
+      readonly type:
+        | 'accept'
+        | 'snooze'
+        | 'dismiss'
+        | 'pause'
+        | 'resume'
+        | 'startBreak'
+        | 'endFocus';
       readonly now: number;
     };
 
@@ -68,7 +86,7 @@ export function startWorking(now: number): BreakState {
   return { phase: 'working', workStartedAt: now, snoozedUntil: 0 };
 }
 
-type ActiveWork = Extract<BreakState, { phase: 'working' | 'due' }>;
+type ActiveWork = Extract<BreakState, { phase: 'working' | 'due' | 'focusing' }>;
 
 /** A break of the configured length that starts now. */
 function breakNow(state: ActiveWork, now: number, config: BreakConfig): BreakState {
@@ -96,6 +114,18 @@ export function reduceBreak(state: BreakState, event: BreakEvent, config: BreakC
     return event.type === 'resume' ? startWorking(event.now) : state;
   }
   if (event.type === 'pause') return { phase: 'paused' };
+
+  // A focus session can start from work, a reminder, a running session (a
+  // new length) or a break, which it ends: back to work, focused.
+  if (event.type === 'startFocus') {
+    if (!(event.durationMs > 0 && Number.isFinite(event.durationMs))) return state;
+    return {
+      phase: 'focusing',
+      startedAt: event.now,
+      endsAt: event.now + event.durationMs,
+      workStartedAt: state.phase === 'onBreak' ? event.now : state.workStartedAt,
+    };
+  }
 
   switch (state.phase) {
     case 'working': {
@@ -138,5 +168,21 @@ export function reduceBreak(state: BreakState, event: BreakEvent, config: BreakC
       const isOver = event.now >= state.endsAt && event.idleMs < config.idleBreakMs;
       return isOver ? startWorking(event.now) : state;
     }
+
+    case 'focusing':
+      switch (event.type) {
+        case 'tick':
+          if (event.idleMs >= config.idleBreakMs) return awayBreak(state, event.now, event.idleMs);
+          // The session is over: the break the user planned starts now,
+          // quiet hours or not, since the user chose this rhythm.
+          return event.now >= state.endsAt ? breakNow(state, event.now, config) : state;
+        case 'startBreak':
+          return breakNow(state, event.now, config);
+        case 'endFocus':
+          // Stopped early: the usual rules take over, for the same stretch.
+          return { phase: 'working', workStartedAt: state.workStartedAt, snoozedUntil: 0 };
+        default:
+          return state;
+      }
   }
 }
