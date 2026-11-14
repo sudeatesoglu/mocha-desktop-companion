@@ -118,8 +118,39 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+.focus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 2px solid var(--track);
+}
+
+#focus-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.lengths {
+  display: flex;
+  gap: 6px;
+}
+
+.focus button {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+}
+
 #status {
   min-height: 1.4em;
   margin: 12px 0 0;
   color: var(--muted);
+}
+
+/* The hidden attribute must win over the display rules above: these
+   selectors are more specific than ".lengths" and ".focus button". */
+.lengths[hidden],
+#focus-end[hidden] {
+  display: none;
 }

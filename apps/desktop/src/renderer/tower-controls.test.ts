@@ -9,6 +9,7 @@ const view = (patch: Partial<TowerView>): TowerView => ({
   treatsLeft: 3,
   resting: false,
   paused: false,
+  focusMinutesLeft: null,
   ...patch,
 });
 
@@ -18,6 +19,7 @@ describe('towerControls', () => {
       pet: { disabled: false },
       treat: { label: 'Treat (3 left)', disabled: false },
       rest: { label: 'Rest together', disabled: false },
+      focus: { running: false, label: 'Focus with Mocha', disabled: false },
       status: '',
     });
   });
@@ -49,5 +51,20 @@ describe('towerControls', () => {
     expect(controls.treat.disabled).toBe(true);
     expect(controls.rest).toEqual({ label: 'Resting…', disabled: true });
     expect(controls.status).toBe('Resting together. Mocha is napping.');
+  });
+
+  it('shows the minutes left in a focus session and Mocha reading', () => {
+    const controls = towerControls(view({ focusMinutesLeft: 18, tired: true }));
+
+    expect(controls.focus).toEqual({
+      running: true,
+      label: 'Focusing: 18 min left',
+      disabled: false,
+    });
+    expect(controls.status).toBe('Focusing together. Mocha is reading next to you.');
+  });
+
+  it('starts no focus session while Mocha is paused', () => {
+    expect(towerControls(view({ paused: true })).focus.disabled).toBe(true);
   });
 });

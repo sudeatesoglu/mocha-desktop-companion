@@ -1,5 +1,5 @@
 import { createGameLoop, createPetAnimator, type Gaze, gazeOffset } from '@mocha/core';
-import type { TowerAction, TowerView } from '../shared/tower.ts';
+import { FOCUS_MINUTES, type TowerAction, type TowerView } from '../shared/tower.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
 import { loadDefaultLook } from './default-skin.ts';
 import { createEffects } from './effects.ts';
@@ -80,6 +80,10 @@ const buttons = {
   rest: element('rest', HTMLButtonElement),
 };
 const status = element('status', HTMLElement);
+const focusLabel = element('focus-label', HTMLElement);
+const focusLengths = element('focus-lengths', HTMLElement);
+const focusEnd = element('focus-end', HTMLButtonElement);
+const lengthButtons = [...focusLengths.querySelectorAll('button')];
 
 let resting = false;
 
@@ -93,7 +97,13 @@ function show(view: TowerView): void {
   buttons.rest.disabled = controls.rest.disabled;
   buttons.rest.textContent = controls.rest.label;
   status.textContent = controls.status;
-  if (animator.setTired(view.tired)) loop.invalidate();
+  focusLabel.textContent = controls.focus.label;
+  focusLengths.hidden = controls.focus.running;
+  focusEnd.hidden = !controls.focus.running;
+  for (const button of lengthButtons) button.disabled = controls.focus.disabled;
+  // Reading during a session comes before looking tired.
+  const posed = animator.setTired(view.tired);
+  if (animator.setFocus(view.focusMinutesLeft !== null) || posed) loop.invalidate();
 
   // Mocha naps through a break and greets the user when it ends.
   if (view.resting !== resting) {
@@ -116,6 +126,12 @@ function act(action: TowerAction): void {
 buttons.pet.addEventListener('click', () => act('pet'));
 buttons.treat.addEventListener('click', () => act('treat'));
 buttons.rest.addEventListener('click', () => act('rest'));
+// Only the offered lengths reach main; anything else is ignored there too.
+for (const button of lengthButtons) {
+  const minutes = FOCUS_MINUTES.find((offered) => String(offered) === button.dataset['minutes']);
+  if (minutes) button.addEventListener('click', () => window.tower.focus(minutes));
+}
+focusEnd.addEventListener('click', () => window.tower.focus(null));
 window.tower.onNeeds(show);
 window.tower.ready(); // listening now: ask main for the needs
 

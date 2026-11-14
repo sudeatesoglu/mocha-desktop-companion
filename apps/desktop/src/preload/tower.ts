@@ -12,6 +12,7 @@ const bridge: TowerBridge = {
   },
   ready: () => ipcRenderer.send(IpcChannel.TowerReady),
   act: (action) => ipcRenderer.send(IpcChannel.TowerAct, action),
+  focus: (minutes) => ipcRenderer.send(IpcChannel.TowerFocus, minutes),
 };
 
 contextBridge.exposeInMainWorld('tower', bridge);

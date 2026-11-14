@@ -4,6 +4,10 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Added
+
+- Focus with Mocha: start a 25, 40 or 50-minute focus session from the menu bar or the Tower. Mocha reads next to you, no reminder interrupts, and a break starts when the session ends ([#131](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/131), [#127](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/127))
+
 ## [0.3.0] - 2026-11-14
 
 "The Tower": Mocha gets a home of its own, with a mood and an energy that follow your rest.

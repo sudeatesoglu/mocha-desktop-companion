@@ -1,8 +1,11 @@
 import { type DailyStats, formatDuration } from '@mocha/core';
 import type { MenuItemConstructorOptions } from 'electron';
+import { FOCUS_MINUTES, type FocusMinutes } from '../../shared/tower.ts';
 
 export interface TrayActions {
   openTower(): void;
+  startFocus(minutes: FocusMinutes): void;
+  endFocus(): void;
   togglePause(): void;
   openSettings(): void;
   resetPosition(): void;
@@ -14,12 +17,18 @@ export interface TrayActions {
  * keeps the labels and wiring testable; Electron only turns it into a menu.
  */
 export function trayMenuTemplate(
-  state: { paused: boolean; today?: DailyStats | undefined },
+  state: {
+    paused: boolean;
+    today?: DailyStats | undefined;
+    /** Time left in the running focus session, if any. */
+    focusLeftMs?: number | undefined;
+  },
   actions: TrayActions,
 ): MenuItemConstructorOptions[] {
   return [
     ...todayItems(state.today),
     { label: 'Open Tower', click: () => actions.openTower() },
+    ...focusItems(state, actions),
     {
       label: state.paused ? 'Resume Mocha' : 'Pause Mocha',
       click: () => actions.togglePause(),
@@ -46,5 +55,31 @@ function todayItems(today: DailyStats | undefined): MenuItemConstructorOptions[]
     { label: `Breaks today: ${today.breaks}`, enabled: false },
     { label: `Longest stretch: ${formatDuration(today.longestStretchMs)}`, enabled: false },
     { type: 'separator' },
+  ];
+}
+
+/**
+ * Starting a focus session, or the time left in the running one and a way
+ * to end it. A paused Mocha starts no session: the break rules are paused.
+ */
+function focusItems(
+  state: { paused: boolean; focusLeftMs?: number | undefined },
+  actions: TrayActions,
+): MenuItemConstructorOptions[] {
+  if (state.focusLeftMs !== undefined) {
+    return [
+      { label: `Focusing: ${formatDuration(state.focusLeftMs)} left`, enabled: false },
+      { label: 'End Focus Session', click: () => actions.endFocus() },
+    ];
+  }
+  return [
+    {
+      label: 'Focus with Mocha',
+      enabled: !state.paused,
+      submenu: FOCUS_MINUTES.map((minutes) => ({
+        label: `${minutes} minutes`,
+        click: () => actions.startFocus(minutes),
+      })),
+    },
   ];
 }
