@@ -7,6 +7,7 @@ import {
   minuteOfDay,
   needsActivity,
   needsEventsForBreakChange,
+  type RitualPose,
 } from '@mocha/core';
 import {
   app,
@@ -23,6 +24,7 @@ import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { DEFAULT_PREFERENCES, type Preferences, toBreakConfig } from '../shared/preferences.ts';
 import { REMINDER_HEIGHT, REMINDER_WIDTH, type ReminderShow } from '../shared/reminder.ts';
+import { RITUAL_HEIGHT, RITUAL_WIDTH, type RitualShow } from '../shared/ritual.ts';
 import type { FocusMinutes } from '../shared/tower.ts';
 import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
@@ -37,6 +39,7 @@ import { createSessionRepository } from './db/session-repository.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
+import { registerRitualHandlers } from './ipc/register-ritual-handlers.ts';
 import { registerSettingsHandlers } from './ipc/register-settings-handlers.ts';
 import { registerTowerHandlers } from './ipc/register-tower-handlers.ts';
 import { createNeedsKeeper } from './pet/needs-keeper.ts';
@@ -44,12 +47,14 @@ import { towerView } from './pet/tower-view.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
 import { reminderPosition } from './reminder/reminder-placement.ts';
 import { reminderTransition } from './reminder/reminder-transition.ts';
+import { createRitualTracker } from './ritual/ritual-tracker.ts';
+import { ritualTransition } from './ritual/ritual-transition.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
 import { watchSpaceChanges } from './space/space-watcher.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
 import { trayMenuTemplate } from './tray/tray-menu.ts';
+import { createBubbleWindow } from './windows/create-bubble-window.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
-import { createReminderWindow } from './windows/create-reminder-window.ts';
 import { createSettingsWindow } from './windows/create-settings-window.ts';
 import { createTowerWindow } from './windows/create-tower-window.ts';
 import { initialOverlayPosition, placeOnDisplays } from './windows/overlay-placement.ts';
@@ -64,8 +69,8 @@ const rendererFile = join(import.meta.dirname, '../renderer/index.html');
 // Set by electron-vite in development only.
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL'];
 
-// The reminder, settings and Tower windows each have their own preload and page.
-type Page = 'reminder' | 'settings' | 'tower';
+// The reminder, ritual, settings and Tower windows each have their own preload and page.
+type Page = 'reminder' | 'ritual' | 'settings' | 'tower';
 const pagePreload = (page: Page) => join(import.meta.dirname, `../preload/${page}.cjs`);
 const pageFile = (page: Page) => join(import.meta.dirname, `../renderer/${page}.html`);
 const pageUrl = (page: Page) =>
@@ -269,6 +274,8 @@ if (!app.requestSingleInstanceLock()) {
       restingReporter.report(breaks.state.phase === 'onBreak');
       focusingReporter.reset();
       focusingReporter.report(breaks.state.phase === 'focusing');
+      ritualReporter.reset();
+      ritualReporter.report(ritualTracker.pose);
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
@@ -310,7 +317,12 @@ if (!app.requestSingleInstanceLock()) {
     const openReminder = (state: DueState) => {
       const placed = placeReminder();
       reminderShow = { ...reminderInfo(state, breaks.config), side: placed.side };
-      const opened = createReminderWindow(pagePreload('reminder'), placed, process.platform);
+      const opened = createBubbleWindow(
+        pagePreload('reminder'),
+        placed,
+        { width: REMINDER_WIDTH, height: REMINDER_HEIGHT, title: 'Mocha: break reminder' },
+        process.platform,
+      );
       reminder = opened;
       // The page shows nothing until this arrives, so it never flashes empty.
       opened.webContents.once('did-finish-load', () =>
@@ -335,6 +347,7 @@ if (!app.requestSingleInstanceLock()) {
       reminder.webContents.send(IpcChannel.ReminderShow, reminderShow);
     };
     window.on('move', followMocha);
+    window.on('move', () => followRitual());
     breaks.onChange((next, previous) => {
       const transition = reminderTransition(next, previous);
       if (transition === 'open' && next.phase === 'due') openReminder(next);
@@ -344,6 +357,83 @@ if (!app.requestSingleInstanceLock()) {
       () => reminder?.webContents,
       (choice) => breaks.dispatch({ type: choice, now: Date.now() }),
       [pageUrl('reminder')],
+      console,
+    );
+
+    // The ritual: a bubble that opens when a planned break starts and
+    // guides a short ritual while Mocha acts along on the desktop. It closes
+    // with the break, or when the user chooses to just rest.
+    let ritual: BrowserWindow | undefined;
+    let ritualShow: RitualShow = { side: 'left' };
+    const ritualTracker = createRitualTracker();
+    const ritualReporter = createChangeReporter<RitualPose | null>((pose) =>
+      window.webContents.send(IpcChannel.OverlayRitual, pose),
+    );
+    const placeRitual = () => {
+      const bounds = window.getBounds();
+      return reminderPosition(
+        bounds,
+        { width: RITUAL_WIDTH, height: RITUAL_HEIGHT },
+        screen.getDisplayMatching(bounds).workArea,
+      );
+    };
+    const openRitual = () => {
+      const placed = placeRitual();
+      ritualShow = { side: placed.side };
+      const opened = createBubbleWindow(
+        pagePreload('ritual'),
+        placed,
+        { width: RITUAL_WIDTH, height: RITUAL_HEIGHT, title: 'Mocha: break ritual' },
+        process.platform,
+      );
+      ritual = opened;
+      opened.on('closed', () => {
+        if (ritual !== opened) return;
+        ritual = undefined;
+        ritualTracker.stop();
+        ritualReporter.report(null);
+      });
+      loadPage(opened, 'ritual');
+    };
+    function closeRitual() {
+      ritual?.close();
+      ritual = undefined;
+      ritualTracker.stop();
+      ritualReporter.report(null);
+    }
+    function followRitual() {
+      if (!ritual) return;
+      const placed = placeRitual();
+      ritual.setPosition(placed.x, placed.y);
+      if (placed.side === ritualShow.side) return;
+      ritualShow = { side: placed.side };
+      ritual.webContents.send(IpcChannel.RitualShow, ritualShow);
+    }
+    breaks.onChange((next, previous) => {
+      const transition = ritualTransition(next, previous);
+      if (transition === 'open') {
+        ritualTracker.newBreak();
+        openRitual();
+      }
+      if (transition === 'close') closeRitual();
+    });
+    registerRitualHandlers(
+      () => ritual?.webContents,
+      {
+        ready: () => ritual?.webContents.send(IpcChannel.RitualShow, ritualShow),
+        start: (id) => {
+          ritualTracker.start(id, Date.now());
+          ritualReporter.report(ritualTracker.pose);
+        },
+        finish: () => {
+          // Main decides whether it counts: once per break, and only if the
+          // ritual really took its time.
+          if (ritualTracker.finish(Date.now())) needs.dispatch({ type: 'ritualCompleted' });
+          ritualReporter.report(null);
+        },
+        close: () => closeRitual(),
+      },
+      [pageUrl('ritual')],
       console,
     );
 
@@ -475,6 +565,7 @@ if (!app.requestSingleInstanceLock()) {
 
     window.on('closed', () => {
       closeReminder();
+      closeRitual();
       settingsWindow.close();
       towerWindow.close();
       activity.stop();

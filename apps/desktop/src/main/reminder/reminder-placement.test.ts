@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { OVERLAY_SIZE } from '../../shared/overlay.ts';
+import { REMINDER_HEIGHT, REMINDER_WIDTH } from '../../shared/reminder.ts';
+import { RITUAL_HEIGHT, RITUAL_WIDTH } from '../../shared/ritual.ts';
 import { reminderPosition } from './reminder-placement.ts';
 
 const AREA = { x: 0, y: 25, width: 1440, height: 875 };
@@ -43,5 +46,30 @@ describe('reminderPosition', () => {
 
     expect(position.side).toBe('left');
     expect(position.x).toBe(-200 - 264 + 12);
+  });
+
+  it.each([
+    ['reminder', { width: REMINDER_WIDTH, height: REMINDER_HEIGHT }],
+    ['ritual', { width: RITUAL_WIDTH, height: RITUAL_HEIGHT }],
+  ])('keeps the %s bubble on a small screen wherever Mocha is', (_bubble, size) => {
+    // A 1280x800 screen with the menu bar, Mocha in each corner.
+    const small = { x: 0, y: 25, width: 1280, height: 775 };
+    const far = { x: small.width - OVERLAY_SIZE, y: small.y + small.height - OVERLAY_SIZE };
+    for (const [x, y] of [
+      [0, small.y],
+      [far.x, small.y],
+      [0, far.y],
+      [far.x, far.y],
+    ] as const) {
+      const placed = reminderPosition(
+        { x, y, width: OVERLAY_SIZE, height: OVERLAY_SIZE },
+        size,
+        small,
+      );
+      expect(placed.x).toBeGreaterThanOrEqual(small.x);
+      expect(placed.y).toBeGreaterThanOrEqual(small.y);
+      expect(placed.x + size.width).toBeLessThanOrEqual(small.x + small.width);
+      expect(placed.y + size.height).toBeLessThanOrEqual(small.y + small.height);
+    }
   });
 });
