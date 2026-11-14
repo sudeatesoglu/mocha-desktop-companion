@@ -108,11 +108,12 @@ pnpm install
 pnpm dev
 ```
 
-Built with Electron, TypeScript and a small hand-written Canvas 2D engine.
+Built with Electron, TypeScript and a small hand-written Canvas 2D engine. `pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build` runs every check, and `pnpm --filter @mocha/desktop generate:skin`, `generate:readme-art` and `generate:icon` redraw the placeholder skin, the README art and the app icon.
 
-- [Contributing](CONTRIBUTING.md): setup, scripts and workflow
 - [Skin format](docs/skins.md): how to draw your own Mocha
 - [Architecture decisions](docs/adr/README.md): why it is built this way
+
+Mocha is a personal project and is not open to code contributions: pull requests from others are not merged. Bug reports and ideas are welcome as [issues](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/new/choose).
 
 </details>
 
