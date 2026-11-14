@@ -1,22 +1,23 @@
 import type { BrowserWindow } from 'electron';
-import { REMINDER_HEIGHT, REMINDER_WIDTH } from '../../shared/reminder.ts';
 import { createSecureWindow } from './create-secure-window.ts';
 
 /**
- * Creates the break reminder bubble: transparent, floating next to Mocha on
- * every Space, and never taking keyboard focus, so it cannot interrupt
- * typing. Its first click still reaches the page (acceptFirstMouse).
+ * Creates a speech bubble next to Mocha, such as the break reminder or the
+ * ritual: transparent, floating on every Space, and never taking keyboard
+ * focus, so it cannot interrupt typing. Its first click still reaches the
+ * page (acceptFirstMouse).
  */
-export function createReminderWindow(
+export function createBubbleWindow(
   preloadPath: string,
   position: { x: number; y: number },
+  bubble: { width: number; height: number; title: string },
   platform: NodeJS.Platform,
 ): BrowserWindow {
   const window = createSecureWindow(
     {
       ...position,
-      width: REMINDER_WIDTH,
-      height: REMINDER_HEIGHT,
+      width: bubble.width,
+      height: bubble.height,
       transparent: true,
       frame: false,
       hasShadow: false,
@@ -27,7 +28,7 @@ export function createReminderWindow(
       skipTaskbar: true,
       focusable: false,
       acceptFirstMouse: true,
-      title: 'Mocha: break reminder',
+      title: bubble.title,
       ...(platform === 'darwin' ? { type: 'panel' } : {}),
     },
     preloadPath,
