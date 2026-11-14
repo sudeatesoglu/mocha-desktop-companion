@@ -21,6 +21,8 @@ export interface NeedsConfig {
   readonly treatMood: number;
   /** Treats Mocha accepts per local day. */
   readonly treatsPerDay: number;
+  /** Mood gained from a ritual done together during a break. */
+  readonly ritualMood: number;
   /** Energy lost per hour of work. */
   readonly energyDrainPerHour: number;
   /** Energy regained per hour of rest. */
@@ -38,6 +40,7 @@ export const DEFAULT_NEEDS_CONFIG: NeedsConfig = Object.freeze({
   petCooldownMs: 5 * MINUTE_MS,
   treatMood: 6,
   treatsPerDay: 3,
+  ritualMood: 5,
   // 40 minutes of work cost about what a 10-minute break gives back.
   energyDrainPerHour: 30,
   energyRestorePerHour: 120,
@@ -65,6 +68,8 @@ export type NeedsEvent =
   | { readonly type: 'elapse'; readonly now: number; readonly activity: NeedsActivity }
   /** A break of `durationMs` just ended. */
   | { readonly type: 'breakCompleted'; readonly durationMs: number }
+  /** A ritual was done together; main allows one per break. */
+  | { readonly type: 'ritualCompleted' }
   | { readonly type: 'pet' | 'treat'; readonly now: number };
 
 /** A rested Mocha in a neutral mood. */
@@ -123,6 +128,9 @@ export function reduceNeeds(
       return event.durationMs >= config.minBreakMs
         ? { ...state, mood: clamp(state.mood + config.breakMood) }
         : state;
+
+    case 'ritualCompleted':
+      return { ...state, mood: clamp(state.mood + config.ritualMood) };
 
     case 'pet': {
       const sinceLast = state.lastPetAt === null ? Infinity : event.now - state.lastPetAt;
