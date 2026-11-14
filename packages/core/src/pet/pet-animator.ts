@@ -19,6 +19,12 @@ export interface PetAnimator {
   update(stepMs: number): boolean;
   /** Holds the skin's tired pose instead of idle. Returns true if the frame changed. */
   setTired(tired: boolean): boolean;
+  /**
+   * Holds the skin's focus pose during a focus session, ahead of the tired
+   * pose: a tired Mocha that is focusing still reads. Returns true if the
+   * frame changed.
+   */
+  setFocus(focusing: boolean): boolean;
 }
 
 /**
@@ -33,6 +39,15 @@ export function createPetAnimator(
   const player = createAnimationPlayer(animations);
   const blink = createBlinkTimer({ minMs: blinkMinMs, maxMs: blinkMaxMs, random });
   const canBlink = animations.blink !== undefined;
+  let tired = false;
+  let focusing = false;
+
+  /** The pose held between other animations, from the ones the skin has. */
+  function applyBase(): boolean {
+    blink.reset();
+    if (focusing && animations.focus) return player.setBase('focus');
+    return player.setBase(tired ? 'tired' : 'idle');
+  }
 
   return {
     get current() {
@@ -49,9 +64,14 @@ export function createPetAnimator(
       return changed;
     },
 
-    setTired(tired) {
-      blink.reset();
-      return player.setBase(tired ? 'tired' : 'idle');
+    setTired(next) {
+      tired = next;
+      return applyBase();
+    },
+
+    setFocus(next) {
+      focusing = next;
+      return applyBase();
     },
 
     update(stepMs) {
