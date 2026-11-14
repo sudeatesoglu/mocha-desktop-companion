@@ -23,6 +23,7 @@ import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { DEFAULT_PREFERENCES, type Preferences, toBreakConfig } from '../shared/preferences.ts';
 import { REMINDER_HEIGHT, REMINDER_WIDTH, type ReminderShow } from '../shared/reminder.ts';
+import type { FocusMinutes } from '../shared/tower.ts';
 import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
 import { createChangeReporter } from './activity/change-reporter.ts';
@@ -196,6 +197,16 @@ if (!app.requestSingleInstanceLock()) {
         : config;
     };
     const breaks = createBreakController(breakConfigFor(preferences), Date.now());
+    // Focus sessions ("Focus with Mocha") go through the break rules
+    // (ADR-0009). In development, MOCHA_DEV_FOCUS_MS shortens every session.
+    const devFocusMs = devServerUrl ? Number(process.env['MOCHA_DEV_FOCUS_MS']) : Number.NaN;
+    const startFocus = (minutes: FocusMinutes) =>
+      breaks.dispatch({
+        type: 'startFocus',
+        now: Date.now(),
+        durationMs: devFocusMs > 0 && Number.isFinite(devFocusMs) ? devFocusMs : minutes * 60_000,
+      });
+    const endFocus = () => breaks.dispatch({ type: 'endFocus', now: Date.now() });
 
     // History: work and break sessions, stored as kinds and timestamps only.
     // The heartbeat lets the next start close a session a crash left open.
@@ -237,6 +248,11 @@ if (!app.requestSingleInstanceLock()) {
       window.webContents.send(IpcChannel.OverlayResting, resting),
     );
     breaks.onChange((next) => restingReporter.report(next.phase === 'onBreak'));
+    // During a focus session Mocha reads on the desktop.
+    const focusingReporter = createChangeReporter<boolean>((focusing) =>
+      window.webContents.send(IpcChannel.OverlayFocusing, focusing),
+    );
+    breaks.onChange((next) => focusingReporter.report(next.phase === 'focusing'));
     // Low energy shows on the desktop as Mocha's tired pose.
     const tiredReporter = createChangeReporter<boolean>((tired) =>
       window.webContents.send(IpcChannel.OverlayTired, tired),
@@ -251,6 +267,8 @@ if (!app.requestSingleInstanceLock()) {
     function syncOverlay() {
       restingReporter.reset();
       restingReporter.report(breaks.state.phase === 'onBreak');
+      focusingReporter.reset();
+      focusingReporter.report(breaks.state.phase === 'focusing');
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
@@ -362,7 +380,7 @@ if (!app.requestSingleInstanceLock()) {
     const sendTowerView = (force: boolean) => {
       const target = towerWindow.current;
       if (!target) return;
-      const view = towerView(needs.state, breaks.state.phase, Date.now());
+      const view = towerView(needs.state, breaks.state, Date.now());
       const key = JSON.stringify(view);
       if (!force && key === shownView) return;
       shownView = key;
@@ -390,6 +408,7 @@ if (!app.requestSingleInstanceLock()) {
           if (action === 'rest') breaks.dispatch({ type: 'startBreak', now });
           else needs.dispatch({ type: action, now });
         },
+        focus: (minutes) => (minutes === null ? endFocus() : startFocus(minutes)),
       },
       [pageUrl('tower')],
       console,
@@ -427,11 +446,18 @@ if (!app.requestSingleInstanceLock()) {
       tray?.popUpContextMenu(
         Menu.buildFromTemplate(
           trayMenuTemplate(
-            { paused: pause.paused, today: todayStats(Date.now()) },
+            {
+              paused: pause.paused,
+              today: todayStats(Date.now()),
+              focusLeftMs:
+                breaks.state.phase === 'focusing' ? breaks.state.endsAt - Date.now() : undefined,
+            },
             {
               togglePause: () => pause.toggle(),
               openSettings,
               openTower,
+              startFocus,
+              endFocus,
               resetPosition: () =>
                 settle(initialOverlayPosition(undefined, screen.getPrimaryDisplay().workArea, [])),
               quit: () => app.quit(),

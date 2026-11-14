@@ -1,6 +1,6 @@
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
-import type { TowerAction, TowerView } from './tower.ts';
+import type { FocusMinutes, TowerAction, TowerView } from './tower.ts';
 
 /**
  * IPC channel names shared by the main process and the preload script.
@@ -27,6 +27,8 @@ export const IpcChannel = {
   OverlayReady: 'overlay:ready',
   /** Overlay → main (send): Mocha was double-clicked; open its Tower. */
   OpenTower: 'overlay:open-tower',
+  /** Main → overlay: a focus session started (true) or ended (false): Mocha reads along. */
+  OverlayFocusing: 'overlay:focusing',
   /** Main → overlay: Mocha's energy fell below (true) or rose above (false) the tired line. */
   OverlayTired: 'overlay:tired',
   /** Overlay → main (send): the user petted Mocha on the desktop. */
@@ -35,6 +37,8 @@ export const IpcChannel = {
   TowerNeeds: 'tower:needs',
   /** Tower → main (send): the page listens now; send it the needs. */
   TowerReady: 'tower:ready',
+  /** Tower → main (send): start a focus session of 25, 40 or 50 minutes, or end it (null). */
+  TowerFocus: 'tower:focus',
   /** Tower → main (send): pet, treat or rest together. */
   TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
@@ -71,6 +75,8 @@ export interface MochaBridge {
   onRestingChange(callback: (resting: boolean) => void): () => void;
   /** Overlay only: the page listens now and wants the current state. */
   ready(): void;
+  /** Overlay only: a focus session started or ended. Returns an unsubscribe function. */
+  onFocusingChange(callback: (focusing: boolean) => void): () => void;
   /** Overlay only: Mocha became tired or rested. Returns an unsubscribe function. */
   onTiredChange(callback: (tired: boolean) => void): () => void;
   /** Overlay only: open Mocha's Tower. */
@@ -102,4 +108,6 @@ export interface TowerBridge {
   ready(): void;
   /** Care for Mocha. */
   act(action: TowerAction): void;
+  /** Starts a focus session of `minutes`, or ends the running one (null). */
+  focus(minutes: FocusMinutes | null): void;
 }

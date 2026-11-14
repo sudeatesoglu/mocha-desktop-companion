@@ -12,7 +12,13 @@ export interface TowerView {
   resting: boolean;
   /** Mocha is paused from the menu bar: no break can start. */
   paused: boolean;
+  /** Whole minutes left in the focus session, rounded up, or null without one. */
+  focusMinutesLeft: number | null;
 }
+
+/** The focus session lengths Mocha offers, in minutes. */
+export const FOCUS_MINUTES = [25, 40, 50] as const;
+export type FocusMinutes = (typeof FOCUS_MINUTES)[number];
 
 /** What the user can do for Mocha in the Tower. */
 export type TowerAction = 'pet' | 'treat' | 'rest';
