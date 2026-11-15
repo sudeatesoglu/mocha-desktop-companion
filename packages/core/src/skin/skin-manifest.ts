@@ -19,7 +19,14 @@ export const ANIMATION_NAMES = [
   'tired',
   'breathe',
   'lookFar',
-  'stretch',
+  'slowBlink',
+  'shoulderRoll',
+  'reachUp',
+  'leanLeft',
+  'leanRight',
+  'tiltLeft',
+  'tiltRight',
+  'flutter',
   'focus',
 ] as const;
 export type AnimationName = (typeof ANIMATION_NAMES)[number];
@@ -87,10 +94,17 @@ const manifestSchema = z
       slip: animationSchema.optional(),
       /** Held instead of idle while Mocha's energy is low. */
       tired: animationSchema.optional(),
-      /** Rituals and focus sessions (v0.4). */
+      /** Rituals, one per kind of step, and focus sessions (v0.4). */
       breathe: animationSchema.optional(),
       lookFar: animationSchema.optional(),
-      stretch: animationSchema.optional(),
+      slowBlink: animationSchema.optional(),
+      shoulderRoll: animationSchema.optional(),
+      reachUp: animationSchema.optional(),
+      leanLeft: animationSchema.optional(),
+      leanRight: animationSchema.optional(),
+      tiltLeft: animationSchema.optional(),
+      tiltRight: animationSchema.optional(),
+      flutter: animationSchema.optional(),
       focus: animationSchema.optional(),
     }),
   })

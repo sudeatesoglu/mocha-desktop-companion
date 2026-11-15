@@ -114,6 +114,21 @@ function stumble(grid, bodyDx, bodyDy, legs, legTop = 43) {
   return result;
 }
 
+/** How far `shear` moves row `y`: `dx` at `top`, nothing at `pivot` and below. */
+const shearShift = (dx, y, pivot, top) =>
+  y >= pivot ? 0 : Math.round((dx * (pivot - y)) / (pivot - top));
+
+/**
+ * Leans everything above `pivot` sideways, more the higher it is: a bend
+ * from the feet (pivot 40) or a tilt of the head (pivot at the neck).
+ */
+function shear(grid, dx, pivot, top) {
+  return grid.map((row, y) => {
+    const shift = shearShift(dx, y, pivot, top);
+    return Array.from({ length: SIZE }, (_, x) => row[x - shift] ?? null);
+  });
+}
+
 /** Moves the whole sprite up by `by` pixels. */
 function lift(grid, by) {
   return grid.map((_, y) => (grid[y + by] ? [...grid[y + by]] : Array(SIZE).fill(null)));
@@ -152,9 +167,18 @@ function openBeak(grid, dy, slope) {
  * (`hatSlip`, tilted forward), open the beak for a yawn (`yawn`, the slope
  * of the open beak), puff the chest out on a breath in (`chest`) and move
  * the wing (`wing`: 1 halfway up, 2 above the head, 'hold' reaching
- * forward to hold something in front of the chest).
+ * forward to hold something in front of the chest), which `wingShift`
+ * moves by [dx, dy] for a roll.
  */
-function drawRaven({ headDrop = 0, hatSlip = 0, yawn = 0, chest = 0, wing = 0 } = {}) {
+function drawRaven({
+  headDrop = 0,
+  hatSlip = 0,
+  yawn = 0,
+  chest = 0,
+  wing = 0,
+  wingShift = [0, 0],
+} = {}) {
+  const [wx, wy] = wingShift;
   const g = blank();
   const feathers = (x, y) => (y > 30 && (x + y) % 3 === 0 ? 'M' : 'D');
   // tail, body, chest (checker dither) and head
@@ -169,11 +193,11 @@ function drawRaven({ headDrop = 0, hatSlip = 0, yawn = 0, chest = 0, wing = 0 } 
   ellipse(g, 24, 21 + headDrop, 10, 7, 'D');
   // wing: dark ring with dithered feathers
   if (wing === 0) {
-    ellipse(g, 33, 31, 7, 8, 'K');
-    ellipse(g, 33, 31, 6, 7, feathers);
+    ellipse(g, 33 + wx, 31 + wy, 7, 8, 'K');
+    ellipse(g, 33 + wx, 31 + wy, 6, 7, feathers);
   } else if (wing === 'hold') {
-    ellipse(g, 21, 31, 7, 3.5, 'K');
-    ellipse(g, 21, 31, 6, 2.5, feathers);
+    ellipse(g, 21 + wx, 31 + wy, 7, 3.5, 'K');
+    ellipse(g, 21 + wx, 31 + wy, 6, 2.5, feathers);
   } else if (wing === 1) {
     ellipse(g, 34, 25, 6, 8, 'K');
     ellipse(g, 34, 25, 5, 7, (x, y) => ((x + y) % 3 === 0 && y < 26 ? 'M' : 'D'));
@@ -362,9 +386,36 @@ const breatheOutHold = squash(closeEye(drawRaven({ headDrop: 1 }), false, 1), 1)
 const breatheOutEnd = breathLines(breatheOutHold, 22, true);
 const lookFarA = pupilAt(drawRaven({ headDrop: -1 }), -1, -1, -1);
 const lookFarB = sway(pupilAt(drawRaven({ headDrop: -1 }), -1, 0, -1), -1);
-const stretchHalf = squeezedEye(drawRaven({ wing: 1 }), 0);
-const stretchUp = squeezedEye(drawRaven({ headDrop: -1, wing: 2 }), -1);
 const reading = drawRaven({ headDrop: 1, wing: 'hold' });
+
+// Stretching: one pose per step, so Mocha does what the bubble asks.
+// Rolling the shoulders: the wing goes up (the head sinks), back and down.
+const shrug = drawRaven({ headDrop: 1, wingShift: [0, -3] });
+const shoulderBack = drawRaven({ wingShift: [2, -2] });
+const shoulderDown = drawRaven({ wingShift: [2, 0] });
+// Reaching up: the wing above the head, the body rising on longer legs.
+const wingUp = squeezedEye(drawRaven({ headDrop: -1, wing: 2 }), -1);
+const LONG_LEGS = [
+  [22, 43, 22, 45],
+  [27, 43, 27, 45],
+  [21, 46, 23, 46],
+  [26, 46, 28, 46],
+];
+const reachHalf = stumble(wingUp, 0, -1, LONG_LEGS);
+const reachHigh = stumble(wingUp, 0, -2, LONG_LEGS);
+// Leaning: the wing up, the body bending from the feet.
+const LEAN = { pivot: 40, top: 5 };
+const lean = (dx) => shear(wingUp, dx, LEAN.pivot, LEAN.top);
+// Tilting the head: eyes closed, the head bending from the neck.
+const TILT = { pivot: 27, top: 4 };
+const tilt = (dx) => shear(closeEye(base, false), dx, TILT.pivot, TILT.top);
+// Rolling the wrists: the wing held forward, its tip going round.
+const wristRoll = [
+  [0, 0],
+  [-1, -1],
+  [0, -2],
+  [1, -1],
+].map((shift) => drawRaven({ wing: 'hold', wingShift: shift }));
 
 const sleepA = squash(closeEye(base, false), 1);
 zGlyph(sleepA, 36, 5, 4);
@@ -409,13 +460,23 @@ const FRAMES = [
   breatheOutHold, // 21 breathe: head down, emptied
   lookFarA, // 22 lookFar: head up, eye on the horizon
   lookFarB, // 23 lookFar: leaning forward to see further
-  stretchHalf, // 24 stretch: wing on its way up
-  stretchUp, // 25 stretch: wing above the head
-  sway(stretchUp, -2), // 26 stretch: leaning to one side
-  sway(stretchUp, 2), // 27 stretch: and to the other
-  book(pupilAt(reading, -1, 1, 1), false), // 28 focus: reading the left page
-  book(pupilAt(reading, 1, 1, 1), false), // 29 focus: reading the right page
-  book(pupilAt(reading, 0, 0, 1), true), // 30 focus: turning the page
+  book(pupilAt(reading, -1, 1, 1), false), // 24 focus: reading the left page
+  book(pupilAt(reading, 1, 1, 1), false), // 25 focus: reading the right page
+  book(pupilAt(reading, 0, 0, 1), true), // 26 focus: turning the page
+  shrug, // 27 shoulderRoll: shoulders up
+  shoulderBack, // 28 shoulderRoll: and back
+  shoulderDown, // 29 shoulderRoll: and down
+  reachHalf, // 30 reachUp: rising
+  reachHigh, // 31 reachUp: as high as it goes
+  lean(-3), // 32 leanLeft: on the way
+  lean(-6), // 33 leanLeft: all the way
+  lean(3), // 34 leanRight: on the way
+  lean(6), // 35 leanRight: all the way
+  tilt(-3), // 36 tiltLeft: on the way
+  tilt(-5), // 37 tiltLeft: all the way
+  tilt(3), // 38 tiltRight: on the way
+  tilt(5), // 39 tiltRight: all the way
+  ...wristRoll, // 40-43 flutter: the wing tip going round
 ];
 
 /** Slip anchors: the body shifted by (dx, dy), the feet by feetDx. */
@@ -429,6 +490,20 @@ const slipAnchors = (dx, dy, feetDx) => {
     feet: { x: feet.x + feetDx, y: feet.y },
   };
 };
+
+/** Anchors of a sheared frame: the beak and head move with their rows. */
+const shearedAnchors = (dx, { pivot, top }, dy) => {
+  const { beak, head, feet } = closedAnchors(dy);
+  const move = ({ x, y }) => ({ x: x + shearShift(dx, y, pivot, top), y });
+  return { beak: move(beak), head: move(head), feet };
+};
+
+/** A pose that eases into `full` through `half`, holds, and eases out: `ms` in all. */
+const easeAndHold = (half, full, ms, ease = 1000) => [
+  { ...half, durationMs: ease },
+  { ...full, durationMs: ms - 2 * ease },
+  { ...half, durationMs: ease },
+];
 
 /** Dizzy anchors: crossed-out eye (no pupil), head swaying with the body. */
 const dizzyAnchors = (dx) => {
@@ -514,30 +589,80 @@ const manifest = {
         { index: 23, durationMs: 2400, anchors: closedAnchors(-1) },
       ],
     },
-    // A wing goes up, then Mocha leans to one side and the other.
-    stretch: {
+    // The end of the eye rest: slow, deliberate blinks.
+    slowBlink: {
       loop: true,
       frames: [
-        { index: 0, durationMs: 600, anchors: anchors(0) },
-        { index: 24, durationMs: 500, anchors: closedAnchors(0) },
-        { index: 25, durationMs: 1500, anchors: closedAnchors(-1) },
-        { index: 24, durationMs: 400, anchors: closedAnchors(0) },
-        { index: 0, durationMs: 600, anchors: anchors(0) },
-        { index: 26, durationMs: 1200, anchors: closedAnchors(-1) },
-        { index: 0, durationMs: 400, anchors: anchors(0) },
-        { index: 27, durationMs: 1200, anchors: closedAnchors(-1) },
+        { index: 0, durationMs: 900, anchors: anchors(0) },
+        { index: 2, durationMs: 250, anchors: closedAnchors(0) },
+        { index: 3, durationMs: 900, anchors: closedAnchors(0) },
+        { index: 2, durationMs: 250, anchors: closedAnchors(0) },
       ],
+    },
+    // The stretching ritual, one animation per step. Each one that holds a
+    // position eases in and out within its step's 8 seconds.
+    shoulderRoll: {
+      loop: true,
+      frames: [
+        { index: 27, durationMs: 600, anchors: anchors(1) },
+        { index: 28, durationMs: 600, anchors: anchors(0) },
+        { index: 29, durationMs: 600, anchors: anchors(0) },
+        { index: 0, durationMs: 700, anchors: anchors(0) },
+      ],
+    },
+    reachUp: {
+      loop: true,
+      frames: [
+        { index: 30, durationMs: 1200, anchors: closedAnchors(-2) },
+        { index: 31, durationMs: 2600, anchors: closedAnchors(-3) },
+      ],
+    },
+    leanLeft: {
+      loop: true,
+      frames: easeAndHold(
+        { index: 32, anchors: shearedAnchors(-3, LEAN, -1) },
+        { index: 33, anchors: shearedAnchors(-6, LEAN, -1) },
+        8000,
+      ),
+    },
+    leanRight: {
+      loop: true,
+      frames: easeAndHold(
+        { index: 34, anchors: shearedAnchors(3, LEAN, -1) },
+        { index: 35, anchors: shearedAnchors(6, LEAN, -1) },
+        8000,
+      ),
+    },
+    tiltLeft: {
+      loop: true,
+      frames: easeAndHold(
+        { index: 36, anchors: shearedAnchors(-3, TILT, 0) },
+        { index: 37, anchors: shearedAnchors(-5, TILT, 0) },
+        8000,
+      ),
+    },
+    tiltRight: {
+      loop: true,
+      frames: easeAndHold(
+        { index: 38, anchors: shearedAnchors(3, TILT, 0) },
+        { index: 39, anchors: shearedAnchors(5, TILT, 0) },
+        8000,
+      ),
+    },
+    flutter: {
+      loop: true,
+      frames: [40, 41, 42, 43].map((index) => ({ index, durationMs: 250, anchors: anchors(0) })),
     },
     // Reading next to the user during a focus session: the eye moves along
     // the lines, and now and then a page turns.
     focus: {
       loop: true,
       frames: [
-        { index: 28, durationMs: 2200, anchors: closedAnchors(1) },
-        { index: 29, durationMs: 1800, anchors: closedAnchors(1) },
-        { index: 28, durationMs: 2200, anchors: closedAnchors(1) },
-        { index: 29, durationMs: 1500, anchors: closedAnchors(1) },
-        { index: 30, durationMs: 400, anchors: closedAnchors(1) },
+        { index: 24, durationMs: 2200, anchors: closedAnchors(1) },
+        { index: 25, durationMs: 1800, anchors: closedAnchors(1) },
+        { index: 24, durationMs: 2200, anchors: closedAnchors(1) },
+        { index: 25, durationMs: 1500, anchors: closedAnchors(1) },
+        { index: 26, durationMs: 400, anchors: closedAnchors(1) },
       ],
     },
     // Feet slide out, Mocha wobbles twice and catches itself.

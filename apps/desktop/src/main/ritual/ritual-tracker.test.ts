@@ -5,22 +5,24 @@ import { createRitualTracker } from './ritual-tracker.ts';
 const breathe = ritualDuration(ritualById('breathe'));
 
 describe('createRitualTracker', () => {
-  it('knows the pose of the running ritual', () => {
+  it('knows the pose of the running step and how long it lasts', () => {
     const tracker = createRitualTracker();
-    expect(tracker.pose).toBeNull();
+    expect(tracker.poseAt(0)).toBeNull();
 
-    tracker.start('eyes', 0);
-    expect(tracker.pose).toBe('lookFar');
+    tracker.start('eyes', 1_000);
+    expect(tracker.poseAt(1_000)).toEqual({ pose: 'lookFar', leftMs: 20_000 });
+    expect(tracker.poseAt(22_000)).toEqual({ pose: 'slowBlink', leftMs: 4_000 });
+    expect(tracker.poseAt(26_000)).toBeNull(); // the steps are over
 
     tracker.stop();
-    expect(tracker.pose).toBeNull();
+    expect(tracker.poseAt(2_000)).toBeNull();
   });
 
   it('rewards a ritual that took its time, once per break', () => {
     const tracker = createRitualTracker();
     tracker.start('breathe', 0);
     expect(tracker.finish(breathe)).toBe(true);
-    expect(tracker.pose).toBeNull();
+    expect(tracker.poseAt(0)).toBeNull();
 
     tracker.start('breathe', breathe);
     expect(tracker.finish(2 * breathe)).toBe(false); // same break
