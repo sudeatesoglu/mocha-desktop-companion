@@ -55,11 +55,13 @@ Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks 
 
 **A home of its own.** Double-click Mocha, or choose **Open Tower** in the menu bar, to visit its room. Mocha has a mood and an energy that follow your rest: energy drains while you work and comes back with every break, so a tired Mocha slumps and yawns on your desktop when you need a pause. Nothing bad ever happens if you forget about it. Pet it, give it a treat or rest together.
 
+**Together.** Choose **Focus with Mocha** for a 25, 40 or 50-minute session: Mocha reads next to you, no reminder interrupts, and a break starts when the time is up. When a break starts, Mocha offers a short ritual in a bubble: breathe, rest your eyes or stretch, step by step, while Mocha does each step with you.
+
 ## Install
 
 1. [Download the DMG](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest) for your Mac (`arm64` for Apple Silicon) and drag **Mocha** into **Applications**.
 2. Open Mocha. This early version isn't notarized by Apple yet, so the first time you'll need to allow it: **System Settings → Privacy & Security → Open Anyway**.
-3. Look for the top hat in your menu bar. That is where you see today's numbers, open the Tower and Settings, pause and quit.
+3. Look for the top hat in your menu bar. That is where you see today's numbers, start a focus session, open the Tower and Settings, pause and quit.
 
 macOS only for now.
 
@@ -68,7 +70,7 @@ macOS only for now.
 - [x] **v0.1 Hello, Mocha:** lives on your desktop and reacts to you
 - [x] **v0.2 Healthy habits:** notices long stretches of work and reminds you to take a break
 - [x] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
-- [ ] **v0.4 Together:** break rituals and working side by side
+- [x] **v0.4 Together:** break rituals and working side by side
 - [ ] **v0.5 Make it yours:** decorations and accessories
 
 See the [changelog](CHANGELOG.md) for what each release contains.
