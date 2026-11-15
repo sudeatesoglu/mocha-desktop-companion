@@ -28,11 +28,14 @@ describe('registerTowerHandlers', () => {
     registerTowerHandlers(() => current, { ready, act: onAction, focus }, [TRUSTED], logger);
   });
 
-  it.each(['pet', 'treat', 'rest'] as const)('passes on "%s" from the Tower', (action) => {
-    send(towerContents, action);
+  it.each(['pet', 'treat', 'rest', 'endBreak'] as const)(
+    'passes on "%s" from the Tower',
+    (action) => {
+      send(towerContents, action);
 
-    expect(onAction).toHaveBeenCalledWith(action);
-  });
+      expect(onAction).toHaveBeenCalledWith(action);
+    },
+  );
 
   it.each([
     ['an unknown action', 'feed-all'],

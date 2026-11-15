@@ -86,6 +86,8 @@ const focusEnd = element('focus-end', HTMLButtonElement);
 const lengthButtons = [...focusLengths.querySelectorAll('button')];
 
 let resting = false;
+// What the rest button does now: start a break, or end the one running.
+let restAction: TowerAction = 'rest';
 
 function show(view: TowerView): void {
   meters.mood.value = view.mood;
@@ -96,6 +98,7 @@ function show(view: TowerView): void {
   buttons.treat.textContent = controls.treat.label;
   buttons.rest.disabled = controls.rest.disabled;
   buttons.rest.textContent = controls.rest.label;
+  restAction = controls.rest.action;
   status.textContent = controls.status;
   focusLabel.textContent = controls.focus.label;
   focusLengths.hidden = controls.focus.running;
@@ -106,8 +109,8 @@ function show(view: TowerView): void {
   if (animator.setFocus(view.focusMinutesLeft !== null) || posed) loop.invalidate();
 
   // Mocha naps through a break and greets the user when it ends.
-  if (view.resting !== resting) {
-    resting = view.resting;
+  if ((view.breakMinutesLeft !== null) !== resting) {
+    resting = view.breakMinutesLeft !== null;
     effects.clear();
     animator.play(resting ? 'sleep' : 'hop');
     if (!resting) effects.add('heart');
@@ -117,7 +120,8 @@ function show(view: TowerView): void {
 
 function act(action: TowerAction): void {
   window.tower.act(action);
-  if (action === 'rest') return; // the nap starts when main reports the break
+  // The nap starts and ends when main reports the break.
+  if (action === 'rest' || action === 'endBreak') return;
   animator.play('hop');
   effects.add('heart');
   loop.invalidate();
@@ -125,7 +129,7 @@ function act(action: TowerAction): void {
 
 buttons.pet.addEventListener('click', () => act('pet'));
 buttons.treat.addEventListener('click', () => act('treat'));
-buttons.rest.addEventListener('click', () => act('rest'));
+buttons.rest.addEventListener('click', () => act(restAction));
 // Only the offered lengths reach main; anything else is ignored there too.
 for (const button of lengthButtons) {
   const minutes = FOCUS_MINUTES.find((offered) => String(offered) === button.dataset['minutes']);

@@ -6,6 +6,7 @@ const actions = () => ({
   openTower: vi.fn(),
   startFocus: vi.fn(),
   endFocus: vi.fn(),
+  endBreak: vi.fn(),
   togglePause: vi.fn(),
   openSettings: vi.fn(),
   resetPosition: vi.fn(),
@@ -112,5 +113,27 @@ describe('trayMenuTemplate', () => {
     click(item(menu, 'End Focus Session'));
     expect(wired.endFocus).toHaveBeenCalledOnce();
     expect(menu.some(({ label }) => label === 'Focus with Mocha')).toBe(false);
+  });
+
+  it('shows the time left in a break and a way to end it, after the Tower', () => {
+    const wired = actions();
+    const menu = trayMenuTemplate({ paused: false, breakLeftMs: 7 * 60_000 + 30_000 }, wired);
+
+    expect(menu.slice(0, 4).map(({ label }) => label)).toEqual([
+      'Open Tower',
+      'On a break: 7m left',
+      'End Break',
+      'Focus with Mocha',
+    ]);
+    expect(item(menu, 'On a break: 7m left').enabled).toBe(false);
+    click(item(menu, 'End Break'));
+    expect(wired.endBreak).toHaveBeenCalledOnce();
+  });
+
+  it('shows no time left once a break goes on while the user is away', () => {
+    const menu = trayMenuTemplate({ paused: false, breakLeftMs: 0 }, actions());
+
+    expect(item(menu, 'On a break').enabled).toBe(false);
+    expect(item(menu, 'End Break')).toBeDefined();
   });
 });

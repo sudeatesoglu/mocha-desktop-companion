@@ -15,17 +15,30 @@ describe('towerView', () => {
       energy: 20,
       tired: true,
       treatsLeft: DEFAULT_NEEDS_CONFIG.treatsPerDay - 1,
-      resting: true,
       paused: false,
+      breakMinutesLeft: 0,
       focusMinutesLeft: null,
     });
   });
 
   it('says when Mocha is paused', () => {
     expect(towerView(startNeeds(now), { phase: 'paused' }, now)).toMatchObject({
-      resting: false,
+      breakMinutesLeft: null,
       paused: true,
     });
+  });
+
+  it('counts the minutes left in a break, rounded up', () => {
+    const onBreak: BreakState = {
+      phase: 'onBreak',
+      startedAt: now,
+      endsAt: now + 10 * MINUTE,
+      workStartedAt: 0,
+    };
+
+    expect(towerView(startNeeds(now), onBreak, now + 30_000).breakMinutesLeft).toBe(10);
+    expect(towerView(startNeeds(now), onBreak, now + 12 * MINUTE).breakMinutesLeft).toBe(0);
+    expect(towerView(startNeeds(now), startWorking(now), now).breakMinutesLeft).toBeNull();
   });
 
   it('counts the minutes left in a focus session, rounded up', () => {

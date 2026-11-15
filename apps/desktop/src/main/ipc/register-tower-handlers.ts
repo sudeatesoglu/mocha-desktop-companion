@@ -49,6 +49,11 @@ export function registerTowerHandlers(
   );
   fromTower(
     IpcChannel.TowerAct,
-    validated(IpcChannel.TowerAct, z.enum(['pet', 'treat', 'rest']), handlers.act, options),
+    validated(
+      IpcChannel.TowerAct,
+      z.enum(['pet', 'treat', 'rest', 'endBreak']),
+      handlers.act,
+      options,
+    ),
   );
 }

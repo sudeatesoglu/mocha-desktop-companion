@@ -212,6 +212,7 @@ if (!app.requestSingleInstanceLock()) {
         durationMs: devFocusMs > 0 && Number.isFinite(devFocusMs) ? devFocusMs : minutes * 60_000,
       });
     const endFocus = () => breaks.dispatch({ type: 'endFocus', now: Date.now() });
+    const endBreak = () => breaks.dispatch({ type: 'endBreak', now: Date.now() });
 
     // History: work and break sessions, stored as kinds and timestamps only.
     // The heartbeat lets the next start close a session a crash left open.
@@ -496,6 +497,7 @@ if (!app.requestSingleInstanceLock()) {
           // Resting goes through the break rules like any break; the needs
           // follow from the break change.
           if (action === 'rest') breaks.dispatch({ type: 'startBreak', now });
+          else if (action === 'endBreak') endBreak();
           else needs.dispatch({ type: action, now });
         },
         focus: (minutes) => (minutes === null ? endFocus() : startFocus(minutes)),
@@ -532,6 +534,10 @@ if (!app.requestSingleInstanceLock()) {
     // The menu is built when it opens, not kept up to date in the background,
     // so today's numbers are always current. popUpContextMenu is how macOS
     // shows a fresh menu; a menu set with setContextMenu would be fixed.
+    // A session's end can pass up to a tick before the rules notice: no
+    // negative time left.
+    const leftIn = (phase: 'onBreak' | 'focusing', now: number) =>
+      breaks.state.phase === phase ? Math.max(0, breaks.state.endsAt - now) : undefined;
     const showTrayMenu = () =>
       tray?.popUpContextMenu(
         Menu.buildFromTemplate(
@@ -539,8 +545,8 @@ if (!app.requestSingleInstanceLock()) {
             {
               paused: pause.paused,
               today: todayStats(Date.now()),
-              focusLeftMs:
-                breaks.state.phase === 'focusing' ? breaks.state.endsAt - Date.now() : undefined,
+              breakLeftMs: leftIn('onBreak', Date.now()),
+              focusLeftMs: leftIn('focusing', Date.now()),
             },
             {
               togglePause: () => pause.toggle(),
@@ -548,6 +554,7 @@ if (!app.requestSingleInstanceLock()) {
               openTower,
               startFocus,
               endFocus,
+              endBreak,
               resetPosition: () =>
                 settle(initialOverlayPosition(undefined, screen.getPrimaryDisplay().workArea, [])),
               quit: () => app.quit(),
