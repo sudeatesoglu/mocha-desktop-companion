@@ -372,9 +372,10 @@ if (!app.requestSingleInstanceLock()) {
     let ritual: BrowserWindow | undefined;
     let ritualShow: RitualShow = { side: 'left' };
     const ritualTracker = createRitualTracker();
-    const ritualReporter = createChangeReporter<RitualPose | null>((pose) =>
-      window.webContents.send(IpcChannel.OverlayRitual, pose),
-    );
+    // The bubble also closes with the overlay, when Mocha's window is gone.
+    const ritualReporter = createChangeReporter<RitualPose | null>((pose) => {
+      if (!window.isDestroyed()) window.webContents.send(IpcChannel.OverlayRitual, pose);
+    });
     // Mocha changes pose with each step of the ritual, in step with the bubble.
     const ritualPoses = followRitualPoses(ritualTracker, { now: Date.now, after }, (pose) =>
       ritualReporter.report(pose),
