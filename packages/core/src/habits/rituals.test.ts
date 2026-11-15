@@ -5,10 +5,34 @@ const SECOND = 1_000;
 
 describe('RITUALS', () => {
   it('offers breathing, resting the eyes and stretching, in that order', () => {
-    expect(RITUALS.map(({ id, title, pose }) => [id, title, pose])).toEqual([
-      ['breathe', 'Breathe', 'breathe'],
-      ['eyes', 'Rest eyes', 'lookFar'],
-      ['stretch', 'Stretch', 'stretch'],
+    expect(RITUALS.map(({ id, title }) => [id, title])).toEqual([
+      ['breathe', 'Breathe'],
+      ['eyes', 'Rest eyes'],
+      ['stretch', 'Stretch'],
+    ]);
+  });
+
+  it('keeps one breathing pose throughout, so its loop is never restarted', () => {
+    expect(new Set(ritualById('breathe').steps.map(({ pose }) => pose))).toEqual(
+      new Set(['breathe']),
+    );
+  });
+
+  it('gazes far, then blinks slowly', () => {
+    expect(ritualById('eyes').steps.map(({ pose }) => pose)).toEqual(['lookFar', 'slowBlink']);
+  });
+
+  it('gives every stretch its own pose', () => {
+    const poses = ritualById('stretch').steps.map(({ pose }) => pose);
+
+    expect(poses).toEqual([
+      'shoulderRoll',
+      'reachUp',
+      'leanLeft',
+      'leanRight',
+      'tiltLeft',
+      'tiltRight',
+      'flutter',
     ]);
   });
 
@@ -44,10 +68,9 @@ describe('ritualProgress', () => {
   const ritual: Ritual = {
     id: 'eyes',
     title: 'Test',
-    pose: 'lookFar',
     steps: [
-      { text: 'First', durationMs: 10 * SECOND },
-      { text: 'Second', durationMs: 5 * SECOND },
+      { text: 'First', durationMs: 10 * SECOND, pose: 'lookFar' },
+      { text: 'Second', durationMs: 5 * SECOND, pose: 'slowBlink' },
     ],
   };
 

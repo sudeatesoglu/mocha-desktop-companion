@@ -47,6 +47,7 @@ import { towerView } from './pet/tower-view.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
 import { reminderPosition } from './reminder/reminder-placement.ts';
 import { reminderTransition } from './reminder/reminder-transition.ts';
+import { followRitualPoses } from './ritual/ritual-poses.ts';
 import { createRitualTracker } from './ritual/ritual-tracker.ts';
 import { ritualTransition } from './ritual/ritual-transition.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
@@ -81,6 +82,10 @@ const loadPage = (target: BrowserWindow, page: Page) =>
 const every = (ms: number, callback: () => void) => {
   const id = setInterval(callback, ms);
   return () => clearInterval(id);
+};
+const after = (ms: number, callback: () => void) => {
+  const id = setTimeout(callback, ms);
+  return () => clearTimeout(id);
 };
 
 const workAreas = () => screen.getAllDisplays().map((display) => display.workArea);
@@ -276,7 +281,7 @@ if (!app.requestSingleInstanceLock()) {
       focusingReporter.reset();
       focusingReporter.report(breaks.state.phase === 'focusing');
       ritualReporter.reset();
-      ritualReporter.report(ritualTracker.pose);
+      ritualReporter.report(ritualTracker.poseAt(Date.now())?.pose ?? null);
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
@@ -367,8 +372,13 @@ if (!app.requestSingleInstanceLock()) {
     let ritual: BrowserWindow | undefined;
     let ritualShow: RitualShow = { side: 'left' };
     const ritualTracker = createRitualTracker();
-    const ritualReporter = createChangeReporter<RitualPose | null>((pose) =>
-      window.webContents.send(IpcChannel.OverlayRitual, pose),
+    // The bubble also closes with the overlay, when Mocha's window is gone.
+    const ritualReporter = createChangeReporter<RitualPose | null>((pose) => {
+      if (!window.isDestroyed()) window.webContents.send(IpcChannel.OverlayRitual, pose);
+    });
+    // Mocha changes pose with each step of the ritual, in step with the bubble.
+    const ritualPoses = followRitualPoses(ritualTracker, { now: Date.now, after }, (pose) =>
+      ritualReporter.report(pose),
     );
     const placeRitual = () => {
       const bounds = window.getBounds();
@@ -392,7 +402,7 @@ if (!app.requestSingleInstanceLock()) {
         if (ritual !== opened) return;
         ritual = undefined;
         ritualTracker.stop();
-        ritualReporter.report(null);
+        ritualPoses.update();
       });
       loadPage(opened, 'ritual');
     };
@@ -400,7 +410,7 @@ if (!app.requestSingleInstanceLock()) {
       ritual?.close();
       ritual = undefined;
       ritualTracker.stop();
-      ritualReporter.report(null);
+      ritualPoses.update();
     }
     function followRitual() {
       if (!ritual) return;
@@ -424,13 +434,13 @@ if (!app.requestSingleInstanceLock()) {
         ready: () => ritual?.webContents.send(IpcChannel.RitualShow, ritualShow),
         start: (id) => {
           ritualTracker.start(id, Date.now());
-          ritualReporter.report(ritualTracker.pose);
+          ritualPoses.update();
         },
         finish: () => {
           // Main decides whether it counts: once per break, and only if the
           // ritual really took its time.
           if (ritualTracker.finish(Date.now())) needs.dispatch({ type: 'ritualCompleted' });
-          ritualReporter.report(null);
+          ritualPoses.update();
         },
         close: () => closeRitual(),
       },

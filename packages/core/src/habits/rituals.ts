@@ -1,7 +1,17 @@
 const SECOND_MS = 1_000;
 
-/** How Mocha acts along during a ritual; the names of skin animations. */
-export type RitualPose = 'breathe' | 'lookFar' | 'stretch';
+/** How Mocha acts along with a ritual step; the names of skin animations. */
+export type RitualPose =
+  | 'breathe'
+  | 'lookFar'
+  | 'slowBlink'
+  | 'shoulderRoll'
+  | 'reachUp'
+  | 'leanLeft'
+  | 'leanRight'
+  | 'tiltLeft'
+  | 'tiltRight'
+  | 'flutter';
 
 export type RitualId = 'breathe' | 'eyes' | 'stretch';
 
@@ -9,53 +19,58 @@ export interface RitualStep {
   /** What the user does now, shown in the bubble. */
   readonly text: string;
   readonly durationMs: number;
+  /** What Mocha does meanwhile on the desktop. */
+  readonly pose: RitualPose;
 }
 
 export interface Ritual {
   readonly id: RitualId;
   /** The button label that starts it. */
   readonly title: string;
-  readonly pose: RitualPose;
   readonly steps: readonly RitualStep[];
 }
 
-const step = (text: string, seconds: number): RitualStep => ({
+const step = (text: string, seconds: number, pose: RitualPose): RitualStep => ({
   text,
   durationMs: seconds * SECOND_MS,
+  pose,
 });
 
 // Box breathing: four rounds of in, hold, out, hold, four seconds each.
-// Mocha's "breathe" animation loops with the same 16-second rhythm, so
-// starting both together keeps them in step.
+// Mocha's "breathe" animation loops with the same 16-second rhythm and
+// keeps running from step to step, so starting both together keeps them
+// in step.
 const BOX: readonly RitualStep[] = [
-  step('Breathe in', 4),
-  step('Hold', 4),
-  step('Breathe out', 4),
-  step('Hold', 4),
+  step('Breathe in', 4, 'breathe'),
+  step('Hold', 4, 'breathe'),
+  step('Breathe out', 4, 'breathe'),
+  step('Hold', 4, 'breathe'),
 ];
 
 /** The rituals Mocha offers during a break, in the order it offers them. */
 export const RITUALS: readonly Ritual[] = Object.freeze([
-  { id: 'breathe', title: 'Breathe', pose: 'breathe', steps: [...BOX, ...BOX, ...BOX, ...BOX] },
+  { id: 'breathe', title: 'Breathe', steps: [...BOX, ...BOX, ...BOX, ...BOX] },
   {
     id: 'eyes',
     title: 'Rest eyes',
-    pose: 'lookFar',
     // The 20-20-20 rule: every 20 minutes, 20 seconds at something 20 feet away.
-    steps: [step('Look at something far away, at least 6 metres off', 20), step('Blink slowly', 5)],
+    steps: [
+      step('Look at something far away, at least 6 metres off', 20, 'lookFar'),
+      step('Blink slowly', 5, 'slowBlink'),
+    ],
   },
   {
     id: 'stretch',
     title: 'Stretch',
-    pose: 'stretch',
+    // Mocha faces left, so its left and right are the screen's.
     steps: [
-      step('Roll your shoulders back', 10),
-      step('Reach both arms up high', 10),
-      step('Lean slowly to the left', 8),
-      step('And slowly to the right', 8),
-      step('Tilt your head to one side', 8),
-      step('And to the other side', 8),
-      step('Shake out your hands', 6),
+      step('Roll your shoulders back', 10, 'shoulderRoll'),
+      step('Reach both arms up high', 10, 'reachUp'),
+      step('Lean slowly to the left', 8, 'leanLeft'),
+      step('And slowly to the right', 8, 'leanRight'),
+      step('Tilt your head to the left', 8, 'tiltLeft'),
+      step('And to the right', 8, 'tiltRight'),
+      step('Roll your wrists slowly', 6, 'flutter'),
     ],
   },
 ]);

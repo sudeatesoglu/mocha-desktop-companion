@@ -4,6 +4,7 @@ import {
   type RitualPose,
   ritualById,
   ritualDuration,
+  ritualProgress,
 } from '@mocha/core';
 
 /** Slack for timers and messages: a ritual may report its end this much early. */
@@ -20,9 +21,14 @@ export function createRitualTracker() {
   let rewarded = false;
 
   return {
-    /** The pose of the running ritual, or null. */
-    get pose(): RitualPose | null {
-      return running?.ritual.pose ?? null;
+    /**
+     * Mocha's pose at `now`, from the running ritual's step, and how long the
+     * step lasts; null without a ritual or once its steps are over.
+     */
+    poseAt(now: number): { pose: RitualPose; leftMs: number } | null {
+      if (!running) return null;
+      const at = ritualProgress(running.ritual, now - running.startedAt);
+      return at.finished ? null : { pose: at.step.pose, leftMs: at.stepLeftMs };
     },
     start(id: RitualId, now: number): void {
       running = { ritual: ritualById(id), startedAt: now };
