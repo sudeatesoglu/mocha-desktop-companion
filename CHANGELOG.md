@@ -4,6 +4,10 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Added
+
+- Mocha finds things during breaks. Rest that follows at least 20 minutes of work fills a meter in the Tower, and every 3 points Mocha finds something new, at most 2 a day, with a sparkle on the desktop. Nothing is bought or lost ([ADR-0010](docs/adr/0010-finds-earned-by-breaks.md), [#147](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/147), [#148](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/148))
+
 ## [0.4.0] - 2026-11-15
 
 "Together": Mocha keeps you company through work and breaks, with focus sessions side by side and short rituals in every break.
