@@ -2,7 +2,7 @@ import type { BrowserWindow } from 'electron';
 import { createSecureWindow } from './create-secure-window.ts';
 
 export const TOWER_WIDTH = 360;
-export const TOWER_HEIGHT = 480;
+export const TOWER_HEIGHT = 520;
 
 /** Creates Mocha's Tower: an ordinary, fixed-size window that takes focus. */
 export function createTowerWindow(preloadPath: string): BrowserWindow {

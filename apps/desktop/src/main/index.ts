@@ -506,7 +506,7 @@ if (!app.requestSingleInstanceLock()) {
     const sendTowerView = (force: boolean) => {
       const target = towerWindow.current;
       if (!target) return;
-      const view = towerView(needs.state, breaks.state, Date.now());
+      const view = towerView(needs.state, breaks.state, finds.state, Date.now());
       const key = JSON.stringify(view);
       if (!force && key === shownView) return;
       shownView = key;
@@ -523,6 +523,7 @@ if (!app.requestSingleInstanceLock()) {
     }
     needs.onChange(() => sendTowerView(false));
     breaks.onChange(() => sendTowerView(false)); // a break starts or ends
+    finds.onChange(() => sendTowerView(false));
     registerTowerHandlers(
       () => towerWindow.current?.webContents,
       {

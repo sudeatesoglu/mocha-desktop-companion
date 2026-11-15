@@ -84,6 +84,8 @@ const focusLabel = element('focus-label', HTMLElement);
 const focusLengths = element('focus-lengths', HTMLElement);
 const focusEnd = element('focus-end', HTMLButtonElement);
 const lengthButtons = [...focusLengths.querySelectorAll('button')];
+const findsDots = element('finds-dots', HTMLElement);
+const findsText = element('finds-text', HTMLElement);
 
 let resting = false;
 // What the rest button does now: start a break, or end the one running.
@@ -104,6 +106,10 @@ function show(view: TowerView): void {
   focusLengths.hidden = controls.focus.running;
   focusEnd.hidden = !controls.focus.running;
   for (const button of lengthButtons) button.disabled = controls.focus.disabled;
+  findsDots.textContent = controls.finds.dots;
+  findsDots.hidden = controls.finds.dots === '';
+  findsDots.setAttribute('aria-label', controls.finds.dotsLabel);
+  findsText.textContent = controls.finds.text;
   // Reading during a session comes before looking tired.
   const posed = animator.setTired(view.tired);
   if (animator.setFocus(view.focusMinutesLeft !== null) || posed) loop.invalidate();
