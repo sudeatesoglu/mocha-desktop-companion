@@ -8,8 +8,11 @@ export interface TowerView {
   tired: boolean;
   /** Treats Mocha still accepts today. */
   treatsLeft: number;
-  /** A break is in progress: Mocha naps, and "Rest together" is not offered. */
-  resting: boolean;
+  /**
+   * Whole minutes left in a break, rounded up, or null without one. During a
+   * break Mocha naps, and the Tower offers to end it instead of starting one.
+   */
+  breakMinutesLeft: number | null;
   /** Mocha is paused from the menu bar: no break can start. */
   paused: boolean;
   /** Whole minutes left in the focus session, rounded up, or null without one. */
@@ -21,4 +24,4 @@ export const FOCUS_MINUTES = [25, 40, 50] as const;
 export type FocusMinutes = (typeof FOCUS_MINUTES)[number];
 
 /** What the user can do for Mocha in the Tower. */
-export type TowerAction = 'pet' | 'treat' | 'rest';
+export type TowerAction = 'pet' | 'treat' | 'rest' | 'endBreak';

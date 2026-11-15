@@ -6,6 +6,7 @@ export interface TrayActions {
   openTower(): void;
   startFocus(minutes: FocusMinutes): void;
   endFocus(): void;
+  endBreak(): void;
   togglePause(): void;
   openSettings(): void;
   resetPosition(): void;
@@ -20,6 +21,8 @@ export function trayMenuTemplate(
   state: {
     paused: boolean;
     today?: DailyStats | undefined;
+    /** Time left in the running break, if any. */
+    breakLeftMs?: number | undefined;
     /** Time left in the running focus session, if any. */
     focusLeftMs?: number | undefined;
   },
@@ -28,6 +31,7 @@ export function trayMenuTemplate(
   return [
     ...todayItems(state.today),
     { label: 'Open Tower', click: () => actions.openTower() },
+    ...breakItems(state.breakLeftMs, actions),
     ...focusItems(state, actions),
     {
       label: state.paused ? 'Resume Mocha' : 'Pause Mocha',
@@ -55,6 +59,24 @@ function todayItems(today: DailyStats | undefined): MenuItemConstructorOptions[]
     { label: `Breaks today: ${today.breaks}`, enabled: false },
     { label: `Longest stretch: ${formatDuration(today.longestStretchMs)}`, enabled: false },
     { type: 'separator' },
+  ];
+}
+
+/**
+ * The time left in a running break and a way to end it early. A break goes
+ * on past its length while the user is away, so it may have no time left.
+ */
+function breakItems(
+  breakLeftMs: number | undefined,
+  actions: TrayActions,
+): MenuItemConstructorOptions[] {
+  if (breakLeftMs === undefined) return [];
+  return [
+    {
+      label: breakLeftMs > 0 ? `On a break: ${formatDuration(breakLeftMs)} left` : 'On a break',
+      enabled: false,
+    },
+    { label: 'End Break', click: () => actions.endBreak() },
   ];
 }
 

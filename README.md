@@ -51,7 +51,7 @@
 
 Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks pass through everywhere except Mocha itself.
 
-**Breaks, gently.** After 40 minutes of work a speech bubble next to Mocha suggests a 10-minute break. Take it, snooze it or skip it; the bubble never steals your keyboard. Mocha naps through every break, including when you step away. Change the lengths or set quiet hours in **Settings**, and see today's active time, breaks and longest stretch at the top of the menu.
+**Breaks, gently.** After 40 minutes of work a speech bubble next to Mocha suggests a 10-minute break. Take it, snooze it or skip it; the bubble never steals your keyboard. Mocha naps through every break, including when you step away; the menu bar and the Tower show how long it has left and let you end it early. Change the lengths or set quiet hours in **Settings**, and see today's active time, breaks and longest stretch at the top of the menu.
 
 **A home of its own.** Double-click Mocha, or choose **Open Tower** in the menu bar, to visit its room. Mocha has a mood and an energy that follow your rest: energy drains while you work and comes back with every break, so a tired Mocha slumps and yawns on your desktop when you need a pause. Nothing bad ever happens if you forget about it. Pet it, give it a treat or rest together.
 

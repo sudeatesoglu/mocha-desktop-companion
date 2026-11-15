@@ -7,8 +7,8 @@ const view = (patch: Partial<TowerView>): TowerView => ({
   energy: 80,
   tired: false,
   treatsLeft: 3,
-  resting: false,
   paused: false,
+  breakMinutesLeft: null,
   focusMinutesLeft: null,
   ...patch,
 });
@@ -18,7 +18,7 @@ describe('towerControls', () => {
     expect(towerControls(view({}))).toEqual({
       pet: { disabled: false },
       treat: { label: 'Treat (3 left)', disabled: false },
-      rest: { label: 'Rest together', disabled: false },
+      rest: { action: 'rest', label: 'Rest together', disabled: false },
       focus: { running: false, label: 'Focus with Mocha', disabled: false },
       status: '',
     });
@@ -44,13 +44,19 @@ describe('towerControls', () => {
     expect(controls.status).toBe('Mocha is paused. Resume it from the menu bar to rest together.');
   });
 
-  it('leaves a napping Mocha in peace during a break', () => {
-    const controls = towerControls(view({ resting: true, tired: true }));
+  it('leaves a napping Mocha in peace during a break, and offers to end it', () => {
+    const controls = towerControls(view({ breakMinutesLeft: 8, tired: true }));
 
     expect(controls.pet.disabled).toBe(true);
     expect(controls.treat.disabled).toBe(true);
-    expect(controls.rest).toEqual({ label: 'Resting…', disabled: true });
-    expect(controls.status).toBe('Resting together. Mocha is napping.');
+    expect(controls.rest).toEqual({ action: 'endBreak', label: 'End break', disabled: false });
+    expect(controls.status).toBe('Resting together: 8 min left. Mocha is napping.');
+  });
+
+  it('shows no minutes once a break goes on while the user is away', () => {
+    expect(towerControls(view({ breakMinutesLeft: 0 })).status).toBe(
+      'Resting together. Mocha is napping.',
+    );
   });
 
   it('shows the minutes left in a focus session and Mocha reading', () => {

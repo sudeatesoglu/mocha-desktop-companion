@@ -290,6 +290,33 @@ describe('starting a break on request', () => {
   });
 });
 
+describe('ending a break on request', () => {
+  const resting = [tick(20), { type: 'startBreak', now: at(20) } as const];
+
+  it('starts a new work stretch before the break length is over', () => {
+    expect(play([...resting, tick(22), { type: 'endBreak', now: at(22) }])).toEqual({
+      phase: 'working',
+      workStartedAt: at(22),
+      snoozedUntil: 0,
+    });
+  });
+
+  it('ends a break from being away too', () => {
+    expect(play([tick(30, 5), { type: 'endBreak', now: at(30) }])).toEqual(startWorking(at(30)));
+  });
+
+  it.each([
+    ['working', []],
+    ['due', [tick(50)]],
+    ['focusing', [{ type: 'startFocus', now: at(1), durationMs: at(25) } as const]],
+    ['paused', [{ type: 'pause', now: at(1) } as const]],
+  ])('changes nothing while %s', (_name, before) => {
+    const state = play(before);
+
+    expect(reduceBreak(state, { type: 'endBreak', now: at(2) }, config)).toBe(state);
+  });
+});
+
 describe('focus sessions', () => {
   const focus = (minutes: number, length: number): BreakEvent => ({
     type: 'startFocus',

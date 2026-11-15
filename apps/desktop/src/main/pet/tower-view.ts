@@ -3,6 +3,10 @@ import type { TowerView } from '../../shared/tower.ts';
 
 const MINUTE_MS = 60_000;
 
+// Whole minutes, so the view changes once a minute, not on every tick.
+const minutesLeft = (endsAt: number, now: number) =>
+  Math.max(0, Math.ceil((endsAt - now) / MINUTE_MS));
+
 /** What the Tower shows of Mocha's needs at `now`: rounded, never raw state. */
 export function towerView(needs: NeedsState, breaks: BreakState, now: number): TowerView {
   return {
@@ -10,12 +14,8 @@ export function towerView(needs: NeedsState, breaks: BreakState, now: number): T
     energy: Math.round(needs.energy),
     tired: isTired(needs),
     treatsLeft: treatsLeft(needs, now),
-    resting: breaks.phase === 'onBreak',
     paused: breaks.phase === 'paused',
-    // Whole minutes, so the view changes once a minute, not on every tick.
-    focusMinutesLeft:
-      breaks.phase === 'focusing'
-        ? Math.max(0, Math.ceil((breaks.endsAt - now) / MINUTE_MS))
-        : null,
+    breakMinutesLeft: breaks.phase === 'onBreak' ? minutesLeft(breaks.endsAt, now) : null,
+    focusMinutesLeft: breaks.phase === 'focusing' ? minutesLeft(breaks.endsAt, now) : null,
   };
 }
