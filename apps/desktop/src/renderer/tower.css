@@ -142,6 +142,29 @@ button:focus-visible {
   padding: 4px 8px;
 }
 
+.finds {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 2px solid var(--track);
+}
+
+#finds-dots {
+  color: var(--energy);
+  letter-spacing: 2px;
+}
+
+#finds-text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 #status {
   min-height: 1.4em;
   margin: 12px 0 0;

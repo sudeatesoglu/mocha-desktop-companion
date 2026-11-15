@@ -63,5 +63,7 @@ describe('runMigrations', () => {
 
     expect(version(db)).toBe(MIGRATIONS.length);
     expect(tables(db)).toContainEqual({ name: 'sessions' });
+    expect(tables(db)).toContainEqual({ name: 'finds' });
+    expect(tables(db)).toContainEqual({ name: 'find_meter' });
   });
 });

@@ -46,6 +46,11 @@ const bridge: MochaBridge = {
     ipcRenderer.on(IpcChannel.OverlayTired, listener);
     return () => ipcRenderer.removeListener(IpcChannel.OverlayTired, listener);
   },
+  onFound: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on(IpcChannel.OverlayFound, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlayFound, listener);
+  },
   openTower: () => ipcRenderer.send(IpcChannel.OpenTower),
   petted: () => ipcRenderer.send(IpcChannel.OverlayPetted),
 };

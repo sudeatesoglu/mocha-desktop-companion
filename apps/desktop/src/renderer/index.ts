@@ -259,6 +259,13 @@ window.mocha.onFocusingChange((focusing) => {
   if (animator.setFocus(focusing)) loop.invalidate();
 });
 
+// Mocha found something during the break: twinkles as it wakes up.
+window.mocha.onFound(() => {
+  if (paused) return;
+  effects.add('sparkle');
+  loop.invalidate();
+});
+
 // Low energy: Mocha holds its tired pose instead of idle.
 window.mocha.onTiredChange((tired) => {
   if (animator.setTired(tired)) loop.invalidate();

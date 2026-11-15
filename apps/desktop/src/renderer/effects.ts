@@ -1,7 +1,7 @@
 import type { PixelPainter } from './placeholder-sprite.ts';
 
 /** Short-lived decorations drawn on top of Mocha, attached to an anchor. */
-export type EffectKind = 'heart' | 'stars' | 'dust';
+export type EffectKind = 'heart' | 'stars' | 'dust' | 'sparkle';
 
 export interface Point {
   x: number;
@@ -37,6 +37,23 @@ const STAR_SHAPE = [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]] as const;
 
 // biome-ignore format: laid out as the pixel grid it draws
 const PUFF_SHAPE = [[1, -1], [0, 0], [1, 0], [2, 0]] as const;
+
+// biome-ignore format: laid out as the pixel grids they draw
+const TWINKLE_SHAPES = [
+  [[0, 0]],
+  [[0, -1], [-1, 0], [0, 0], [1, 0], [0, 1]],
+  [[0, -2], [0, -1], [-2, 0], [-1, 0], [0, 0], [1, 0], [2, 0], [0, 1], [0, 2]],
+] as const;
+
+/** A twinkle's size in each frame of its life: it grows, then fades. */
+const TWINKLE_GROWTH = [0, 1, 2, 1, 0] as const;
+
+/** Where the twinkles of a sparkle light up around the hat, one after another. */
+const TWINKLE_SPOTS = [
+  [-9, 4],
+  [10, -1],
+  [-4, -3],
+] as const;
 const mirrored = (shape: readonly (readonly [number, number])[]) =>
   shape.map(([x, y]) => [-x, y] as const);
 
@@ -76,6 +93,20 @@ const EFFECTS: Record<EffectKind, EffectSpec> = {
       [0, 2].flatMap((phase) => {
         const [x, y] = station(n + phase);
         return offset(STAR_SHAPE, x, y);
+      }),
+  },
+  // Mocha found something: twinkles light up around the hat one after
+  // another, each growing and fading.
+  sparkle: {
+    anchor: 'head',
+    durationMs: 1_800,
+    frameMs: 150,
+    color: '#ffd27a',
+    pixels: (n) =>
+      TWINKLE_SPOTS.flatMap(([x, y], i) => {
+        // Each twinkle starts three frames after the one before it.
+        const size = TWINKLE_GROWTH[n - i * 3];
+        return size === undefined ? [] : offset(TWINKLE_SHAPES[size], x, y);
       }),
   },
   // Two puffs kicked up at the feet, drifting outward and upward.

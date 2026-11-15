@@ -17,6 +17,23 @@ export interface TowerView {
   paused: boolean;
   /** Whole minutes left in the focus session, rounded up, or null without one. */
   focusMinutesLeft: number | null;
+  /** Mocha's find meter and collection (ADR-0010). */
+  finds: TowerFinds;
+}
+
+/** What the Tower shows of Mocha's finds. */
+export interface TowerFinds {
+  /** Points towards the next find, and how many make one. */
+  points: number;
+  pointsPerFind: number;
+  /** No more finds today: the meter waits for tomorrow. */
+  waiting: boolean;
+  /** Everything was found. */
+  complete: boolean;
+  found: number;
+  total: number;
+  /** The newest find's title, or null before the first. */
+  latest: string | null;
 }
 
 /** The focus session lengths Mocha offers, in minutes. */

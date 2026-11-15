@@ -1,4 +1,4 @@
-import type { TowerAction, TowerView } from '../shared/tower.ts';
+import type { TowerAction, TowerFinds, TowerView } from '../shared/tower.ts';
 
 /** What the Tower's buttons and status line show for a view of Mocha's needs. */
 export function towerControls(view: TowerView) {
@@ -26,6 +26,7 @@ export function towerControls(view: TowerView) {
       // The break rules are paused too: no session can start.
       disabled: view.paused,
     },
+    finds: findsControls(view.finds),
     status: resting
       ? restingStatus(view.breakMinutesLeft)
       : view.paused
@@ -43,4 +44,17 @@ function restingStatus(minutesLeft: number | null): string {
   return minutesLeft
     ? `Resting together: ${minutesLeft} min left. Mocha is napping.`
     : 'Resting together. Mocha is napping.';
+}
+
+/** The find meter's dots, their spoken label and the line beside them (ADR-0010). */
+function findsControls(finds: TowerFinds) {
+  if (finds.complete) return { dots: '', dotsLabel: '', text: `All ${finds.total} found` };
+  const latest = finds.latest ? `, last: ${finds.latest}` : '';
+  return {
+    dots: '●'.repeat(finds.points) + '○'.repeat(finds.pointsPerFind - finds.points),
+    dotsLabel: `${finds.points} of ${finds.pointsPerFind} points toward the next find`,
+    text: finds.waiting
+      ? 'Mocha looks again tomorrow'
+      : `${finds.found} of ${finds.total} found${latest}`,
+  };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TowerView } from '../shared/tower.ts';
+import type { TowerFinds, TowerView } from '../shared/tower.ts';
 import { towerControls } from './tower-controls.ts';
 
 const view = (patch: Partial<TowerView>): TowerView => ({
@@ -10,8 +10,22 @@ const view = (patch: Partial<TowerView>): TowerView => ({
   paused: false,
   breakMinutesLeft: null,
   focusMinutesLeft: null,
+  finds: finds({}),
   ...patch,
 });
+
+function finds(patch: Partial<TowerFinds>): TowerFinds {
+  return {
+    points: 1,
+    pointsPerFind: 3,
+    waiting: false,
+    complete: false,
+    found: 2,
+    total: 11,
+    latest: 'Fern',
+    ...patch,
+  };
+}
 
 describe('towerControls', () => {
   it('offers everything to a rested Mocha', () => {
@@ -20,6 +34,11 @@ describe('towerControls', () => {
       treat: { label: 'Treat (3 left)', disabled: false },
       rest: { action: 'rest', label: 'Rest together', disabled: false },
       focus: { running: false, label: 'Focus with Mocha', disabled: false },
+      finds: {
+        dots: '●○○',
+        dotsLabel: '1 of 3 points toward the next find',
+        text: '2 of 11 found, last: Fern',
+      },
       status: '',
     });
   });
@@ -72,5 +91,27 @@ describe('towerControls', () => {
 
   it('starts no focus session while Mocha is paused', () => {
     expect(towerControls(view({ paused: true })).focus.disabled).toBe(true);
+  });
+
+  it('counts what was found before the first find has a name', () => {
+    expect(towerControls(view({ finds: finds({ found: 0, latest: null }) })).finds.text).toBe(
+      '0 of 11 found',
+    );
+  });
+
+  it('says when the meter waits for tomorrow', () => {
+    expect(towerControls(view({ finds: finds({ points: 3, waiting: true }) })).finds).toEqual({
+      dots: '●●●',
+      dotsLabel: '3 of 3 points toward the next find',
+      text: 'Mocha looks again tomorrow',
+    });
+  });
+
+  it('hides the meter once everything is found', () => {
+    expect(towerControls(view({ finds: finds({ complete: true, points: 0 }) })).finds).toEqual({
+      dots: '',
+      dotsLabel: '',
+      text: 'All 11 found',
+    });
   });
 });
