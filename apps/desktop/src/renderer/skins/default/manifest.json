@@ -457,7 +457,25 @@
         },
         {
           "index": 17,
-          "durationMs": 7000,
+          "durationMs": 1000,
+          "anchors": {
+            "beak": {
+              "x": 5,
+              "y": 19
+            },
+            "head": {
+              "x": 23,
+              "y": 4
+            },
+            "feet": {
+              "x": 24,
+              "y": 46
+            }
+          }
+        },
+        {
+          "index": 18,
+          "durationMs": 6000,
           "anchors": {
             "beak": {
               "x": 5,
@@ -474,8 +492,8 @@
           }
         },
         {
-          "index": 3,
-          "durationMs": 1000,
+          "index": 19,
+          "durationMs": 2000,
           "anchors": {
             "beak": {
               "x": 5,
@@ -492,8 +510,8 @@
           }
         },
         {
-          "index": 19,
-          "durationMs": 3000,
+          "index": 20,
+          "durationMs": 2000,
           "anchors": {
             "beak": {
               "x": 5,
@@ -510,7 +528,7 @@
           }
         },
         {
-          "index": 18,
+          "index": 21,
           "durationMs": 4000,
           "anchors": {
             "beak": {
@@ -533,7 +551,7 @@
       "loop": true,
       "frames": [
         {
-          "index": 20,
+          "index": 22,
           "durationMs": 2400,
           "anchors": {
             "beak": {
@@ -551,7 +569,7 @@
           }
         },
         {
-          "index": 21,
+          "index": 23,
           "durationMs": 2400,
           "anchors": {
             "beak": {
@@ -596,7 +614,7 @@
           }
         },
         {
-          "index": 22,
+          "index": 24,
           "durationMs": 500,
           "anchors": {
             "beak": {
@@ -614,7 +632,7 @@
           }
         },
         {
-          "index": 23,
+          "index": 25,
           "durationMs": 1500,
           "anchors": {
             "beak": {
@@ -632,7 +650,7 @@
           }
         },
         {
-          "index": 22,
+          "index": 24,
           "durationMs": 400,
           "anchors": {
             "beak": {
@@ -672,7 +690,7 @@
           }
         },
         {
-          "index": 24,
+          "index": 26,
           "durationMs": 1200,
           "anchors": {
             "beak": {
@@ -712,7 +730,7 @@
           }
         },
         {
-          "index": 25,
+          "index": 27,
           "durationMs": 1200,
           "anchors": {
             "beak": {
@@ -735,7 +753,7 @@
       "loop": true,
       "frames": [
         {
-          "index": 26,
+          "index": 28,
           "durationMs": 2200,
           "anchors": {
             "beak": {
@@ -753,7 +771,7 @@
           }
         },
         {
-          "index": 27,
+          "index": 29,
           "durationMs": 1800,
           "anchors": {
             "beak": {
@@ -771,7 +789,7 @@
           }
         },
         {
-          "index": 26,
+          "index": 28,
           "durationMs": 2200,
           "anchors": {
             "beak": {
@@ -789,7 +807,7 @@
           }
         },
         {
-          "index": 27,
+          "index": 29,
           "durationMs": 1500,
           "anchors": {
             "beak": {
@@ -807,8 +825,8 @@
           }
         },
         {
-          "index": 28,
-          "durationMs": 300,
+          "index": 30,
+          "durationMs": 400,
           "anchors": {
             "beak": {
               "x": 5,
