@@ -6,6 +6,25 @@
  */
 
 export {
+  DEFAULT_FINDS_CONFIG,
+  type Find,
+  type FindsConfig,
+  type FindsEvent,
+  type FindsState,
+  findStatus,
+  pointsForBreak,
+  reduceFinds,
+  startFinds,
+} from './collection/finds.ts';
+export {
+  type AccessorySlot,
+  type DecorSlot,
+  ITEMS,
+  type Item,
+  type ItemId,
+  itemById,
+} from './collection/items.ts';
+export {
   type BreakConfig,
   type BreakEvent,
   type BreakState,
