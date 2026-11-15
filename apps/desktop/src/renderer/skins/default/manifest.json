@@ -439,7 +439,7 @@
       "frames": [
         {
           "index": 3,
-          "durationMs": 1000,
+          "durationMs": 750,
           "anchors": {
             "beak": {
               "x": 5,
@@ -457,7 +457,7 @@
         },
         {
           "index": 17,
-          "durationMs": 1000,
+          "durationMs": 750,
           "anchors": {
             "beak": {
               "x": 5,
@@ -475,7 +475,7 @@
         },
         {
           "index": 18,
-          "durationMs": 6000,
+          "durationMs": 4500,
           "anchors": {
             "beak": {
               "x": 5,
@@ -493,7 +493,7 @@
         },
         {
           "index": 19,
-          "durationMs": 2000,
+          "durationMs": 1500,
           "anchors": {
             "beak": {
               "x": 5,
@@ -511,7 +511,7 @@
         },
         {
           "index": 20,
-          "durationMs": 2000,
+          "durationMs": 1500,
           "anchors": {
             "beak": {
               "x": 5,
@@ -529,7 +529,7 @@
         },
         {
           "index": 21,
-          "durationMs": 4000,
+          "durationMs": 3000,
           "anchors": {
             "beak": {
               "x": 5,
