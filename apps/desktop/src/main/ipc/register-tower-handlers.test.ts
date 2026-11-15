@@ -14,6 +14,7 @@ const towerContents = { id: 5 };
 describe('registerTowerHandlers', () => {
   const onAction = vi.fn();
   const ready = vi.fn();
+  const focus = vi.fn();
   const logger = { warn: vi.fn() };
   let current: unknown;
 
@@ -24,14 +25,17 @@ describe('registerTowerHandlers', () => {
     ipc.handlers.clear();
     vi.clearAllMocks();
     current = towerContents;
-    registerTowerHandlers(() => current, { ready, act: onAction }, [TRUSTED], logger);
+    registerTowerHandlers(() => current, { ready, act: onAction, focus }, [TRUSTED], logger);
   });
 
-  it.each(['pet', 'treat', 'rest'] as const)('passes on "%s" from the Tower', (action) => {
-    send(towerContents, action);
+  it.each(['pet', 'treat', 'rest', 'endBreak'] as const)(
+    'passes on "%s" from the Tower',
+    (action) => {
+      send(towerContents, action);
 
-    expect(onAction).toHaveBeenCalledWith(action);
-  });
+      expect(onAction).toHaveBeenCalledWith(action);
+    },
+  );
 
   it.each([
     ['an unknown action', 'feed-all'],
@@ -80,6 +84,33 @@ describe('registerTowerHandlers', () => {
       announce({ id: 1 });
 
       expect(ready).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(IpcChannel.TowerFocus, () => {
+    const ask = (payload: unknown, sender: unknown = towerContents) =>
+      ipc.handlers.get(IpcChannel.TowerFocus)?.({ sender, senderFrame: { url: TRUSTED } }, payload);
+
+    it.each([25, 40, 50, null])('passes on %s', (minutes) => {
+      ask(minutes);
+
+      expect(focus).toHaveBeenCalledWith(minutes);
+    });
+
+    it.each([
+      ['another length', 600],
+      ['a string', '25'],
+      ['nothing', undefined],
+    ])('rejects %s', (_case, payload) => {
+      ask(payload);
+
+      expect(focus).not.toHaveBeenCalled();
+    });
+
+    it('rejects other windows', () => {
+      ask(25, { id: 1 });
+
+      expect(focus).not.toHaveBeenCalled();
     });
   });
 });

@@ -27,3 +27,4 @@ Accepted records are immutable. When a decision changes, write a new ADR that su
 | [0006](0006-package-with-electron-builder.md) | Package with electron-builder as a fully bundled, fused app | Accepted |
 | [0007](0007-store-data-with-node-sqlite.md) | Store data with the built-in node:sqlite | Accepted |
 | [0008](0008-punishment-free-needs.md) | Give Mocha punishment-free needs that follow the user's rest | Accepted |
+| [0009](0009-focus-sessions-in-the-break-rules.md) | Make focus sessions part of the break rules | Accepted |

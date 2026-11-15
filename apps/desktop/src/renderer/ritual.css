@@ -1,0 +1,74 @@
+@import "./bubble.css";
+
+p {
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+#title {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.step {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+#seconds {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+progress {
+  flex: 1 1 auto;
+  height: 10px;
+  appearance: none;
+  border: 2px solid var(--ink);
+  background: var(--hover);
+}
+
+progress::-webkit-progress-bar {
+  background: var(--hover);
+}
+
+progress::-webkit-progress-value {
+  background: var(--accent);
+}
+
+#stop {
+  flex: 0 0 auto;
+}
+
+#done {
+  align-self: center;
+  margin: auto 0;
+  font-weight: 600;
+}
+
+/* The hidden attribute must win over the layout rules above. */
+#guide[hidden],
+#choose[hidden],
+#done[hidden] {
+  display: none;
+}
+
+#choose,
+#guide {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  height: 100%;
+}

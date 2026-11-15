@@ -25,6 +25,15 @@
         <button type="button" id="treat">Treat</button>
         <button type="button" id="rest" class="primary">Rest together</button>
       </div>
+      <div class="focus">
+        <span id="focus-label">Focus with Mocha</span>
+        <div class="lengths" id="focus-lengths">
+          <button type="button" data-minutes="25">25 min</button>
+          <button type="button" data-minutes="40">40 min</button>
+          <button type="button" data-minutes="50">50 min</button>
+        </div>
+        <button type="button" id="focus-end" hidden>End</button>
+      </div>
       <p id="status" role="status" aria-live="polite"></p>
     </main>
     <script type="module" src="./tower.ts"></script>

@@ -4,6 +4,30 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-15
+
+"Together": Mocha keeps you company through work and breaks, with focus sessions side by side and short rituals in every break.
+
+### Added
+
+- Focus with Mocha: start a 25, 40 or 50-minute focus session from the menu bar or the Tower. Mocha reads next to you, no reminder interrupts, and a break starts when the session ends ([#131](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/131), [#133](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/133))
+- Break rituals: when a planned break starts, a bubble next to Mocha offers to breathe, rest your eyes or stretch together. It guides each step with a countdown while Mocha does it with you, changing pose with every step. Box breathing goes in 3-second steps. A finished ritual lifts Mocha's mood once per break ([#130](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/130), [#134](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/134), [#140](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/140), [#142](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/142))
+- See how long a break has left in the menu bar and the Tower, and end it early with End Break ([#138](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/138))
+- Skins can provide `focus` for focus sessions and an animation for each kind of ritual step: `breathe`, `lookFar`, `slowBlink`, `shoulderRoll`, `reachUp`, `leanLeft`, `leanRight`, `tiltLeft`, `tiltRight` and `flutter` ([#132](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/132), [#139](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/139), [#140](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/140))
+
+### Security
+
+- The ritual bubble has its own preload and accepts messages only from the open bubble: a ritual from an allow-list, and finishing or closing with no data. Main decides what a finished ritual is worth: only once per break, and only if it really took its full length, so a page cannot raise Mocha's mood by reporting finishes ([#134](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/134))
+- The Tower can only ask for one of the offered focus lengths, and its actions stay an allow-list ([#133](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/133), [#138](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/138))
+
+### Known limitations
+
+- The ritual and focus poses, the Tower's room, the treat and the tired pose are placeholder art drawn in code, until the hand-drawn versions replace them.
+- Focus sessions count as work in today's numbers; focus time is not shown on its own.
+- Breaks are noticed from keyboard and mouse input only: reading or watching something for 5 minutes without touching anything counts as a break.
+- The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
+- macOS only. Windows and Linux are planned.
+
 ## [0.3.0] - 2026-11-14
 
 "The Tower": Mocha gets a home of its own, with a mood and an energy that follow your rest.
@@ -91,7 +115,8 @@ The first release, "Hello, Mocha": a pixel-art raven that lives on the macOS des
 - The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
 - macOS only. Windows and Linux are planned.
 
-[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.4.0
 [0.3.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.3.0
 [0.2.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.2.0
 [0.1.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.1.0

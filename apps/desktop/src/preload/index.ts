@@ -1,3 +1,4 @@
+import type { RitualPose } from '@mocha/core';
 import { contextBridge, ipcRenderer } from 'electron';
 import { IpcChannel, type MochaBridge } from '../shared/ipc-channels.ts';
 
@@ -30,6 +31,16 @@ const bridge: MochaBridge = {
     return () => ipcRenderer.removeListener(IpcChannel.OverlayResting, listener);
   },
   ready: () => ipcRenderer.send(IpcChannel.OverlayReady),
+  onRitualChange: (callback) => {
+    const listener = (_event: unknown, pose: RitualPose | null) => callback(pose);
+    ipcRenderer.on(IpcChannel.OverlayRitual, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlayRitual, listener);
+  },
+  onFocusingChange: (callback) => {
+    const listener = (_event: unknown, focusing: boolean) => callback(focusing);
+    ipcRenderer.on(IpcChannel.OverlayFocusing, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlayFocusing, listener);
+  },
   onTiredChange: (callback) => {
     const listener = (_event: unknown, tired: boolean) => callback(tired);
     ipcRenderer.on(IpcChannel.OverlayTired, listener);

@@ -114,6 +114,21 @@ function stumble(grid, bodyDx, bodyDy, legs, legTop = 43) {
   return result;
 }
 
+/** How far `shear` moves row `y`: `dx` at `top`, nothing at `pivot` and below. */
+const shearShift = (dx, y, pivot, top) =>
+  y >= pivot ? 0 : Math.round((dx * (pivot - y)) / (pivot - top));
+
+/**
+ * Leans everything above `pivot` sideways, more the higher it is: a bend
+ * from the feet (pivot 40) or a tilt of the head (pivot at the neck).
+ */
+function shear(grid, dx, pivot, top) {
+  return grid.map((row, y) => {
+    const shift = shearShift(dx, y, pivot, top);
+    return Array.from({ length: SIZE }, (_, x) => row[x - shift] ?? null);
+  });
+}
+
 /** Moves the whole sprite up by `by` pixels. */
 function lift(grid, by) {
   return grid.map((_, y) => (grid[y + by] ? [...grid[y + by]] : Array(SIZE).fill(null)));
@@ -147,21 +162,46 @@ function openBeak(grid, dy, slope) {
 }
 
 /**
- * The raven. The defaults draw the normal pose; tired poses lower the head
- * into the shoulders (`headDrop`), slide the hat down over the eye
- * (`hatSlip`, tilted forward) and open the beak for a yawn (`yawn`, the
- * slope of the open beak).
+ * The raven. The defaults draw the normal pose; other poses lower or raise
+ * the head (`headDrop`, negative is up), slide the hat down over the eye
+ * (`hatSlip`, tilted forward), open the beak for a yawn (`yawn`, the slope
+ * of the open beak), puff the chest out on a breath in (`chest`) and move
+ * the wing (`wing`: 1 halfway up, 2 above the head, 'hold' reaching
+ * forward to hold something in front of the chest), which `wingShift`
+ * moves by [dx, dy] for a roll.
  */
-function drawRaven({ headDrop = 0, hatSlip = 0, yawn = 0 } = {}) {
+function drawRaven({
+  headDrop = 0,
+  hatSlip = 0,
+  yawn = 0,
+  chest = 0,
+  wing = 0,
+  wingShift = [0, 0],
+} = {}) {
+  const [wx, wy] = wingShift;
   const g = blank();
+  const feathers = (x, y) => (y > 30 && (x + y) % 3 === 0 ? 'M' : 'D');
   // tail, body, chest (checker dither) and head
   for (let y = 35; y <= 41; y++) rect(g, 34, y, 44 - (y - 35), y, 'D');
   ellipse(g, 26, 31, 13, 10, 'D');
-  ellipse(g, 20, 32, 7, 6, (x, y) => ((x + y) % 2 === 0 ? 'M' : 'D'));
+  ellipse(g, 20, 32 - chest, 7 + chest, 6 + chest, (x, y) => ((x + y) % 2 === 0 ? 'M' : 'D'));
+  // A wing raised above the head sits behind it.
+  if (wing === 2) {
+    ellipse(g, 35, 17, 5, 10, 'K');
+    ellipse(g, 35, 17, 4, 9, (x, y) => ((x + y) % 3 === 0 && y < 20 ? 'M' : 'D'));
+  }
   ellipse(g, 24, 21 + headDrop, 10, 7, 'D');
   // wing: dark ring with dithered feathers
-  ellipse(g, 33, 31, 7, 8, 'K');
-  ellipse(g, 33, 31, 6, 7, (x, y) => (y > 30 && (x + y) % 3 === 0 ? 'M' : 'D'));
+  if (wing === 0) {
+    ellipse(g, 33 + wx, 31 + wy, 7, 8, 'K');
+    ellipse(g, 33 + wx, 31 + wy, 6, 7, feathers);
+  } else if (wing === 'hold') {
+    ellipse(g, 21 + wx, 31 + wy, 7, 3.5, 'K');
+    ellipse(g, 21 + wx, 31 + wy, 6, 2.5, feathers);
+  } else if (wing === 1) {
+    ellipse(g, 34, 25, 6, 8, 'K');
+    ellipse(g, 34, 25, 5, 7, (x, y) => ((x + y) % 3 === 0 && y < 26 ? 'M' : 'D'));
+  }
   // beak: light upper half, mid-gray lower half; tip at (5, 20)
   if (yawn > 0) {
     openBeak(g, headDrop, yawn);
@@ -241,6 +281,68 @@ function squeezedEye(grid, dy) {
   return result;
 }
 
+/** A pupil drawn into the sprite, for poses that look somewhere fixed. */
+function pupilAt(grid, dx, dy, headDrop) {
+  const result = clone(grid);
+  rect(result, 18 + dx, 19 + headDrop + dy, 19 + dx, 20 + headDrop + dy, 'K');
+  return result;
+}
+
+/** Paints a small picture given as rows of palette keys ('.' is transparent). */
+function stamp(grid, x, y, rows) {
+  rows.forEach((row, dy) => {
+    [...row].forEach((key, dx) => {
+      if (key !== '.') set(grid, x + dx, y + dy, key);
+    });
+  });
+}
+
+// Air leaving the beak: light lines fanning out a pixel apart from the tip,
+// so they never read as smoke from it. The tip is on the middle line's row
+// (the fifth here, the sixth in the far one), which moves on and spreads as
+// the breath ends.
+const BREATH_NEAR = ['.LL.', '...L', '....', '..LL', 'LL..', '...L', '.LL.'];
+const BREATH_FAR = ['LL..', '..L.', '....', '....', '.LL.', 'L...', '....', '..L.', 'LL..'];
+
+/** Breath in front of a beak whose tip is on row `tipY`. */
+function breathLines(grid, tipY, far) {
+  const result = clone(grid);
+  if (far) stamp(result, 0, tipY - 5, BREATH_FAR);
+  else stamp(result, 0, tipY - 4, BREATH_NEAR);
+  return result;
+}
+
+// An open book: two pages of text dipping to the spine, on a red cover.
+const BOOK = [
+  '.KKKKK.....KKKKK.',
+  'KWWWWWKK.KKWWWWWK',
+  'KWWWWWWWKWWWWWWWK',
+  'KWLLLLLWKWLLLLLWK',
+  'KWWWWWWWKWWWWWWWK',
+  'KWLLLLWWKWLLLLLWK',
+  'KWWWWWWWKWWWWWWWK',
+  'KWLLLLLWKWLLLWWWK',
+  'KWWWWWWWKWWWWWWWK',
+  'KRKKKKKKKKKKKKKRK',
+  '.KRRRRRRrRRRRRRK.',
+  '..KKKKKKKKKKKKK..',
+];
+// A page halfway over, standing up from the spine, and the blank page it
+// leaves behind.
+const TURNING_PAGE = ['.KK.', 'KWWK', 'KWWK', 'KWK.'];
+const BLANK_PAGE = Array(5).fill('WWWWWWW');
+
+/** The open book in front of the chest; `turning` lifts a page from the spine. */
+function book(grid, turning) {
+  const result = clone(grid);
+  stamp(result, 0, 26, BOOK);
+  if (turning) {
+    stamp(result, 7, 24, TURNING_PAGE);
+    stamp(result, 9, 28, BLANK_PAGE);
+  }
+  return result;
+}
+
 /** Crosses out the eye: the classic cartoon "x" of a dizzy character. */
 function dizzyEye(grid) {
   const result = clone(grid);
@@ -273,6 +375,47 @@ const nodding = closeEye(drawRaven({ headDrop: 4, hatSlip: 3 }), false, 4);
 zGlyph(nodding, 37, 8, 4);
 const yawnStart = squeezedEye(drawRaven({ headDrop: 1, hatSlip: 2, yawn: 0.25 }), 1);
 const yawnWide = squeezedEye(drawRaven({ headDrop: 0, hatSlip: 2, yawn: 0.5 }), 0);
+
+// Rituals and focus. Each pose changes the silhouette: the chest and head
+// for breathing, a raised head for looking far, a raised wing for
+// stretching and a book held in the wing for reading.
+const breatheHalfIn = closeEye(drawRaven({ headDrop: -1, chest: 1 }), false, -1);
+const breatheIn = closeEye(drawRaven({ headDrop: -2, chest: 2 }), false, -2);
+const breatheOutStart = breathLines(closeEye(base, false), 20, false);
+const breatheOutHold = squash(closeEye(drawRaven({ headDrop: 1 }), false, 1), 1);
+const breatheOutEnd = breathLines(breatheOutHold, 22, true);
+const lookFarA = pupilAt(drawRaven({ headDrop: -1 }), -1, -1, -1);
+const lookFarB = sway(pupilAt(drawRaven({ headDrop: -1 }), -1, 0, -1), -1);
+const reading = drawRaven({ headDrop: 1, wing: 'hold' });
+
+// Stretching: one pose per step, so Mocha does what the bubble asks.
+// Rolling the shoulders: the wing goes up (the head sinks), back and down.
+const shrug = drawRaven({ headDrop: 1, wingShift: [0, -3] });
+const shoulderBack = drawRaven({ wingShift: [2, -2] });
+const shoulderDown = drawRaven({ wingShift: [2, 0] });
+// Reaching up: the wing above the head, the body rising on longer legs.
+const wingUp = squeezedEye(drawRaven({ headDrop: -1, wing: 2 }), -1);
+const LONG_LEGS = [
+  [22, 43, 22, 45],
+  [27, 43, 27, 45],
+  [21, 46, 23, 46],
+  [26, 46, 28, 46],
+];
+const reachHalf = stumble(wingUp, 0, -1, LONG_LEGS);
+const reachHigh = stumble(wingUp, 0, -2, LONG_LEGS);
+// Leaning: the wing up, the body bending from the feet.
+const LEAN = { pivot: 40, top: 5 };
+const lean = (dx) => shear(wingUp, dx, LEAN.pivot, LEAN.top);
+// Tilting the head: eyes closed, the head bending from the neck.
+const TILT = { pivot: 27, top: 4 };
+const tilt = (dx) => shear(closeEye(base, false), dx, TILT.pivot, TILT.top);
+// Rolling the wrists: the wing held forward, its tip going round.
+const wristRoll = [
+  [0, 0],
+  [-1, -1],
+  [0, -2],
+  [1, -1],
+].map((shift) => drawRaven({ wing: 'hold', wingShift: shift }));
 
 const sleepA = squash(closeEye(base, false), 1);
 zGlyph(sleepA, 36, 5, 4);
@@ -310,6 +453,30 @@ const FRAMES = [
   nodding, // 14 tired: head drops, eye shut, a small "z"
   yawnStart, // 15 tired: a yawn begins
   yawnWide, // 16 tired: the yawn at its widest
+  breatheHalfIn, // 17 breathe: filling up, eyes closed
+  breatheIn, // 18 breathe: chest out, head up
+  breatheOutStart, // 19 breathe: air leaving the beak
+  breatheOutEnd, // 20 breathe: the last of it, the body sinking
+  breatheOutHold, // 21 breathe: head down, emptied
+  lookFarA, // 22 lookFar: head up, eye on the horizon
+  lookFarB, // 23 lookFar: leaning forward to see further
+  book(pupilAt(reading, -1, 1, 1), false), // 24 focus: reading the left page
+  book(pupilAt(reading, 1, 1, 1), false), // 25 focus: reading the right page
+  book(pupilAt(reading, 0, 0, 1), true), // 26 focus: turning the page
+  shrug, // 27 shoulderRoll: shoulders up
+  shoulderBack, // 28 shoulderRoll: and back
+  shoulderDown, // 29 shoulderRoll: and down
+  reachHalf, // 30 reachUp: rising
+  reachHigh, // 31 reachUp: as high as it goes
+  lean(-3), // 32 leanLeft: on the way
+  lean(-6), // 33 leanLeft: all the way
+  lean(3), // 34 leanRight: on the way
+  lean(6), // 35 leanRight: all the way
+  tilt(-3), // 36 tiltLeft: on the way
+  tilt(-5), // 37 tiltLeft: all the way
+  tilt(3), // 38 tiltRight: on the way
+  tilt(5), // 39 tiltRight: all the way
+  ...wristRoll, // 40-43 flutter: the wing tip going round
 ];
 
 /** Slip anchors: the body shifted by (dx, dy), the feet by feetDx. */
@@ -323,6 +490,20 @@ const slipAnchors = (dx, dy, feetDx) => {
     feet: { x: feet.x + feetDx, y: feet.y },
   };
 };
+
+/** Anchors of a sheared frame: the beak and head move with their rows. */
+const shearedAnchors = (dx, { pivot, top }, dy) => {
+  const { beak, head, feet } = closedAnchors(dy);
+  const move = ({ x, y }) => ({ x: x + shearShift(dx, y, pivot, top), y });
+  return { beak: move(beak), head: move(head), feet };
+};
+
+/** A pose that eases into `full` through `half`, holds, and eases out: `ms` in all. */
+const easeAndHold = (half, full, ms, ease = 1000) => [
+  { ...half, durationMs: ease },
+  { ...full, durationMs: ms - 2 * ease },
+  { ...half, durationMs: ease },
+];
 
 /** Dizzy anchors: crossed-out eye (no pupil), head swaying with the body. */
 const dizzyAnchors = (dx) => {
@@ -383,6 +564,105 @@ const manifest = {
         { index: 15, durationMs: 250, anchors: closedAnchors(1) },
         { index: 16, durationMs: 1100, anchors: closedAnchors(0) },
         { index: 15, durationMs: 250, anchors: closedAnchors(1) },
+      ],
+    },
+    // Box breathing in step with the breathe ritual: in for 3 s, filling up
+    // step by step, and hold 3 s; out for 3 s, the air leaving and the body
+    // sinking, and hold 3 s. The eyes are closed: no eye anchor.
+    breathe: {
+      loop: true,
+      frames: [
+        { index: 3, durationMs: 750, anchors: closedAnchors(0) },
+        { index: 17, durationMs: 750, anchors: closedAnchors(-1) },
+        { index: 18, durationMs: 4500, anchors: closedAnchors(-2) },
+        { index: 19, durationMs: 1500, anchors: closedAnchors(0) },
+        { index: 20, durationMs: 1500, anchors: closedAnchors(2) },
+        { index: 21, durationMs: 3000, anchors: closedAnchors(2) },
+      ],
+    },
+    // Gazing into the distance. The pupil is drawn in the sprite, fixed on
+    // the horizon instead of following the cursor, so no eye anchor.
+    lookFar: {
+      loop: true,
+      frames: [
+        { index: 22, durationMs: 2400, anchors: closedAnchors(-1) },
+        { index: 23, durationMs: 2400, anchors: closedAnchors(-1) },
+      ],
+    },
+    // The end of the eye rest: slow, deliberate blinks.
+    slowBlink: {
+      loop: true,
+      frames: [
+        { index: 0, durationMs: 900, anchors: anchors(0) },
+        { index: 2, durationMs: 250, anchors: closedAnchors(0) },
+        { index: 3, durationMs: 900, anchors: closedAnchors(0) },
+        { index: 2, durationMs: 250, anchors: closedAnchors(0) },
+      ],
+    },
+    // The stretching ritual, one animation per step. Each one that holds a
+    // position eases in and out within its step's 8 seconds.
+    shoulderRoll: {
+      loop: true,
+      frames: [
+        { index: 27, durationMs: 600, anchors: anchors(1) },
+        { index: 28, durationMs: 600, anchors: anchors(0) },
+        { index: 29, durationMs: 600, anchors: anchors(0) },
+        { index: 0, durationMs: 700, anchors: anchors(0) },
+      ],
+    },
+    reachUp: {
+      loop: true,
+      frames: [
+        { index: 30, durationMs: 1200, anchors: closedAnchors(-2) },
+        { index: 31, durationMs: 2600, anchors: closedAnchors(-3) },
+      ],
+    },
+    leanLeft: {
+      loop: true,
+      frames: easeAndHold(
+        { index: 32, anchors: shearedAnchors(-3, LEAN, -1) },
+        { index: 33, anchors: shearedAnchors(-6, LEAN, -1) },
+        8000,
+      ),
+    },
+    leanRight: {
+      loop: true,
+      frames: easeAndHold(
+        { index: 34, anchors: shearedAnchors(3, LEAN, -1) },
+        { index: 35, anchors: shearedAnchors(6, LEAN, -1) },
+        8000,
+      ),
+    },
+    tiltLeft: {
+      loop: true,
+      frames: easeAndHold(
+        { index: 36, anchors: shearedAnchors(-3, TILT, 0) },
+        { index: 37, anchors: shearedAnchors(-5, TILT, 0) },
+        8000,
+      ),
+    },
+    tiltRight: {
+      loop: true,
+      frames: easeAndHold(
+        { index: 38, anchors: shearedAnchors(3, TILT, 0) },
+        { index: 39, anchors: shearedAnchors(5, TILT, 0) },
+        8000,
+      ),
+    },
+    flutter: {
+      loop: true,
+      frames: [40, 41, 42, 43].map((index) => ({ index, durationMs: 250, anchors: anchors(0) })),
+    },
+    // Reading next to the user during a focus session: the eye moves along
+    // the lines, and now and then a page turns.
+    focus: {
+      loop: true,
+      frames: [
+        { index: 24, durationMs: 2200, anchors: closedAnchors(1) },
+        { index: 25, durationMs: 1800, anchors: closedAnchors(1) },
+        { index: 24, durationMs: 2200, anchors: closedAnchors(1) },
+        { index: 25, durationMs: 1500, anchors: closedAnchors(1) },
+        { index: 26, durationMs: 400, anchors: closedAnchors(1) },
       ],
     },
     // Feet slide out, Mocha wobbles twice and catches itself.

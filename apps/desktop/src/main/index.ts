@@ -7,6 +7,7 @@ import {
   minuteOfDay,
   needsActivity,
   needsEventsForBreakChange,
+  type RitualPose,
 } from '@mocha/core';
 import {
   app,
@@ -23,6 +24,8 @@ import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { DEFAULT_PREFERENCES, type Preferences, toBreakConfig } from '../shared/preferences.ts';
 import { REMINDER_HEIGHT, REMINDER_WIDTH, type ReminderShow } from '../shared/reminder.ts';
+import { RITUAL_HEIGHT, RITUAL_WIDTH, type RitualShow } from '../shared/ritual.ts';
+import type { FocusMinutes } from '../shared/tower.ts';
 import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
 import { createChangeReporter } from './activity/change-reporter.ts';
@@ -36,6 +39,7 @@ import { createSessionRepository } from './db/session-repository.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
+import { registerRitualHandlers } from './ipc/register-ritual-handlers.ts';
 import { registerSettingsHandlers } from './ipc/register-settings-handlers.ts';
 import { registerTowerHandlers } from './ipc/register-tower-handlers.ts';
 import { createNeedsKeeper } from './pet/needs-keeper.ts';
@@ -43,12 +47,15 @@ import { towerView } from './pet/tower-view.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
 import { reminderPosition } from './reminder/reminder-placement.ts';
 import { reminderTransition } from './reminder/reminder-transition.ts';
+import { followRitualPoses } from './ritual/ritual-poses.ts';
+import { createRitualTracker } from './ritual/ritual-tracker.ts';
+import { ritualTransition } from './ritual/ritual-transition.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
 import { watchSpaceChanges } from './space/space-watcher.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
 import { trayMenuTemplate } from './tray/tray-menu.ts';
+import { createBubbleWindow } from './windows/create-bubble-window.ts';
 import { createOverlayWindow } from './windows/create-overlay-window.ts';
-import { createReminderWindow } from './windows/create-reminder-window.ts';
 import { createSettingsWindow } from './windows/create-settings-window.ts';
 import { createTowerWindow } from './windows/create-tower-window.ts';
 import { initialOverlayPosition, placeOnDisplays } from './windows/overlay-placement.ts';
@@ -63,8 +70,8 @@ const rendererFile = join(import.meta.dirname, '../renderer/index.html');
 // Set by electron-vite in development only.
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL'];
 
-// The reminder, settings and Tower windows each have their own preload and page.
-type Page = 'reminder' | 'settings' | 'tower';
+// The reminder, ritual, settings and Tower windows each have their own preload and page.
+type Page = 'reminder' | 'ritual' | 'settings' | 'tower';
 const pagePreload = (page: Page) => join(import.meta.dirname, `../preload/${page}.cjs`);
 const pageFile = (page: Page) => join(import.meta.dirname, `../renderer/${page}.html`);
 const pageUrl = (page: Page) =>
@@ -75,6 +82,10 @@ const loadPage = (target: BrowserWindow, page: Page) =>
 const every = (ms: number, callback: () => void) => {
   const id = setInterval(callback, ms);
   return () => clearInterval(id);
+};
+const after = (ms: number, callback: () => void) => {
+  const id = setTimeout(callback, ms);
+  return () => clearTimeout(id);
 };
 
 const workAreas = () => screen.getAllDisplays().map((display) => display.workArea);
@@ -196,6 +207,17 @@ if (!app.requestSingleInstanceLock()) {
         : config;
     };
     const breaks = createBreakController(breakConfigFor(preferences), Date.now());
+    // Focus sessions ("Focus with Mocha") go through the break rules
+    // (ADR-0009). In development, MOCHA_DEV_FOCUS_MS shortens every session.
+    const devFocusMs = devServerUrl ? Number(process.env['MOCHA_DEV_FOCUS_MS']) : Number.NaN;
+    const startFocus = (minutes: FocusMinutes) =>
+      breaks.dispatch({
+        type: 'startFocus',
+        now: Date.now(),
+        durationMs: devFocusMs > 0 && Number.isFinite(devFocusMs) ? devFocusMs : minutes * 60_000,
+      });
+    const endFocus = () => breaks.dispatch({ type: 'endFocus', now: Date.now() });
+    const endBreak = () => breaks.dispatch({ type: 'endBreak', now: Date.now() });
 
     // History: work and break sessions, stored as kinds and timestamps only.
     // The heartbeat lets the next start close a session a crash left open.
@@ -237,6 +259,11 @@ if (!app.requestSingleInstanceLock()) {
       window.webContents.send(IpcChannel.OverlayResting, resting),
     );
     breaks.onChange((next) => restingReporter.report(next.phase === 'onBreak'));
+    // During a focus session Mocha reads on the desktop.
+    const focusingReporter = createChangeReporter<boolean>((focusing) =>
+      window.webContents.send(IpcChannel.OverlayFocusing, focusing),
+    );
+    breaks.onChange((next) => focusingReporter.report(next.phase === 'focusing'));
     // Low energy shows on the desktop as Mocha's tired pose.
     const tiredReporter = createChangeReporter<boolean>((tired) =>
       window.webContents.send(IpcChannel.OverlayTired, tired),
@@ -251,6 +278,10 @@ if (!app.requestSingleInstanceLock()) {
     function syncOverlay() {
       restingReporter.reset();
       restingReporter.report(breaks.state.phase === 'onBreak');
+      focusingReporter.reset();
+      focusingReporter.report(breaks.state.phase === 'focusing');
+      ritualReporter.reset();
+      ritualReporter.report(ritualTracker.poseAt(Date.now())?.pose ?? null);
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
@@ -292,7 +323,12 @@ if (!app.requestSingleInstanceLock()) {
     const openReminder = (state: DueState) => {
       const placed = placeReminder();
       reminderShow = { ...reminderInfo(state, breaks.config), side: placed.side };
-      const opened = createReminderWindow(pagePreload('reminder'), placed, process.platform);
+      const opened = createBubbleWindow(
+        pagePreload('reminder'),
+        placed,
+        { width: REMINDER_WIDTH, height: REMINDER_HEIGHT, title: 'Mocha: break reminder' },
+        process.platform,
+      );
       reminder = opened;
       // The page shows nothing until this arrives, so it never flashes empty.
       opened.webContents.once('did-finish-load', () =>
@@ -317,6 +353,7 @@ if (!app.requestSingleInstanceLock()) {
       reminder.webContents.send(IpcChannel.ReminderShow, reminderShow);
     };
     window.on('move', followMocha);
+    window.on('move', () => followRitual());
     breaks.onChange((next, previous) => {
       const transition = reminderTransition(next, previous);
       if (transition === 'open' && next.phase === 'due') openReminder(next);
@@ -326,6 +363,88 @@ if (!app.requestSingleInstanceLock()) {
       () => reminder?.webContents,
       (choice) => breaks.dispatch({ type: choice, now: Date.now() }),
       [pageUrl('reminder')],
+      console,
+    );
+
+    // The ritual: a bubble that opens when a planned break starts and
+    // guides a short ritual while Mocha acts along on the desktop. It closes
+    // with the break, or when the user chooses to just rest.
+    let ritual: BrowserWindow | undefined;
+    let ritualShow: RitualShow = { side: 'left' };
+    const ritualTracker = createRitualTracker();
+    // The bubble also closes with the overlay, when Mocha's window is gone.
+    const ritualReporter = createChangeReporter<RitualPose | null>((pose) => {
+      if (!window.isDestroyed()) window.webContents.send(IpcChannel.OverlayRitual, pose);
+    });
+    // Mocha changes pose with each step of the ritual, in step with the bubble.
+    const ritualPoses = followRitualPoses(ritualTracker, { now: Date.now, after }, (pose) =>
+      ritualReporter.report(pose),
+    );
+    const placeRitual = () => {
+      const bounds = window.getBounds();
+      return reminderPosition(
+        bounds,
+        { width: RITUAL_WIDTH, height: RITUAL_HEIGHT },
+        screen.getDisplayMatching(bounds).workArea,
+      );
+    };
+    const openRitual = () => {
+      const placed = placeRitual();
+      ritualShow = { side: placed.side };
+      const opened = createBubbleWindow(
+        pagePreload('ritual'),
+        placed,
+        { width: RITUAL_WIDTH, height: RITUAL_HEIGHT, title: 'Mocha: break ritual' },
+        process.platform,
+      );
+      ritual = opened;
+      opened.on('closed', () => {
+        if (ritual !== opened) return;
+        ritual = undefined;
+        ritualTracker.stop();
+        ritualPoses.update();
+      });
+      loadPage(opened, 'ritual');
+    };
+    function closeRitual() {
+      ritual?.close();
+      ritual = undefined;
+      ritualTracker.stop();
+      ritualPoses.update();
+    }
+    function followRitual() {
+      if (!ritual) return;
+      const placed = placeRitual();
+      ritual.setPosition(placed.x, placed.y);
+      if (placed.side === ritualShow.side) return;
+      ritualShow = { side: placed.side };
+      ritual.webContents.send(IpcChannel.RitualShow, ritualShow);
+    }
+    breaks.onChange((next, previous) => {
+      const transition = ritualTransition(next, previous);
+      if (transition === 'open') {
+        ritualTracker.newBreak();
+        openRitual();
+      }
+      if (transition === 'close') closeRitual();
+    });
+    registerRitualHandlers(
+      () => ritual?.webContents,
+      {
+        ready: () => ritual?.webContents.send(IpcChannel.RitualShow, ritualShow),
+        start: (id) => {
+          ritualTracker.start(id, Date.now());
+          ritualPoses.update();
+        },
+        finish: () => {
+          // Main decides whether it counts: once per break, and only if the
+          // ritual really took its time.
+          if (ritualTracker.finish(Date.now())) needs.dispatch({ type: 'ritualCompleted' });
+          ritualPoses.update();
+        },
+        close: () => closeRitual(),
+      },
+      [pageUrl('ritual')],
       console,
     );
 
@@ -362,7 +481,7 @@ if (!app.requestSingleInstanceLock()) {
     const sendTowerView = (force: boolean) => {
       const target = towerWindow.current;
       if (!target) return;
-      const view = towerView(needs.state, breaks.state.phase, Date.now());
+      const view = towerView(needs.state, breaks.state, Date.now());
       const key = JSON.stringify(view);
       if (!force && key === shownView) return;
       shownView = key;
@@ -388,8 +507,10 @@ if (!app.requestSingleInstanceLock()) {
           // Resting goes through the break rules like any break; the needs
           // follow from the break change.
           if (action === 'rest') breaks.dispatch({ type: 'startBreak', now });
+          else if (action === 'endBreak') endBreak();
           else needs.dispatch({ type: action, now });
         },
+        focus: (minutes) => (minutes === null ? endFocus() : startFocus(minutes)),
       },
       [pageUrl('tower')],
       console,
@@ -423,15 +544,27 @@ if (!app.requestSingleInstanceLock()) {
     // The menu is built when it opens, not kept up to date in the background,
     // so today's numbers are always current. popUpContextMenu is how macOS
     // shows a fresh menu; a menu set with setContextMenu would be fixed.
+    // A session's end can pass up to a tick before the rules notice: no
+    // negative time left.
+    const leftIn = (phase: 'onBreak' | 'focusing', now: number) =>
+      breaks.state.phase === phase ? Math.max(0, breaks.state.endsAt - now) : undefined;
     const showTrayMenu = () =>
       tray?.popUpContextMenu(
         Menu.buildFromTemplate(
           trayMenuTemplate(
-            { paused: pause.paused, today: todayStats(Date.now()) },
+            {
+              paused: pause.paused,
+              today: todayStats(Date.now()),
+              breakLeftMs: leftIn('onBreak', Date.now()),
+              focusLeftMs: leftIn('focusing', Date.now()),
+            },
             {
               togglePause: () => pause.toggle(),
               openSettings,
               openTower,
+              startFocus,
+              endFocus,
+              endBreak,
               resetPosition: () =>
                 settle(initialOverlayPosition(undefined, screen.getPrimaryDisplay().workArea, [])),
               quit: () => app.quit(),
@@ -449,6 +582,7 @@ if (!app.requestSingleInstanceLock()) {
 
     window.on('closed', () => {
       closeReminder();
+      closeRitual();
       settingsWindow.close();
       towerWindow.close();
       activity.stop();

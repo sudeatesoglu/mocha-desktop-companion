@@ -6,6 +6,7 @@ import {
   type Gaze,
   gazeOffset,
   type Reaction,
+  type RitualPose,
 } from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
@@ -235,6 +236,27 @@ window.mocha.onRestingChange((next) => {
     effects.add('heart');
   }
   loop.invalidate();
+});
+
+// A ritual done together during a break: Mocha takes its pose, in step
+// with the bubble, then goes back to napping.
+let ritualPose: RitualPose | null = null;
+window.mocha.onRitualChange((pose) => {
+  const previous = ritualPose;
+  ritualPose = pose;
+  if (paused) return; // the pause pose wins
+  if (pose) {
+    effects.clear();
+    animator.play(pose);
+  } else if (previous && animator.current === previous) {
+    animator.play(resting ? 'sleep' : 'idle');
+  }
+  loop.invalidate();
+});
+
+// A focus session: Mocha reads next to the user until it ends.
+window.mocha.onFocusingChange((focusing) => {
+  if (animator.setFocus(focusing)) loop.invalidate();
 });
 
 // Low energy: Mocha holds its tired pose instead of idle.

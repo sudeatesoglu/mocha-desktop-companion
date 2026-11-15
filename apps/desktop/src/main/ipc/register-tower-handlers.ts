@@ -1,7 +1,7 @@
 import { type IpcMainEvent, ipcMain } from 'electron';
 import { z } from 'zod';
 import { IpcChannel } from '../../shared/ipc-channels.ts';
-import type { TowerAction } from '../../shared/tower.ts';
+import type { FocusMinutes, TowerAction } from '../../shared/tower.ts';
 import { type IpcLogger, isTrustedSenderUrl, senderUrl, validated } from './validate.ts';
 
 /**
@@ -11,7 +11,11 @@ import { type IpcLogger, isTrustedSenderUrl, senderUrl, validated } from './vali
  */
 export function registerTowerHandlers(
   currentSender: () => unknown,
-  handlers: { ready(): void; act(action: TowerAction): void },
+  handlers: {
+    ready(): void;
+    act(action: TowerAction): void;
+    focus(minutes: FocusMinutes | null): void;
+  },
   trustedUrls: readonly string[],
   logger: IpcLogger,
 ): void {
@@ -33,8 +37,23 @@ export function registerTowerHandlers(
     IpcChannel.TowerReady,
     validated(IpcChannel.TowerReady, z.undefined(), () => handlers.ready(), options),
   );
+  // Only the offered lengths: a page cannot ask for a session of any length.
+  fromTower(
+    IpcChannel.TowerFocus,
+    validated(
+      IpcChannel.TowerFocus,
+      z.union([z.literal(25), z.literal(40), z.literal(50), z.null()]),
+      handlers.focus,
+      options,
+    ),
+  );
   fromTower(
     IpcChannel.TowerAct,
-    validated(IpcChannel.TowerAct, z.enum(['pet', 'treat', 'rest']), handlers.act, options),
+    validated(
+      IpcChannel.TowerAct,
+      z.enum(['pet', 'treat', 'rest', 'endBreak']),
+      handlers.act,
+      options,
+    ),
   );
 }

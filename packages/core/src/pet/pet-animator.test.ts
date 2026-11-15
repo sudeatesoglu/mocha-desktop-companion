@@ -80,4 +80,34 @@ describe('createPetAnimator', () => {
     expect(animator.setTired(false)).toBe(true);
     expect(animator.current).toBe('idle');
   });
+
+  describe('focus pose', () => {
+    const WITH_POSES: SkinManifest['animations'] = {
+      ...ANIMATIONS,
+      tired: { loop: true, frames: [frame(12, 1400)] },
+      focus: { loop: true, frames: [frame(26, 2200)] },
+    };
+
+    it('reads during a focus session, ahead of looking tired', () => {
+      const animator = createPetAnimator(WITH_POSES, options);
+      animator.setTired(true);
+
+      expect(animator.setFocus(true)).toBe(true);
+      expect(animator.current).toBe('focus');
+      animator.setFocus(false);
+      expect(animator.current).toBe('tired');
+    });
+
+    it('falls back to the tired or idle pose for skins without one', () => {
+      const animator = createPetAnimator(
+        { ...ANIMATIONS, tired: { loop: true, frames: [frame(12, 1400)] } },
+        options,
+      );
+      animator.setTired(true);
+
+      animator.setFocus(true);
+
+      expect(animator.current).toBe('tired');
+    });
+  });
 });
