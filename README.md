@@ -47,6 +47,36 @@
       <br><b>Let it rest</b><br>Pause it from the menu bar.
     </td>
   </tr>
+  <tr>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/focus-dark.png">
+        <img src="docs/assets/readme/focus-light.png" width="144" alt="Mocha reads an open book and now and then turns a page">
+      </picture>
+      <br><b>Focus together</b><br>It reads while you work.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/breathe-dark.png">
+        <img src="docs/assets/readme/breathe-light.png" width="144" alt="Mocha breathes in, holds and breathes out with its eyes closed">
+      </picture>
+      <br><b>Breathe with it</b><br>A short ritual in every break.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/stretch-dark.png">
+        <img src="docs/assets/readme/stretch-light.png" width="144" alt="Mocha rolls its shoulders, reaches up high and leans to each side">
+      </picture>
+      <br><b>Stretch with it</b><br>It does every step with you.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/tired-dark.png">
+        <img src="docs/assets/readme/tired-light.png" width="144" alt="Mocha slumps under its slipping hat, nods off and yawns">
+      </picture>
+      <br><b>Mind its energy</b><br>Long stretches make it sleepy.
+    </td>
+  </tr>
 </table>
 
 Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks pass through everywhere except Mocha itself.
