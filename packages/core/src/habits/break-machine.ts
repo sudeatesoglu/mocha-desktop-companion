@@ -77,6 +77,7 @@ export type BreakEvent =
         | 'pause'
         | 'resume'
         | 'startBreak'
+        | 'endBreak'
         | 'endFocus';
       readonly now: number;
     };
@@ -164,6 +165,8 @@ export function reduceBreak(state: BreakState, event: BreakEvent, config: BreakC
       }
 
     case 'onBreak': {
+      // The user is back before the break length is over: a new stretch.
+      if (event.type === 'endBreak') return startWorking(event.now);
       if (event.type !== 'tick') return state;
       const isOver = event.now >= state.endsAt && event.idleMs < config.idleBreakMs;
       return isOver ? startWorking(event.now) : state;
