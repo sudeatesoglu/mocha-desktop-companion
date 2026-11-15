@@ -140,7 +140,7 @@ pnpm install
 pnpm dev
 ```
 
-Built with Electron, TypeScript and a small hand-written Canvas 2D engine. `pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build` runs every check, and `pnpm --filter @mocha/desktop generate:skin`, `generate:readme-art` and `generate:icon` redraw the placeholder skin, the README art and the app icon. In development, `MOCHA_DEV_WORK_MS=60000 pnpm dev` shortens the work stretch and `MOCHA_DEV_FOCUS_MS=60000` every focus session, so reminders and breaks can be tried without waiting.
+Built with Electron, TypeScript and a small hand-written Canvas 2D engine. `pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build` runs every check, and `pnpm --filter @mocha/desktop generate:skin`, `generate:readme-art` and `generate:icon` redraw the placeholder skin, the README art and the app icon. In development, `MOCHA_DEV_WORK_MS=60000 pnpm dev` shortens the work stretch and `MOCHA_DEV_FOCUS_MS=60000` every focus session, so reminders and breaks can be tried without waiting. Development keeps its data in `~/Library/Application Support/Mocha Dev`, apart from the installed app's.
 
 - [Skin format](docs/skins.md): how to draw your own Mocha
 - [Architecture decisions](docs/adr/README.md): why it is built this way

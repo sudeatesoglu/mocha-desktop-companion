@@ -100,6 +100,11 @@ function createTrayIcon() {
   return icon;
 }
 
+// Development keeps its own data, so a development build never upgrades
+// the installed app's database or writes test runs into its history. Set
+// before the lock and before ready, so Chromium's storage moves too.
+if (devServerUrl) app.setPath('userData', join(app.getPath('appData'), 'Mocha Dev'));
+
 // Only one Mocha at a time: a second launch exits immediately.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
