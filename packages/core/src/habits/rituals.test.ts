@@ -36,7 +36,7 @@ describe('RITUALS', () => {
     ]);
   });
 
-  it('breathes in four rounds of a 16-second box', () => {
+  it('breathes in four rounds of a 12-second box', () => {
     const breathe = ritualById('breathe');
 
     expect(breathe.steps).toHaveLength(16);
@@ -46,8 +46,8 @@ describe('RITUALS', () => {
       'Breathe out',
       'Hold',
     ]);
-    expect(breathe.steps.every(({ durationMs }) => durationMs === 4 * SECOND)).toBe(true);
-    expect(ritualDuration(breathe)).toBe(64 * SECOND);
+    expect(breathe.steps.every(({ durationMs }) => durationMs === 3 * SECOND)).toBe(true);
+    expect(ritualDuration(breathe)).toBe(48 * SECOND);
   });
 
   it('rests the eyes for 20 seconds, then blinks', () => {

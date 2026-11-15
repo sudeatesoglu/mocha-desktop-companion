@@ -566,18 +566,18 @@ const manifest = {
         { index: 15, durationMs: 250, anchors: closedAnchors(1) },
       ],
     },
-    // Box breathing in step with the breathe ritual: in for 4 s, filling up
-    // step by step, and hold 4 s; out for 4 s, the air leaving and the body
-    // sinking, and hold 4 s. The eyes are closed: no eye anchor.
+    // Box breathing in step with the breathe ritual: in for 3 s, filling up
+    // step by step, and hold 3 s; out for 3 s, the air leaving and the body
+    // sinking, and hold 3 s. The eyes are closed: no eye anchor.
     breathe: {
       loop: true,
       frames: [
-        { index: 3, durationMs: 1000, anchors: closedAnchors(0) },
-        { index: 17, durationMs: 1000, anchors: closedAnchors(-1) },
-        { index: 18, durationMs: 6000, anchors: closedAnchors(-2) },
-        { index: 19, durationMs: 2000, anchors: closedAnchors(0) },
-        { index: 20, durationMs: 2000, anchors: closedAnchors(2) },
-        { index: 21, durationMs: 4000, anchors: closedAnchors(2) },
+        { index: 3, durationMs: 750, anchors: closedAnchors(0) },
+        { index: 17, durationMs: 750, anchors: closedAnchors(-1) },
+        { index: 18, durationMs: 4500, anchors: closedAnchors(-2) },
+        { index: 19, durationMs: 1500, anchors: closedAnchors(0) },
+        { index: 20, durationMs: 1500, anchors: closedAnchors(2) },
+        { index: 21, durationMs: 3000, anchors: closedAnchors(2) },
       ],
     },
     // Gazing into the distance. The pupil is drawn in the sprite, fixed on

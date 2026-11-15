@@ -36,15 +36,15 @@ const step = (text: string, seconds: number, pose: RitualPose): RitualStep => ({
   pose,
 });
 
-// Box breathing: four rounds of in, hold, out, hold, four seconds each.
-// Mocha's "breathe" animation loops with the same 16-second rhythm and
+// Box breathing: four rounds of in, hold, out, hold, three seconds each.
+// Mocha's "breathe" animation loops with the same 12-second rhythm and
 // keeps running from step to step, so starting both together keeps them
 // in step.
 const BOX: readonly RitualStep[] = [
-  step('Breathe in', 4, 'breathe'),
-  step('Hold', 4, 'breathe'),
-  step('Breathe out', 4, 'breathe'),
-  step('Hold', 4, 'breathe'),
+  step('Breathe in', 3, 'breathe'),
+  step('Hold', 3, 'breathe'),
+  step('Breathe out', 3, 'breathe'),
+  step('Hold', 3, 'breathe'),
 ];
 
 /** The rituals Mocha offers during a break, in the order it offers them. */
