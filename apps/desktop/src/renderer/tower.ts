@@ -109,8 +109,9 @@ function show(view: TowerView): void {
   if (animator.setFocus(view.focusMinutesLeft !== null) || posed) loop.invalidate();
 
   // Mocha naps through a break and greets the user when it ends.
-  if ((view.breakMinutesLeft !== null) !== resting) {
-    resting = view.breakMinutesLeft !== null;
+  const nowResting = view.breakMinutesLeft !== null;
+  if (nowResting !== resting) {
+    resting = nowResting;
     effects.clear();
     animator.play(resting ? 'sleep' : 'hop');
     if (!resting) effects.add('heart');
