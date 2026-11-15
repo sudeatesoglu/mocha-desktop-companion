@@ -30,6 +30,10 @@ export function createRitualTracker() {
       const at = ritualProgress(running.ritual, now - running.startedAt);
       return at.finished ? null : { pose: at.step.pose, leftMs: at.stepLeftMs };
     },
+    /** A ritual earned Mocha's mood in this break. */
+    get rewarded(): boolean {
+      return rewarded;
+    },
     start(id: RitualId, now: number): void {
       running = { ritual: ritualById(id), startedAt: now };
     },

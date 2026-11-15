@@ -16,6 +16,7 @@ export {
   reduceFinds,
   startFinds,
 } from './collection/finds.ts';
+export { findsEventForBreakChange } from './collection/finds-from-breaks.ts';
 export {
   type AccessorySlot,
   type DecorSlot,

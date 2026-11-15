@@ -20,14 +20,17 @@ describe('createRitualTracker', () => {
 
   it('rewards a ritual that took its time, once per break', () => {
     const tracker = createRitualTracker();
+    expect(tracker.rewarded).toBe(false);
     tracker.start('breathe', 0);
     expect(tracker.finish(breathe)).toBe(true);
     expect(tracker.poseAt(0)).toBeNull();
+    expect(tracker.rewarded).toBe(true);
 
     tracker.start('breathe', breathe);
     expect(tracker.finish(2 * breathe)).toBe(false); // same break
 
     tracker.newBreak();
+    expect(tracker.rewarded).toBe(false);
     tracker.start('breathe', 0);
     expect(tracker.finish(breathe - 500)).toBe(true); // within the slack
   });

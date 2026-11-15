@@ -2,6 +2,7 @@ import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
+  findsEventForBreakChange,
   isQuietTime,
   isTired,
   minuteOfDay,
@@ -33,6 +34,7 @@ import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-
 import { createTodayStats } from './activity/today-stats.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
+import { createFindsRepository } from './db/finds-repository.ts';
 import { createNeedsRepository } from './db/needs-repository.ts';
 import { openDatabase } from './db/open-database.ts';
 import { createSessionRepository } from './db/session-repository.ts';
@@ -42,6 +44,7 @@ import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
 import { registerRitualHandlers } from './ipc/register-ritual-handlers.ts';
 import { registerSettingsHandlers } from './ipc/register-settings-handlers.ts';
 import { registerTowerHandlers } from './ipc/register-tower-handlers.ts';
+import { createFindsKeeper } from './pet/finds-keeper.ts';
 import { createNeedsKeeper } from './pet/needs-keeper.ts';
 import { towerView } from './pet/tower-view.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
@@ -452,6 +455,23 @@ if (!app.requestSingleInstanceLock()) {
       [pageUrl('ritual')],
       console,
     );
+
+    // What Mocha finds (ADR-0010): the meter moves when a break ends, with
+    // the ritual done in it, and a find makes Mocha sparkle as it wakes.
+    const finds = createFindsKeeper(
+      database ? createFindsRepository(database) : undefined,
+      Date.now(),
+      console,
+    );
+    breaks.onChange((next, previous) => {
+      const event = findsEventForBreakChange(previous, next, Date.now(), ritualTracker.rewarded);
+      if (event) finds.dispatch(event);
+    });
+    finds.onChange((_state, found) => {
+      if (found.length > 0 && !window.isDestroyed()) {
+        window.webContents.send(IpcChannel.OverlayFound);
+      }
+    });
 
     // Settings: one window at a time, opened from the tray. Saved values
     // apply at once: the break rules take the new durations on the next tick.
