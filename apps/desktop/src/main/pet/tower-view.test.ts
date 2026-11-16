@@ -43,6 +43,7 @@ describe('towerView', () => {
       look: BARE_LOOK,
       wardrobe: { items: [], toFind: 5 },
       room: EMPTY_ROOM,
+      timeOfDay: 'day',
       decor: { items: [], toFind: 6 },
     });
   });
@@ -277,5 +278,23 @@ describe('towerView', () => {
       ],
       toFind: 4,
     });
+  });
+
+  it('tells the part of the day from the local time', () => {
+    const at = (hour: number) => new Date(2026, 10, 13, hour).getTime();
+    const state = {
+      needs: startNeeds(now),
+      breaks: startWorking(now),
+      finds: none,
+      look: BARE_LOOK,
+      room: EMPTY_ROOM,
+    };
+
+    expect([6, 12, 18, 23].map((hour) => towerView(state, at(hour)).timeOfDay)).toEqual([
+      'dawn',
+      'day',
+      'dusk',
+      'night',
+    ]);
   });
 });
