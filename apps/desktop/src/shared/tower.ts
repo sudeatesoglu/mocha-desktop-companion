@@ -1,3 +1,5 @@
+import type { AccessorySlot, ItemId, Look } from '@mocha/core';
+
 /** Mocha's needs as the Tower shows them: whole numbers and flags only. */
 export interface TowerView {
   /** 0 to 100. */
@@ -19,6 +21,18 @@ export interface TowerView {
   focusMinutesLeft: number | null;
   /** Mocha's find meter and collection (ADR-0010). */
   finds: TowerFinds;
+  /** What Mocha wears, drawn on it in the room. */
+  look: Look;
+  /** The found accessories, in catalog order, and how many are left to find. */
+  wardrobe: { items: Wearable[]; toFind: number };
+}
+
+/** A found accessory, as the Collection view lists it. */
+export interface Wearable {
+  id: ItemId;
+  title: string;
+  slot: AccessorySlot;
+  worn: boolean;
 }
 
 /** What the Tower shows of Mocha's finds. */

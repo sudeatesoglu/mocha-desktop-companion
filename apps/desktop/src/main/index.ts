@@ -2,6 +2,7 @@ import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
+  BARE_LOOK,
   findsEventForBreakChange,
   isQuietTime,
   isTired,
@@ -9,6 +10,8 @@ import {
   needsActivity,
   needsEventsForBreakChange,
   type RitualPose,
+  validLook,
+  wear,
 } from '@mocha/core';
 import {
   app,
@@ -292,6 +295,7 @@ if (!app.requestSingleInstanceLock()) {
       ritualReporter.report(ritualTracker.poseAt(Date.now())?.pose ?? null);
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
+      sendLook();
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
     }
     const activity = createActivityTracker(
@@ -473,6 +477,13 @@ if (!app.requestSingleInstanceLock()) {
       }
     });
 
+    // What Mocha wears: only found accessories, each in its slot, saved in
+    // the settings. A look edited by hand loses what Mocha may not wear.
+    let look = validLook(saved.look ?? BARE_LOOK, finds.state);
+    function sendLook() {
+      if (!window.isDestroyed()) window.webContents.send(IpcChannel.OverlayLook, look);
+    }
+
     // Settings: one window at a time, opened from the tray. Saved values
     // apply at once: the break rules take the new durations on the next tick.
     const settingsWindow = singleWindow(() => {
@@ -506,7 +517,10 @@ if (!app.requestSingleInstanceLock()) {
     const sendTowerView = (force: boolean) => {
       const target = towerWindow.current;
       if (!target) return;
-      const view = towerView(needs.state, breaks.state, finds.state, Date.now());
+      const view = towerView(
+        { needs: needs.state, breaks: breaks.state, finds: finds.state, look },
+        Date.now(),
+      );
       const key = JSON.stringify(view);
       if (!force && key === shownView) return;
       shownView = key;
@@ -537,6 +551,15 @@ if (!app.requestSingleInstanceLock()) {
           else needs.dispatch({ type: action, now });
         },
         focus: (minutes) => (minutes === null ? endFocus() : startFocus(minutes)),
+        // Main decides: only found accessories, in their own slot.
+        wear: ({ slot, id }) => {
+          const next = wear(look, finds.state, slot, id);
+          if (next === look) return;
+          look = next;
+          void settings.update({ look });
+          sendLook();
+          sendTowerView(false);
+        },
       },
       [pageUrl('tower')],
       console,

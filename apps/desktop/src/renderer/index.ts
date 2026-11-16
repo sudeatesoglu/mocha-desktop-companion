@@ -1,14 +1,17 @@
 // Overlay renderer entry: draws Mocha on a transparent canvas.
 import {
+  BARE_LOOK,
   createGameLoop,
   createPetAnimator,
   createReactionDetector,
   type Gaze,
   gazeOffset,
+  type Look,
   type Reaction,
   type RitualPose,
 } from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
+import { drawAccessories } from './accessories.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
 import { loadDefaultLook } from './default-skin.ts';
 import { createEffects } from './effects.ts';
@@ -119,12 +122,18 @@ function updateGaze(): boolean {
   return true;
 }
 
+// What Mocha wears, from main.
+let look: Look = BARE_LOOK;
+
 // Draws one frame. Defined as a const so TypeScript keeps `context`
 // narrowed to non-null inside it.
 const render = (): void => {
   context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
   updateGaze(); // the eye may have moved with the frame
   appearance.draw(context, { frame: animator.frame, hovered: interactive, gaze });
+  // What Mocha wears is part of Mocha: clicks on it count, effects do not.
+  const { frame } = animator;
+  drawAccessories(context, { head: appearance.head(frame), neck: appearance.neck(frame) }, look);
   // Read the pixels once per drawing, not on every mouse move, and before
   // effects: a heart or a star is not part of Mocha's body.
   pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
@@ -257,6 +266,14 @@ window.mocha.onRitualChange((pose) => {
 // A focus session: Mocha reads next to the user until it ends.
 window.mocha.onFocusingChange((focusing) => {
   if (animator.setFocus(focusing)) loop.invalidate();
+});
+
+// Something to wear was put on or taken off in the Tower. A paused Mocha
+// has no running loop, so it is redrawn at once.
+window.mocha.onLookChange((next) => {
+  look = next;
+  if (paused) render();
+  else loop.invalidate();
 });
 
 // Mocha found something during the break: twinkles as it wakes up.

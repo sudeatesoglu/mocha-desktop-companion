@@ -109,7 +109,7 @@ See the [changelog](CHANGELOG.md) for what each release contains.
 <summary><b>Your data</b></summary>
 <br>
 
-Mocha is local-first: it has no account and no telemetry. To notice when you step away it reads only how long it has been since your last keyboard or mouse input, never what you type, where you click or which apps you use. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it and your break settings, and `mocha.db`, which holds when your work stretches and breaks started and ended, Mocha's mood and energy, and what Mocha found, with nothing about what you do in them. Deleting them resets Mocha.
+Mocha is local-first: it has no account and no telemetry. To notice when you step away it reads only how long it has been since your last keyboard or mouse input, never what you type, where you click or which apps you use. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it, your break settings and what Mocha wears, and `mocha.db`, which holds when your work stretches and breaks started and ended, Mocha's mood and energy, and what Mocha found, with nothing about what you do in them. Deleting them resets Mocha.
 
 </details>
 

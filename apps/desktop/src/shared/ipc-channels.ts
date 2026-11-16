@@ -1,4 +1,4 @@
-import type { RitualId, RitualPose } from '@mocha/core';
+import type { AccessorySlot, ItemId, Look, RitualId, RitualPose } from '@mocha/core';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
 import type { RitualShow } from './ritual.ts';
@@ -37,6 +37,8 @@ export const IpcChannel = {
   OverlayTired: 'overlay:tired',
   /** Main → overlay (no data): Mocha found something during the break that just ended. */
   OverlayFound: 'overlay:found',
+  /** Main → overlay: what Mocha wears, when the page loads and when it changes. */
+  OverlayLook: 'overlay:look',
   /** Overlay → main (send): the user petted Mocha on the desktop. */
   OverlayPetted: 'overlay:petted',
   /** Main → tower: Mocha's needs, sent when the page loads and when they change. */
@@ -45,6 +47,8 @@ export const IpcChannel = {
   TowerReady: 'tower:ready',
   /** Tower → main (send): start a focus session of 25, 40 or 50 minutes, or end it (null). */
   TowerFocus: 'tower:focus',
+  /** Tower → main (send): put a found accessory on in its slot, or take it off (null). */
+  TowerWear: 'tower:wear',
   /** Tower → main (send): pet, treat or rest together. */
   TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
@@ -99,6 +103,8 @@ export interface MochaBridge {
   onTiredChange(callback: (tired: boolean) => void): () => void;
   /** Overlay only: Mocha found something. Returns an unsubscribe function. */
   onFound(callback: () => void): () => void;
+  /** Overlay only: what Mocha wears. Returns an unsubscribe function. */
+  onLookChange(callback: (look: Look) => void): () => void;
   /** Overlay only: open Mocha's Tower. */
   openTower(): void;
   /** Overlay only: the user petted Mocha, which lifts its mood. */
@@ -130,6 +136,8 @@ export interface TowerBridge {
   act(action: TowerAction): void;
   /** Starts a focus session of `minutes`, or ends the running one (null). */
   focus(minutes: FocusMinutes | null): void;
+  /** Puts a found accessory on in `slot`, or takes the slot's off (null). */
+  wear(slot: AccessorySlot, id: ItemId | null): void;
 }
 
 /** The API the ritual bubble's own preload exposes as `window.ritual`. Nothing else. */

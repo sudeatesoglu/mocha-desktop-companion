@@ -5,6 +5,7 @@ import {
   ITEMS,
   isTired,
   itemById,
+  type Look,
   type NeedsState,
   treatsLeft,
 } from '@mocha/core';
@@ -18,13 +19,18 @@ const minutesLeft = (endsAt: number, now: number) =>
 
 /** What the Tower shows of Mocha at `now`: rounded, never raw state. */
 export function towerView(
-  needs: NeedsState,
-  breaks: BreakState,
-  finds: FindsState,
+  {
+    needs,
+    breaks,
+    finds,
+    look,
+  }: { needs: NeedsState; breaks: BreakState; finds: FindsState; look: Look },
   now: number,
 ): TowerView {
   const status = findStatus(finds, now);
   const latest = finds.found.at(-1);
+  const found = new Set(finds.found.map(({ id }) => id));
+  const accessories = ITEMS.filter((item) => item.kind === 'accessory');
   return {
     mood: Math.round(needs.mood),
     energy: Math.round(needs.energy),
@@ -41,6 +47,13 @@ export function towerView(
       found: finds.found.length,
       total: ITEMS.length,
       latest: latest ? itemById(latest.id).title : null,
+    },
+    look,
+    wardrobe: {
+      items: accessories
+        .filter(({ id }) => found.has(id))
+        .map(({ id, title, slot }) => ({ id, title, slot, worn: look[slot] === id })),
+      toFind: accessories.filter(({ id }) => !found.has(id)).length,
     },
   };
 }

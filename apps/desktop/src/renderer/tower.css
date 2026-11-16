@@ -142,12 +142,16 @@ button:focus-visible {
   padding: 4px 8px;
 }
 
-.finds {
+/* The Finds row is a button that opens the Collection view. */
+button.finds {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   margin-top: 12px;
-  padding-top: 10px;
+  padding: 10px 0 0;
+  text-align: left;
+  border: 0;
   border-top: 2px solid var(--track);
 }
 
@@ -163,6 +167,57 @@ button:focus-visible {
   text-align: right;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+#collection {
+  padding: 16px 20px;
+}
+
+.collection-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.collection-head button {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+}
+
+#collection h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+#collection h3 {
+  margin: 16px 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+#wardrobe {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#wardrobe li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 2px solid var(--track);
+}
+
+#wardrobe button {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+}
+
+#wardrobe-note {
+  margin: 10px 0 0;
+  color: var(--muted);
 }
 
 #status {
