@@ -1,8 +1,14 @@
+import { type AccessorySlot, ITEMS, type ItemId } from '@mocha/core';
 import { type IpcMainEvent, ipcMain } from 'electron';
 import { z } from 'zod';
 import { IpcChannel } from '../../shared/ipc-channels.ts';
 import type { FocusMinutes, TowerAction } from '../../shared/tower.ts';
 import { type IpcLogger, isTrustedSenderUrl, senderUrl, validated } from './validate.ts';
+
+const ACCESSORY_IDS = ITEMS.filter(({ kind }) => kind === 'accessory').map(({ id }) => id) as [
+  ItemId,
+  ...ItemId[],
+];
 
 /**
  * Accepts the user's care for Mocha from the Tower: only from the Tower
@@ -15,6 +21,7 @@ export function registerTowerHandlers(
     ready(): void;
     act(action: TowerAction): void;
     focus(minutes: FocusMinutes | null): void;
+    wear(request: { slot: AccessorySlot; id: ItemId | null }): void;
   },
   trustedUrls: readonly string[],
   logger: IpcLogger,
@@ -44,6 +51,17 @@ export function registerTowerHandlers(
       IpcChannel.TowerFocus,
       z.union([z.literal(25), z.literal(40), z.literal(50), z.null()]),
       handlers.focus,
+      options,
+    ),
+  );
+  // Only known accessory ids; whether Mocha found it, and whether it fits
+  // the slot, main decides.
+  fromTower(
+    IpcChannel.TowerWear,
+    validated(
+      IpcChannel.TowerWear,
+      z.strictObject({ slot: z.enum(['neck', 'hat']), id: z.enum(ACCESSORY_IDS).nullable() }),
+      handlers.wear,
       options,
     ),
   );

@@ -1,4 +1,5 @@
 import {
+  BARE_LOOK,
   type BreakState,
   DEFAULT_NEEDS_CONFIG,
   type FindsState,
@@ -19,7 +20,7 @@ describe('towerView', () => {
     const needs = { ...startNeeds(now), mood: 61.6, energy: 20.4, treatsToday: 1 };
     const onBreak: BreakState = { phase: 'onBreak', startedAt: now, endsAt: now, workStartedAt: 0 };
 
-    expect(towerView(needs, onBreak, none, now)).toEqual({
+    expect(towerView({ needs, breaks: onBreak, finds: none, look: BARE_LOOK }, now)).toEqual({
       mood: 62,
       energy: 20,
       tired: true,
@@ -36,11 +37,18 @@ describe('towerView', () => {
         total: ITEMS.length,
         latest: null,
       },
+      look: BARE_LOOK,
+      wardrobe: { items: [], toFind: 5 },
     });
   });
 
   it('says when Mocha is paused', () => {
-    expect(towerView(startNeeds(now), { phase: 'paused' }, none, now)).toMatchObject({
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: { phase: 'paused' }, finds: none, look: BARE_LOOK },
+        now,
+      ),
+    ).toMatchObject({
       breakMinutesLeft: null,
       paused: true,
     });
@@ -54,9 +62,24 @@ describe('towerView', () => {
       workStartedAt: 0,
     };
 
-    expect(towerView(startNeeds(now), onBreak, none, now + 30_000).breakMinutesLeft).toBe(10);
-    expect(towerView(startNeeds(now), onBreak, none, now + 12 * MINUTE).breakMinutesLeft).toBe(0);
-    expect(towerView(startNeeds(now), startWorking(now), none, now).breakMinutesLeft).toBeNull();
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: onBreak, finds: none, look: BARE_LOOK },
+        now + 30_000,
+      ).breakMinutesLeft,
+    ).toBe(10);
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: onBreak, finds: none, look: BARE_LOOK },
+        now + 12 * MINUTE,
+      ).breakMinutesLeft,
+    ).toBe(0);
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: startWorking(now), finds: none, look: BARE_LOOK },
+        now,
+      ).breakMinutesLeft,
+    ).toBeNull();
   });
 
   it('counts the minutes left in a focus session, rounded up', () => {
@@ -67,12 +90,28 @@ describe('towerView', () => {
       workStartedAt: now,
     };
 
-    expect(towerView(startNeeds(now), focusing, none, now).focusMinutesLeft).toBe(25);
-    expect(towerView(startNeeds(now), focusing, none, now + 24 * MINUTE + 1).focusMinutesLeft).toBe(
-      1,
-    );
-    expect(towerView(startNeeds(now), focusing, none, now + 26 * MINUTE).focusMinutesLeft).toBe(0);
-    expect(towerView(startNeeds(now), startWorking(now), none, now).focusMinutesLeft).toBeNull();
+    expect(
+      towerView({ needs: startNeeds(now), breaks: focusing, finds: none, look: BARE_LOOK }, now)
+        .focusMinutesLeft,
+    ).toBe(25);
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: focusing, finds: none, look: BARE_LOOK },
+        now + 24 * MINUTE + 1,
+      ).focusMinutesLeft,
+    ).toBe(1);
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: focusing, finds: none, look: BARE_LOOK },
+        now + 26 * MINUTE,
+      ).focusMinutesLeft,
+    ).toBe(0);
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: startWorking(now), finds: none, look: BARE_LOOK },
+        now,
+      ).focusMinutesLeft,
+    ).toBeNull();
   });
 
   it('shows the find meter, the collection and the newest find', () => {
@@ -86,7 +125,12 @@ describe('towerView', () => {
       findsToday: 2,
     };
 
-    expect(towerView(startNeeds(now), startWorking(now), finds, now).finds).toEqual({
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: startWorking(now), finds: finds, look: BARE_LOOK },
+        now,
+      ).finds,
+    ).toEqual({
       points: 3,
       pointsPerFind: 3,
       waiting: true,
@@ -97,9 +141,12 @@ describe('towerView', () => {
     });
     // A new day: the meter no longer waits.
     const tomorrow = new Date(2026, 10, 14, 9).getTime();
-    expect(towerView(startNeeds(now), startWorking(now), finds, tomorrow).finds.waiting).toBe(
-      false,
-    );
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: startWorking(now), finds: finds, look: BARE_LOOK },
+        tomorrow,
+      ).finds.waiting,
+    ).toBe(false);
   });
 
   it('says when everything was found', () => {
@@ -108,10 +155,38 @@ describe('towerView', () => {
       found: ITEMS.map(({ id }) => ({ id, foundAt: now })),
     };
 
-    expect(towerView(startNeeds(now), startWorking(now), complete, now).finds).toMatchObject({
+    expect(
+      towerView(
+        { needs: startNeeds(now), breaks: startWorking(now), finds: complete, look: BARE_LOOK },
+        now,
+      ).finds,
+    ).toMatchObject({
       complete: true,
       waiting: false,
       points: 0,
+    });
+  });
+
+  it('lists the found accessories with what Mocha wears, and what is left to find', () => {
+    const finds: FindsState = {
+      ...none,
+      found: [
+        { id: 'hatFeather', foundAt: now - 3_000 },
+        { id: 'fern', foundAt: now - 2_000 },
+        { id: 'redScarf', foundAt: now - 1_000 },
+      ],
+    };
+    const look = { neck: 'redScarf', hat: null } as const;
+
+    const view = towerView({ needs: startNeeds(now), breaks: startWorking(now), finds, look }, now);
+
+    expect(view.look).toBe(look);
+    expect(view.wardrobe).toEqual({
+      items: [
+        { id: 'redScarf', title: 'Red scarf', slot: 'neck', worn: true },
+        { id: 'hatFeather', title: 'Hat feather', slot: 'hat', worn: false },
+      ],
+      toFind: 3,
     });
   });
 });

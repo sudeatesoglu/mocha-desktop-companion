@@ -67,6 +67,30 @@ describe('createSettingsStore', () => {
       });
     });
 
+    it('reads what Mocha wears, dropping ids this version does not know', async () => {
+      const { files } = memoryFiles(
+        JSON.stringify({
+          look: { neck: 'redScarf', hat: 'crown' },
+          overlayPosition: { x: 1, y: 2 },
+        }),
+      );
+
+      await expect(createSettingsStore(PATH, files, logger).load()).resolves.toEqual({
+        look: { neck: 'redScarf', hat: null },
+        overlayPosition: { x: 1, y: 2 },
+      });
+    });
+
+    it('drops a look that is not an object and keeps the rest', async () => {
+      const { files } = memoryFiles(
+        JSON.stringify({ look: 'fancy', overlayPosition: { x: 1, y: 2 } }),
+      );
+
+      await expect(createSettingsStore(PATH, files, logger).load()).resolves.toEqual({
+        overlayPosition: { x: 1, y: 2 },
+      });
+    });
+
     it('starts with defaults when there is no file yet, without a warning', async () => {
       const { files } = memoryFiles();
 

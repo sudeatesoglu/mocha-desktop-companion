@@ -1,3 +1,4 @@
+import { BARE_LOOK } from '@mocha/core';
 import { describe, expect, it } from 'vitest';
 import type { TowerFinds, TowerView } from '../shared/tower.ts';
 import { towerControls } from './tower-controls.ts';
@@ -11,6 +12,8 @@ const view = (patch: Partial<TowerView>): TowerView => ({
   breakMinutesLeft: null,
   focusMinutesLeft: null,
   finds: finds({}),
+  look: BARE_LOOK,
+  wardrobe: { items: [], toFind: 5 },
   ...patch,
 });
 

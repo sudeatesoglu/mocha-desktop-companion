@@ -1,4 +1,4 @@
-import type { RitualPose } from '@mocha/core';
+import type { Look, RitualPose } from '@mocha/core';
 import { contextBridge, ipcRenderer } from 'electron';
 import { IpcChannel, type MochaBridge } from '../shared/ipc-channels.ts';
 
@@ -50,6 +50,11 @@ const bridge: MochaBridge = {
     const listener = () => callback();
     ipcRenderer.on(IpcChannel.OverlayFound, listener);
     return () => ipcRenderer.removeListener(IpcChannel.OverlayFound, listener);
+  },
+  onLookChange: (callback) => {
+    const listener = (_event: unknown, look: Look) => callback(look);
+    ipcRenderer.on(IpcChannel.OverlayLook, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlayLook, listener);
   },
   openTower: () => ipcRenderer.send(IpcChannel.OpenTower),
   petted: () => ipcRenderer.send(IpcChannel.OverlayPetted),
