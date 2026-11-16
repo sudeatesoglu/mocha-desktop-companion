@@ -1,4 +1,4 @@
-import { BARE_LOOK } from '@mocha/core';
+import { BARE_LOOK, EMPTY_ROOM } from '@mocha/core';
 import { describe, expect, it } from 'vitest';
 import type { TowerFinds, TowerView } from '../shared/tower.ts';
 import { towerControls } from './tower-controls.ts';
@@ -14,6 +14,8 @@ const view = (patch: Partial<TowerView>): TowerView => ({
   finds: finds({}),
   look: BARE_LOOK,
   wardrobe: { items: [], toFind: 5 },
+  room: EMPTY_ROOM,
+  decor: { items: [], toFind: 6 },
   ...patch,
 });
 
@@ -43,6 +45,7 @@ describe('towerControls', () => {
         text: '2 of 11 found, last: Fern',
       },
       wardrobe: { rows: [], note: 'Nothing to wear yet. Mocha finds things during breaks.' },
+      room: { rows: [], note: 'No decor yet. Mocha finds things during breaks.' },
       status: '',
     });
   });
@@ -135,12 +138,14 @@ describe('towerControls', () => {
         {
           id: 'redScarf',
           title: 'Red scarf',
+          where: 'Neck',
           label: 'Take off',
           request: { slot: 'neck', id: null },
         },
         {
           id: 'hatFeather',
           title: 'Hat feather',
+          where: 'Hat',
           label: 'Wear',
           request: { slot: 'hat', id: 'hatFeather' },
         },
@@ -155,5 +160,35 @@ describe('towerControls', () => {
     expect(towerControls(view({ wardrobe: { items, toFind: 0 } })).wardrobe.note).toBe(
       'Everything to wear is found.',
     );
+  });
+
+  it('offers to place found decor in its slot, and to remove what stands there', () => {
+    const decor = {
+      items: [
+        { id: 'crystalBall', title: 'Crystal ball', slot: 'shelf', placed: false },
+        { id: 'lantern', title: 'Lantern', slot: 'sill', placed: true },
+      ],
+      toFind: 0,
+    } as const;
+
+    expect(towerControls(view({ decor: { ...decor, items: [...decor.items] } })).room).toEqual({
+      rows: [
+        {
+          id: 'crystalBall',
+          title: 'Crystal ball',
+          where: 'Shelf',
+          label: 'Place',
+          request: { slot: 'shelf', id: 'crystalBall' },
+        },
+        {
+          id: 'lantern',
+          title: 'Lantern',
+          where: 'Window sill',
+          label: 'Remove',
+          request: { slot: 'sill', id: null },
+        },
+      ],
+      note: 'Every decor item is found.',
+    });
   });
 });

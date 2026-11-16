@@ -1,10 +1,15 @@
 import {
+  type AccessorySlot,
   BARE_LOOK,
   createGameLoop,
   createPetAnimator,
+  type DecorSlot,
+  EMPTY_ROOM,
   type Gaze,
   gazeOffset,
+  type ItemId,
   type Look,
+  type Room,
 } from '@mocha/core';
 import { FOCUS_MINUTES, type TowerAction, type TowerView } from '../shared/tower.ts';
 import { drawAccessories } from './accessories.ts';
@@ -53,11 +58,12 @@ canvas.addEventListener('pointermove', (event) => {
   loop.invalidate();
 });
 
-// What Mocha wears, from the view.
+// What Mocha wears and what stands in its room, from the view.
 let look: Look = BARE_LOOK;
+let room: Room = EMPTY_ROOM;
 
 const render = (): void => {
-  drawRoom(context);
+  drawRoom(context, room);
   context.save();
   context.translate(offset.x, offset.y);
   const { frame } = animator;
@@ -105,6 +111,8 @@ const collection = element('collection', HTMLElement);
 const collectionBack = element('collection-back', HTMLButtonElement);
 const wardrobe = element('wardrobe', HTMLUListElement);
 const wardrobeNote = element('wardrobe-note', HTMLElement);
+const roomItems = element('room-items', HTMLUListElement);
+const roomNote = element('room-note', HTMLElement);
 
 let resting = false;
 // What the rest button does now: start a break, or end the one running.
@@ -129,9 +137,11 @@ function show(view: TowerView): void {
   findsDots.hidden = controls.finds.dots === '';
   findsDots.setAttribute('aria-label', controls.finds.dotsLabel);
   findsText.textContent = controls.finds.text;
-  showWardrobe(controls.wardrobe);
-  if (view.look !== look) {
+  showList(wardrobe, wardrobeNote, controls.wardrobe, (slot, id) => window.tower.wear(slot, id));
+  showList(roomItems, roomNote, controls.room, (slot, id) => window.tower.place(slot, id));
+  if (view.look !== look || view.room !== room) {
     look = view.look;
+    room = view.room;
     loop.invalidate();
   }
   // Reading during a session comes before looking tired.
@@ -149,22 +159,45 @@ function show(view: TowerView): void {
   }
 }
 
-/** The Collection view's list, rebuilt from the controls on every view. */
-function showWardrobe({ rows, note }: ReturnType<typeof towerControls>['wardrobe']): void {
-  wardrobe.replaceChildren(
-    ...rows.map(({ title, label, request }) => {
+/**
+ * One of the Collection view's lists, rebuilt from the controls on every
+ * view: each row's title, where it goes and its button.
+ */
+function showList<S extends AccessorySlot | DecorSlot>(
+  list: HTMLUListElement,
+  noteLine: HTMLElement,
+  {
+    rows,
+    note,
+  }: {
+    rows: {
+      title: string;
+      where: string;
+      label: string;
+      request: { slot: S; id: ItemId | null };
+    }[];
+    note: string;
+  },
+  send: (slot: S, id: ItemId | null) => void,
+): void {
+  list.replaceChildren(
+    ...rows.map(({ title, where, label, request }) => {
       const item = document.createElement('li');
       const name = document.createElement('span');
+      name.className = 'title';
       name.textContent = title;
+      const place = document.createElement('span');
+      place.className = 'where';
+      place.textContent = where;
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = label;
-      button.addEventListener('click', () => window.tower.wear(request.slot, request.id));
-      item.append(name, button);
+      button.addEventListener('click', () => send(request.slot, request.id));
+      item.append(name, place, button);
       return item;
     }),
   );
-  wardrobeNote.textContent = note;
+  noteLine.textContent = note;
 }
 
 /** Swaps the care controls for the Collection view and back, moving focus along. */

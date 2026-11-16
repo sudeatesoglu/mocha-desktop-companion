@@ -7,6 +7,7 @@ import {
   itemById,
   type Look,
   type NeedsState,
+  type Room,
   treatsLeft,
 } from '@mocha/core';
 import type { TowerView } from '../../shared/tower.ts';
@@ -24,13 +25,15 @@ export function towerView(
     breaks,
     finds,
     look,
-  }: { needs: NeedsState; breaks: BreakState; finds: FindsState; look: Look },
+    room,
+  }: { needs: NeedsState; breaks: BreakState; finds: FindsState; look: Look; room: Room },
   now: number,
 ): TowerView {
   const status = findStatus(finds, now);
   const latest = finds.found.at(-1);
   const found = new Set(finds.found.map(({ id }) => id));
   const accessories = ITEMS.filter((item) => item.kind === 'accessory');
+  const decor = ITEMS.filter((item) => item.kind === 'decor');
   return {
     mood: Math.round(needs.mood),
     energy: Math.round(needs.energy),
@@ -54,6 +57,13 @@ export function towerView(
         .filter(({ id }) => found.has(id))
         .map(({ id, title, slot }) => ({ id, title, slot, worn: look[slot] === id })),
       toFind: accessories.filter(({ id }) => !found.has(id)).length,
+    },
+    room,
+    decor: {
+      items: decor
+        .filter(({ id }) => found.has(id))
+        .map(({ id, title, slot }) => ({ id, title, slot, placed: room[slot] === id })),
+      toFind: decor.filter(({ id }) => !found.has(id)).length,
     },
   };
 }

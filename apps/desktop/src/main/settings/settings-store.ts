@@ -31,6 +31,16 @@ const settingsSchema = z.object({
     .object({ neck: itemIdSchema.nullable().catch(null), hat: itemIdSchema.nullable().catch(null) })
     .optional()
     .catch(undefined),
+  /** What stands in Mocha's room, checked the same way. */
+  room: z
+    .object({
+      shelf: itemIdSchema.nullable().catch(null),
+      wall: itemIdSchema.nullable().catch(null),
+      floor: itemIdSchema.nullable().catch(null),
+      sill: itemIdSchema.nullable().catch(null),
+    })
+    .optional()
+    .catch(undefined),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;

@@ -2,6 +2,7 @@ import {
   BARE_LOOK,
   type BreakState,
   DEFAULT_NEEDS_CONFIG,
+  EMPTY_ROOM,
   type FindsState,
   ITEMS,
   startFinds,
@@ -20,7 +21,9 @@ describe('towerView', () => {
     const needs = { ...startNeeds(now), mood: 61.6, energy: 20.4, treatsToday: 1 };
     const onBreak: BreakState = { phase: 'onBreak', startedAt: now, endsAt: now, workStartedAt: 0 };
 
-    expect(towerView({ needs, breaks: onBreak, finds: none, look: BARE_LOOK }, now)).toEqual({
+    expect(
+      towerView({ needs, breaks: onBreak, finds: none, look: BARE_LOOK, room: EMPTY_ROOM }, now),
+    ).toEqual({
       mood: 62,
       energy: 20,
       tired: true,
@@ -39,13 +42,21 @@ describe('towerView', () => {
       },
       look: BARE_LOOK,
       wardrobe: { items: [], toFind: 5 },
+      room: EMPTY_ROOM,
+      decor: { items: [], toFind: 6 },
     });
   });
 
   it('says when Mocha is paused', () => {
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: { phase: 'paused' }, finds: none, look: BARE_LOOK },
+        {
+          needs: startNeeds(now),
+          breaks: { phase: 'paused' },
+          finds: none,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
         now,
       ),
     ).toMatchObject({
@@ -64,19 +75,25 @@ describe('towerView', () => {
 
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: onBreak, finds: none, look: BARE_LOOK },
+        { needs: startNeeds(now), breaks: onBreak, finds: none, look: BARE_LOOK, room: EMPTY_ROOM },
         now + 30_000,
       ).breakMinutesLeft,
     ).toBe(10);
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: onBreak, finds: none, look: BARE_LOOK },
+        { needs: startNeeds(now), breaks: onBreak, finds: none, look: BARE_LOOK, room: EMPTY_ROOM },
         now + 12 * MINUTE,
       ).breakMinutesLeft,
     ).toBe(0);
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: startWorking(now), finds: none, look: BARE_LOOK },
+        {
+          needs: startNeeds(now),
+          breaks: startWorking(now),
+          finds: none,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
         now,
       ).breakMinutesLeft,
     ).toBeNull();
@@ -91,24 +108,50 @@ describe('towerView', () => {
     };
 
     expect(
-      towerView({ needs: startNeeds(now), breaks: focusing, finds: none, look: BARE_LOOK }, now)
-        .focusMinutesLeft,
+      towerView(
+        {
+          needs: startNeeds(now),
+          breaks: focusing,
+          finds: none,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
+        now,
+      ).focusMinutesLeft,
     ).toBe(25);
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: focusing, finds: none, look: BARE_LOOK },
+        {
+          needs: startNeeds(now),
+          breaks: focusing,
+          finds: none,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
         now + 24 * MINUTE + 1,
       ).focusMinutesLeft,
     ).toBe(1);
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: focusing, finds: none, look: BARE_LOOK },
+        {
+          needs: startNeeds(now),
+          breaks: focusing,
+          finds: none,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
         now + 26 * MINUTE,
       ).focusMinutesLeft,
     ).toBe(0);
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: startWorking(now), finds: none, look: BARE_LOOK },
+        {
+          needs: startNeeds(now),
+          breaks: startWorking(now),
+          finds: none,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
         now,
       ).focusMinutesLeft,
     ).toBeNull();
@@ -127,7 +170,13 @@ describe('towerView', () => {
 
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: startWorking(now), finds: finds, look: BARE_LOOK },
+        {
+          needs: startNeeds(now),
+          breaks: startWorking(now),
+          finds: finds,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
         now,
       ).finds,
     ).toEqual({
@@ -143,7 +192,13 @@ describe('towerView', () => {
     const tomorrow = new Date(2026, 10, 14, 9).getTime();
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: startWorking(now), finds: finds, look: BARE_LOOK },
+        {
+          needs: startNeeds(now),
+          breaks: startWorking(now),
+          finds: finds,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
         tomorrow,
       ).finds.waiting,
     ).toBe(false);
@@ -157,7 +212,13 @@ describe('towerView', () => {
 
     expect(
       towerView(
-        { needs: startNeeds(now), breaks: startWorking(now), finds: complete, look: BARE_LOOK },
+        {
+          needs: startNeeds(now),
+          breaks: startWorking(now),
+          finds: complete,
+          look: BARE_LOOK,
+          room: EMPTY_ROOM,
+        },
         now,
       ).finds,
     ).toMatchObject({
@@ -178,7 +239,10 @@ describe('towerView', () => {
     };
     const look = { neck: 'redScarf', hat: null } as const;
 
-    const view = towerView({ needs: startNeeds(now), breaks: startWorking(now), finds, look }, now);
+    const view = towerView(
+      { needs: startNeeds(now), breaks: startWorking(now), finds, look, room: EMPTY_ROOM },
+      now,
+    );
 
     expect(view.look).toBe(look);
     expect(view.wardrobe).toEqual({
@@ -187,6 +251,31 @@ describe('towerView', () => {
         { id: 'hatFeather', title: 'Hat feather', slot: 'hat', worn: false },
       ],
       toFind: 3,
+    });
+  });
+
+  it('lists the found decor with what stands in the room', () => {
+    const finds: FindsState = {
+      ...none,
+      found: [
+        { id: 'bookStack', foundAt: now - 2_000 },
+        { id: 'crystalBall', foundAt: now - 1_000 },
+      ],
+    };
+    const room = { ...EMPTY_ROOM, shelf: 'bookStack' } as const;
+
+    const view = towerView(
+      { needs: startNeeds(now), breaks: startWorking(now), finds, look: BARE_LOOK, room },
+      now,
+    );
+
+    expect(view.room).toBe(room);
+    expect(view.decor).toEqual({
+      items: [
+        { id: 'crystalBall', title: 'Crystal ball', slot: 'shelf', placed: false },
+        { id: 'bookStack', title: 'Book stack', slot: 'shelf', placed: true },
+      ],
+      toFind: 4,
     });
   });
 });
