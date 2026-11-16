@@ -59,6 +59,7 @@ import { reminderTransition } from './reminder/reminder-transition.ts';
 import { followRitualPoses } from './ritual/ritual-poses.ts';
 import { createRitualTracker } from './ritual/ritual-tracker.ts';
 import { ritualTransition } from './ritual/ritual-transition.ts';
+import { loginItemView } from './settings/login-item.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
 import { watchSpaceChanges } from './space/space-watcher.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
@@ -509,6 +510,14 @@ if (!app.requestSingleInstanceLock()) {
           preferences = next;
           breaks.setConfig(breakConfigFor(next));
           void settings.update({ preferences: next });
+        },
+      },
+      // Only the installed app becomes a login item (see loginItemView).
+      {
+        get: () => loginItemView(app.isPackaged, app.getLoginItemSettings()),
+        set: (open) => {
+          if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: open });
+          return loginItemView(app.isPackaged, app.getLoginItemSettings());
         },
       },
       [pageUrl('settings')],

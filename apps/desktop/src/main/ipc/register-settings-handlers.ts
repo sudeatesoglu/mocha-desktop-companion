@@ -1,5 +1,7 @@
 import { type IpcMainInvokeEvent, ipcMain } from 'electron';
+import { z } from 'zod';
 import { IpcChannel } from '../../shared/ipc-channels.ts';
+import type { LoginItem } from '../../shared/login-item.ts';
 import { type Preferences, preferencesSchema } from '../../shared/preferences.ts';
 import { type IpcLogger, isTrustedSenderUrl, senderUrl, validated } from './validate.ts';
 
@@ -7,6 +9,12 @@ export interface PreferencesAccess {
   load(): Preferences;
   /** Stores and applies preferences that already passed validation. */
   save(preferences: Preferences): void;
+}
+
+export interface LoginItemAccess {
+  get(): LoginItem;
+  /** Asks the system to open Mocha at login or not, and reads the result. */
+  set(open: boolean): LoginItem;
 }
 
 /**
@@ -17,6 +25,7 @@ export interface PreferencesAccess {
 export function registerSettingsHandlers(
   currentSender: () => unknown,
   preferences: PreferencesAccess,
+  loginItem: LoginItemAccess,
   trustedUrls: readonly string[],
   logger: IpcLogger,
 ): void {
@@ -46,5 +55,19 @@ export function registerSettingsHandlers(
   ipcMain.handle(IpcChannel.SettingsSave, (event, payload: unknown) => {
     if (!fromSettings(IpcChannel.SettingsSave, event)) return false;
     return save(senderUrl(event), payload).ok;
+  });
+
+  ipcMain.handle(IpcChannel.SettingsLoginItem, (event) =>
+    fromSettings(IpcChannel.SettingsLoginItem, event) ? loginItem.get() : undefined,
+  );
+  // Only a boolean: a page cannot pass options such as another app's path.
+  const setOpenAtLogin = validated(IpcChannel.SettingsOpenAtLogin, z.boolean(), loginItem.set, {
+    isTrusted,
+    logger,
+  });
+  ipcMain.handle(IpcChannel.SettingsOpenAtLogin, (event, payload: unknown) => {
+    if (!fromSettings(IpcChannel.SettingsOpenAtLogin, event)) return undefined;
+    const result = setOpenAtLogin(senderUrl(event), payload);
+    return result.ok ? result.value : loginItem.get();
   });
 }
