@@ -42,6 +42,7 @@ describe('towerControls', () => {
         dotsLabel: '1 of 3 points toward the next find',
         text: '2 of 11 found, last: Fern',
       },
+      wardrobe: { rows: [], note: 'Nothing to wear yet. Mocha finds things during breaks.' },
       status: '',
     });
   });
@@ -116,5 +117,43 @@ describe('towerControls', () => {
       dotsLabel: '',
       text: 'All 11 found',
     });
+  });
+
+  it('offers to wear what Mocha found, and to take off what it wears', () => {
+    const wardrobe = {
+      items: [
+        { id: 'redScarf', title: 'Red scarf', slot: 'neck', worn: true },
+        { id: 'hatFeather', title: 'Hat feather', slot: 'hat', worn: false },
+      ],
+      toFind: 3,
+    } as const;
+
+    expect(
+      towerControls(view({ wardrobe: { ...wardrobe, items: [...wardrobe.items] } })).wardrobe,
+    ).toEqual({
+      rows: [
+        {
+          id: 'redScarf',
+          title: 'Red scarf',
+          label: 'Take off',
+          request: { slot: 'neck', id: null },
+        },
+        {
+          id: 'hatFeather',
+          title: 'Hat feather',
+          label: 'Wear',
+          request: { slot: 'hat', id: 'hatFeather' },
+        },
+      ],
+      note: '3 more to find',
+    });
+  });
+
+  it('says when every accessory is found', () => {
+    const items = [{ id: 'bowTie', title: 'Bow tie', slot: 'neck', worn: false } as const];
+
+    expect(towerControls(view({ wardrobe: { items, toFind: 0 } })).wardrobe.note).toBe(
+      'Everything to wear is found.',
+    );
   });
 });

@@ -1,5 +1,13 @@
-import { createGameLoop, createPetAnimator, type Gaze, gazeOffset } from '@mocha/core';
+import {
+  BARE_LOOK,
+  createGameLoop,
+  createPetAnimator,
+  type Gaze,
+  gazeOffset,
+  type Look,
+} from '@mocha/core';
 import { FOCUS_MINUTES, type TowerAction, type TowerView } from '../shared/tower.ts';
+import { drawAccessories } from './accessories.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
 import { loadDefaultLook } from './default-skin.ts';
 import { createEffects } from './effects.ts';
@@ -45,11 +53,16 @@ canvas.addEventListener('pointermove', (event) => {
   loop.invalidate();
 });
 
+// What Mocha wears, from the view.
+let look: Look = BARE_LOOK;
+
 const render = (): void => {
   drawRoom(context);
   context.save();
   context.translate(offset.x, offset.y);
-  appearance.draw(context, { frame: animator.frame, hovered: false, gaze });
+  const { frame } = animator;
+  appearance.draw(context, { frame, hovered: false, gaze });
+  drawAccessories(context, { head: appearance.head(frame), neck: appearance.neck(frame) }, look);
   effects.draw(context, {
     head: appearance.head(animator.frame),
     feet: appearance.feet(animator.frame),
@@ -84,8 +97,14 @@ const focusLabel = element('focus-label', HTMLElement);
 const focusLengths = element('focus-lengths', HTMLElement);
 const focusEnd = element('focus-end', HTMLButtonElement);
 const lengthButtons = [...focusLengths.querySelectorAll('button')];
+const findsButton = element('finds', HTMLButtonElement);
 const findsDots = element('finds-dots', HTMLElement);
 const findsText = element('finds-text', HTMLElement);
+const main = element('main', HTMLElement);
+const collection = element('collection', HTMLElement);
+const collectionBack = element('collection-back', HTMLButtonElement);
+const wardrobe = element('wardrobe', HTMLUListElement);
+const wardrobeNote = element('wardrobe-note', HTMLElement);
 
 let resting = false;
 // What the rest button does now: start a break, or end the one running.
@@ -110,6 +129,11 @@ function show(view: TowerView): void {
   findsDots.hidden = controls.finds.dots === '';
   findsDots.setAttribute('aria-label', controls.finds.dotsLabel);
   findsText.textContent = controls.finds.text;
+  showWardrobe(controls.wardrobe);
+  if (view.look !== look) {
+    look = view.look;
+    loop.invalidate();
+  }
   // Reading during a session comes before looking tired.
   const posed = animator.setTired(view.tired);
   if (animator.setFocus(view.focusMinutesLeft !== null) || posed) loop.invalidate();
@@ -123,6 +147,31 @@ function show(view: TowerView): void {
     if (!resting) effects.add('heart');
     loop.invalidate();
   }
+}
+
+/** The Collection view's list, rebuilt from the controls on every view. */
+function showWardrobe({ rows, note }: ReturnType<typeof towerControls>['wardrobe']): void {
+  wardrobe.replaceChildren(
+    ...rows.map(({ title, label, request }) => {
+      const item = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = title;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.addEventListener('click', () => window.tower.wear(request.slot, request.id));
+      item.append(name, button);
+      return item;
+    }),
+  );
+  wardrobeNote.textContent = note;
+}
+
+/** Swaps the care controls for the Collection view and back, moving focus along. */
+function showCollection(open: boolean): void {
+  main.hidden = open;
+  collection.hidden = !open;
+  (open ? collectionBack : findsButton).focus();
 }
 
 function act(action: TowerAction): void {
@@ -143,6 +192,8 @@ for (const button of lengthButtons) {
   if (minutes) button.addEventListener('click', () => window.tower.focus(minutes));
 }
 focusEnd.addEventListener('click', () => window.tower.focus(null));
+findsButton.addEventListener('click', () => showCollection(true));
+collectionBack.addEventListener('click', () => showCollection(false));
 window.tower.onNeeds(show);
 window.tower.ready(); // listening now: ask main for the needs
 

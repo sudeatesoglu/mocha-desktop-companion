@@ -27,6 +27,7 @@ export function towerControls(view: TowerView) {
       disabled: view.paused,
     },
     finds: findsControls(view.finds),
+    wardrobe: wardrobeControls(view.wardrobe),
     status: resting
       ? restingStatus(view.breakMinutesLeft)
       : view.paused
@@ -57,4 +58,24 @@ function findsControls(finds: TowerFinds) {
       ? 'Mocha looks again tomorrow'
       : `${finds.found} of ${finds.total} found${latest}`,
   };
+}
+
+/**
+ * The Collection view's rows: each found accessory with the button that
+ * puts it on, or takes it off when worn, and a line about what is left.
+ */
+function wardrobeControls(wardrobe: TowerView['wardrobe']) {
+  const rows = wardrobe.items.map(({ id, title, slot, worn }) => ({
+    id,
+    title,
+    label: worn ? 'Take off' : 'Wear',
+    request: { slot, id: worn ? null : id },
+  }));
+  const note =
+    rows.length === 0
+      ? 'Nothing to wear yet. Mocha finds things during breaks.'
+      : wardrobe.toFind > 0
+        ? `${wardrobe.toFind} more to find`
+        : 'Everything to wear is found.';
+  return { rows, note };
 }
