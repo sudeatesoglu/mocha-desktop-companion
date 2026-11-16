@@ -25,6 +25,7 @@ export {
   type ItemId,
   itemById,
 } from './collection/items.ts';
+export { BARE_LOOK, type Look, validLook, wear } from './collection/look.ts';
 export {
   type BreakConfig,
   type BreakEvent,
