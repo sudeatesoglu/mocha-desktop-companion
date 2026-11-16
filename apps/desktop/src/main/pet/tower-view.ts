@@ -6,8 +6,10 @@ import {
   isTired,
   itemById,
   type Look,
+  minuteOfDay,
   type NeedsState,
   type Room,
+  timeOfDay,
   treatsLeft,
 } from '@mocha/core';
 import type { TowerView } from '../../shared/tower.ts';
@@ -59,6 +61,7 @@ export function towerView(
       toFind: accessories.filter(({ id }) => !found.has(id)).length,
     },
     room,
+    timeOfDay: timeOfDay(minuteOfDay(now)),
     decor: {
       items: decor
         .filter(({ id }) => found.has(id))

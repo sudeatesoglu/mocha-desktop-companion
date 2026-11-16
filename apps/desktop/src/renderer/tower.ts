@@ -10,12 +10,14 @@ import {
   type ItemId,
   type Look,
   type Room,
+  type TimeOfDay,
 } from '@mocha/core';
 import { FOCUS_MINUTES, type TowerAction, type TowerView } from '../shared/tower.ts';
 import { drawAccessories } from './accessories.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
 import { loadDefaultLook } from './default-skin.ts';
 import { createEffects } from './effects.ts';
+import { createFlicker } from './flicker.ts';
 import { loadImage } from './load-image.ts';
 import { towerControls } from './tower-controls.ts';
 import { drawRoom, MOCHA_SPOT, ROOM_HEIGHT, ROOM_WIDTH } from './tower-room.ts';
@@ -58,12 +60,17 @@ canvas.addEventListener('pointermove', (event) => {
   loop.invalidate();
 });
 
-// What Mocha wears and what stands in its room, from the view.
+// What Mocha wears, what stands in its room and the part of the day, from
+// the view. The candle burns at night and through a break.
 let look: Look = BARE_LOOK;
 let room: Room = EMPTY_ROOM;
+let time: TimeOfDay = 'night';
+let resting = false;
+const flicker = createFlicker();
+const candleLit = () => time === 'night' || resting;
 
 const render = (): void => {
-  drawRoom(context, room);
+  drawRoom(context, { room, time, flame: candleLit() ? flicker.frame : null });
   context.save();
   context.translate(offset.x, offset.y);
   const { frame } = animator;
@@ -82,7 +89,8 @@ const loop = createGameLoop({
   update(stepMs) {
     const animated = animator.update(stepMs);
     const affected = effects.update(stepMs);
-    return animated || affected;
+    const flickered = flicker.update(stepMs, candleLit());
+    return animated || affected || flickered;
   },
   render,
 });
@@ -114,7 +122,6 @@ const wardrobeNote = element('wardrobe-note', HTMLElement);
 const roomItems = element('room-items', HTMLUListElement);
 const roomNote = element('room-note', HTMLElement);
 
-let resting = false;
 // What the rest button does now: start a break, or end the one running.
 let restAction: TowerAction = 'rest';
 
@@ -139,9 +146,10 @@ function show(view: TowerView): void {
   findsText.textContent = controls.finds.text;
   showList(wardrobe, wardrobeNote, controls.wardrobe, (slot, id) => window.tower.wear(slot, id));
   showList(roomItems, roomNote, controls.room, (slot, id) => window.tower.place(slot, id));
-  if (view.look !== look || view.room !== room) {
+  if (view.look !== look || view.room !== room || view.timeOfDay !== time) {
     look = view.look;
     room = view.room;
+    time = view.timeOfDay;
     loop.invalidate();
   }
   // Reading during a session comes before looking tired.

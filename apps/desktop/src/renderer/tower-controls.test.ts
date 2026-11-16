@@ -15,6 +15,7 @@ const view = (patch: Partial<TowerView>): TowerView => ({
   look: BARE_LOOK,
   wardrobe: { items: [], toFind: 5 },
   room: EMPTY_ROOM,
+  timeOfDay: 'day',
   decor: { items: [], toFind: 6 },
   ...patch,
 });
