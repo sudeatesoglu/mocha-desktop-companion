@@ -1,4 +1,4 @@
-import type { AccessorySlot, ItemId, Look, RitualId, RitualPose } from '@mocha/core';
+import type { AccessorySlot, DecorSlot, ItemId, Look, RitualId, RitualPose } from '@mocha/core';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
 import type { RitualShow } from './ritual.ts';
@@ -49,6 +49,8 @@ export const IpcChannel = {
   TowerFocus: 'tower:focus',
   /** Tower → main (send): put a found accessory on in its slot, or take it off (null). */
   TowerWear: 'tower:wear',
+  /** Tower → main (send): put a found decor item in its slot of the room, or clear it (null). */
+  TowerPlace: 'tower:place',
   /** Tower → main (send): pet, treat or rest together. */
   TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
@@ -138,6 +140,8 @@ export interface TowerBridge {
   focus(minutes: FocusMinutes | null): void;
   /** Puts a found accessory on in `slot`, or takes the slot's off (null). */
   wear(slot: AccessorySlot, id: ItemId | null): void;
+  /** Puts a found decor item in `slot` of the room, or clears the slot (null). */
+  place(slot: DecorSlot, id: ItemId | null): void;
 }
 
 /** The API the ritual bubble's own preload exposes as `window.ritual`. Nothing else. */

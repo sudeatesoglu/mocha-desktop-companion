@@ -3,14 +3,17 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   BARE_LOOK,
+  EMPTY_ROOM,
   findsEventForBreakChange,
   isQuietTime,
   isTired,
   minuteOfDay,
   needsActivity,
   needsEventsForBreakChange,
+  place,
   type RitualPose,
   validLook,
+  validRoom,
   wear,
 } from '@mocha/core';
 import {
@@ -483,6 +486,8 @@ if (!app.requestSingleInstanceLock()) {
     function sendLook() {
       if (!window.isDestroyed()) window.webContents.send(IpcChannel.OverlayLook, look);
     }
+    // What stands in Mocha's room, checked and saved the same way.
+    let room = validRoom(saved.room ?? EMPTY_ROOM, finds.state);
 
     // Settings: one window at a time, opened from the tray. Saved values
     // apply at once: the break rules take the new durations on the next tick.
@@ -518,7 +523,7 @@ if (!app.requestSingleInstanceLock()) {
       const target = towerWindow.current;
       if (!target) return;
       const view = towerView(
-        { needs: needs.state, breaks: breaks.state, finds: finds.state, look },
+        { needs: needs.state, breaks: breaks.state, finds: finds.state, look, room },
         Date.now(),
       );
       const key = JSON.stringify(view);
@@ -558,6 +563,13 @@ if (!app.requestSingleInstanceLock()) {
           look = next;
           void settings.update({ look });
           sendLook();
+          sendTowerView(false);
+        },
+        place: ({ slot, id }) => {
+          const next = place(room, finds.state, slot, id);
+          if (next === room) return;
+          room = next;
+          void settings.update({ room });
           sendTowerView(false);
         },
       },

@@ -169,7 +169,11 @@ button.finds {
   text-overflow: ellipsis;
 }
 
+/* Below the room, scrolling when the lists are long. */
 #collection {
+  box-sizing: border-box;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
   padding: 16px 20px;
 }
 
@@ -195,27 +199,34 @@ button.finds {
   color: var(--muted);
 }
 
-#wardrobe {
+.items {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-#wardrobe li {
+.items li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   padding: 6px 0;
   border-bottom: 2px solid var(--track);
 }
 
-#wardrobe button {
+.items .title {
+  flex: 1 1 auto;
+}
+
+.items .where {
+  color: var(--muted);
+}
+
+.items button {
   flex: 0 0 auto;
   padding: 4px 10px;
 }
 
-#wardrobe-note {
+.note {
   margin: 10px 0 0;
   color: var(--muted);
 }

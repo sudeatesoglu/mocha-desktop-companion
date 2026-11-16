@@ -81,6 +81,16 @@ describe('createSettingsStore', () => {
       });
     });
 
+    it('reads what stands in the room, with a missing slot as empty', async () => {
+      const { files } = memoryFiles(
+        JSON.stringify({ room: { shelf: 'crystalBall', wall: 'poster', floor: 'fern' } }),
+      );
+
+      await expect(createSettingsStore(PATH, files, logger).load()).resolves.toEqual({
+        room: { shelf: 'crystalBall', wall: null, floor: 'fern', sill: null },
+      });
+    });
+
     it('drops a look that is not an object and keeps the rest', async () => {
       const { files } = memoryFiles(
         JSON.stringify({ look: 'fancy', overlayPosition: { x: 1, y: 2 } }),

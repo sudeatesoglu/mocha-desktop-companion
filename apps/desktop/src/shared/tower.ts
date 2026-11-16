@@ -1,4 +1,4 @@
-import type { AccessorySlot, ItemId, Look } from '@mocha/core';
+import type { AccessorySlot, DecorSlot, ItemId, Look, Room } from '@mocha/core';
 
 /** Mocha's needs as the Tower shows them: whole numbers and flags only. */
 export interface TowerView {
@@ -25,6 +25,18 @@ export interface TowerView {
   look: Look;
   /** The found accessories, in catalog order, and how many are left to find. */
   wardrobe: { items: Wearable[]; toFind: number };
+  /** What stands in the room, drawn in it. */
+  room: Room;
+  /** The found decor, in catalog order, and how many are left to find. */
+  decor: { items: Placeable[]; toFind: number };
+}
+
+/** A found decor item, as the Collection view lists it. */
+export interface Placeable {
+  id: ItemId;
+  title: string;
+  slot: DecorSlot;
+  placed: boolean;
 }
 
 /** A found accessory, as the Collection view lists it. */

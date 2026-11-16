@@ -16,6 +16,7 @@ describe('registerTowerHandlers', () => {
   const ready = vi.fn();
   const focus = vi.fn();
   const wear = vi.fn();
+  const place = vi.fn();
   const logger = { warn: vi.fn() };
   let current: unknown;
 
@@ -26,7 +27,12 @@ describe('registerTowerHandlers', () => {
     ipc.handlers.clear();
     vi.clearAllMocks();
     current = towerContents;
-    registerTowerHandlers(() => current, { ready, act: onAction, focus, wear }, [TRUSTED], logger);
+    registerTowerHandlers(
+      () => current,
+      { ready, act: onAction, focus, wear, place },
+      [TRUSTED],
+      logger,
+    );
   });
 
   it.each(['pet', 'treat', 'rest', 'endBreak'] as const)(
@@ -145,6 +151,37 @@ describe('registerTowerHandlers', () => {
       ask({ slot: 'neck', id: 'redScarf' }, { id: 1 });
 
       expect(wear).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(IpcChannel.TowerPlace, () => {
+    const ask = (payload: unknown, sender: unknown = towerContents) =>
+      ipc.handlers.get(IpcChannel.TowerPlace)?.({ sender, senderFrame: { url: TRUSTED } }, payload);
+
+    it.each([
+      { slot: 'floor', id: 'fern' },
+      { slot: 'shelf', id: 'crystalBall' },
+      { slot: 'wall', id: null },
+    ])('passes on %o', (request) => {
+      ask(request);
+
+      expect(place).toHaveBeenCalledWith(request);
+    });
+
+    it.each([
+      ['an accessory', { slot: 'floor', id: 'redScarf' }],
+      ['an unknown slot', { slot: 'ceiling', id: 'lantern' }],
+      ['extra fields', { slot: 'sill', id: 'lantern', x: 3 }],
+    ])('rejects %s', (_case, payload) => {
+      ask(payload);
+
+      expect(place).not.toHaveBeenCalled();
+    });
+
+    it('rejects other windows', () => {
+      ask({ slot: 'floor', id: 'fern' }, { id: 1 });
+
+      expect(place).not.toHaveBeenCalled();
     });
   });
 });
