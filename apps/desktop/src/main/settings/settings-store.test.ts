@@ -91,6 +91,18 @@ describe('createSettingsStore', () => {
       });
     });
 
+    it('reads whether sounds are on, and drops anything but a boolean', async () => {
+      const on = memoryFiles(JSON.stringify({ sounds: true }));
+      const odd = memoryFiles(JSON.stringify({ sounds: 'loud', overlayPosition: { x: 1, y: 2 } }));
+
+      await expect(createSettingsStore(PATH, on.files, logger).load()).resolves.toEqual({
+        sounds: true,
+      });
+      await expect(createSettingsStore(PATH, odd.files, logger).load()).resolves.toEqual({
+        overlayPosition: { x: 1, y: 2 },
+      });
+    });
+
     it('drops a look that is not an object and keeps the rest', async () => {
       const { files } = memoryFiles(
         JSON.stringify({ look: 'fancy', overlayPosition: { x: 1, y: 2 } }),

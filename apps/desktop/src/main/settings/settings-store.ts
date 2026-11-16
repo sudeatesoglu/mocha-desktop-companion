@@ -31,6 +31,8 @@ const settingsSchema = z.object({
     .object({ neck: itemIdSchema.nullable().catch(null), hat: itemIdSchema.nullable().catch(null) })
     .optional()
     .catch(undefined),
+  /** Whether Mocha makes sounds; off unless the user turned them on. */
+  sounds: z.boolean().optional().catch(undefined),
   /** What stands in Mocha's room, checked the same way. */
   room: z
     .object({

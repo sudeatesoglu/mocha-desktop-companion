@@ -1,6 +1,7 @@
 import type { Look, RitualPose } from '@mocha/core';
 import { contextBridge, ipcRenderer } from 'electron';
 import { IpcChannel, type MochaBridge } from '../shared/ipc-channels.ts';
+import type { SoundKind } from '../shared/sounds.ts';
 
 // Expose a small, explicit API instead of ipcRenderer itself, so a page can
 // only call the operations listed here (least privilege).
@@ -55,6 +56,16 @@ const bridge: MochaBridge = {
     const listener = (_event: unknown, look: Look) => callback(look);
     ipcRenderer.on(IpcChannel.OverlayLook, listener);
     return () => ipcRenderer.removeListener(IpcChannel.OverlayLook, listener);
+  },
+  onSoundsChange: (callback) => {
+    const listener = (_event: unknown, enabled: boolean) => callback(enabled);
+    ipcRenderer.on(IpcChannel.OverlaySounds, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlaySounds, listener);
+  },
+  onSound: (callback) => {
+    const listener = (_event: unknown, kind: SoundKind) => callback(kind);
+    ipcRenderer.on(IpcChannel.OverlaySound, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlaySound, listener);
   },
   openTower: () => ipcRenderer.send(IpcChannel.OpenTower),
   petted: () => ipcRenderer.send(IpcChannel.OverlayPetted),

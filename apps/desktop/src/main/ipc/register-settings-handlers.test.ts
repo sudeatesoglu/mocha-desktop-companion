@@ -19,6 +19,7 @@ describe('registerSettingsHandlers', () => {
   const OFF = { available: true, openAtLogin: false, needsApproval: false };
   const ON = { ...OFF, openAtLogin: true };
   const loginItem = { get: vi.fn(() => OFF), set: vi.fn(() => ON) };
+  const sounds = { get: vi.fn(() => false), set: vi.fn((enabled: boolean) => enabled) };
   const logger = { warn: vi.fn() };
   let current: unknown;
 
@@ -29,7 +30,12 @@ describe('registerSettingsHandlers', () => {
     ipc.handlers.clear();
     vi.clearAllMocks();
     current = settingsContents;
-    registerSettingsHandlers(() => current, access, loginItem, [TRUSTED], logger);
+    registerSettingsHandlers(
+      () => current,
+      { preferences: access, loginItem, sounds },
+      [TRUSTED],
+      logger,
+    );
   });
 
   it('gives the settings window the current preferences', () => {
@@ -100,6 +106,31 @@ describe('registerSettingsHandlers', () => {
         expect(invoke(channel, { id: 1 }, true)).toBeUndefined();
         expect(loginItem.get).not.toHaveBeenCalled();
         expect(loginItem.set).not.toHaveBeenCalled();
+      },
+    );
+  });
+
+  describe('sounds', () => {
+    it('reads whether sounds are on', () => {
+      expect(invoke(IpcChannel.SettingsSounds, settingsContents)).toBe(false);
+    });
+
+    it('turns them on or off and answers with the new state', () => {
+      expect(invoke(IpcChannel.SettingsSetSounds, settingsContents, true)).toBe(true);
+      expect(sounds.set).toHaveBeenCalledWith(true);
+    });
+
+    it('refuses anything but a boolean, answering with the unchanged state', () => {
+      expect(invoke(IpcChannel.SettingsSetSounds, settingsContents, 'loud')).toBe(false);
+      expect(sounds.set).not.toHaveBeenCalled();
+    });
+
+    it.each([IpcChannel.SettingsSounds, IpcChannel.SettingsSetSounds])(
+      'answers %s only to the open settings window',
+      (channel) => {
+        expect(invoke(channel, { id: 1 }, true)).toBeUndefined();
+        expect(sounds.get).not.toHaveBeenCalled();
+        expect(sounds.set).not.toHaveBeenCalled();
       },
     );
   });

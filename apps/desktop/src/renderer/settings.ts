@@ -123,3 +123,12 @@ openAtLogin.addEventListener('change', async () => {
   showLoginItem(await window.settings.setOpenAtLogin(openAtLogin.checked));
 });
 window.settings.loginItem().then(showLoginItem);
+
+// Sounds apply at once too: turning them on plays a sample chirp.
+const sounds = element('sounds', HTMLInputElement);
+sounds.addEventListener('change', async () => {
+  sounds.checked = await window.settings.setSounds(sounds.checked);
+});
+window.settings.sounds().then((enabled) => {
+  sounds.checked = enabled;
+});

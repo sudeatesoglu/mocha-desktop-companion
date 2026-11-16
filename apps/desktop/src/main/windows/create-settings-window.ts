@@ -3,7 +3,7 @@ import { createSecureWindow } from './create-secure-window.ts';
 
 export const SETTINGS_WIDTH = 380;
 /** Room for every field with an error message under it. */
-export const SETTINGS_HEIGHT = 480;
+export const SETTINGS_HEIGHT = 560;
 
 /**
  * Creates the settings window: an ordinary window that takes focus, since

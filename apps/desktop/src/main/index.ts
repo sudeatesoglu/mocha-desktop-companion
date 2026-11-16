@@ -32,6 +32,7 @@ import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { DEFAULT_PREFERENCES, type Preferences, toBreakConfig } from '../shared/preferences.ts';
 import { REMINDER_HEIGHT, REMINDER_WIDTH, type ReminderShow } from '../shared/reminder.ts';
 import { RITUAL_HEIGHT, RITUAL_WIDTH, type RitualShow } from '../shared/ritual.ts';
+import type { SoundKind } from '../shared/sounds.ts';
 import type { FocusMinutes } from '../shared/tower.ts';
 import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
@@ -300,6 +301,7 @@ if (!app.requestSingleInstanceLock()) {
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
       sendLook();
+      sendSounds();
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
     }
     const activity = createActivityTracker(
@@ -372,7 +374,10 @@ if (!app.requestSingleInstanceLock()) {
     window.on('move', () => followRitual());
     breaks.onChange((next, previous) => {
       const transition = reminderTransition(next, previous);
-      if (transition === 'open' && next.phase === 'due') openReminder(next);
+      if (transition === 'open' && next.phase === 'due') {
+        openReminder(next);
+        playSound('reminder');
+      }
       if (transition === 'close') closeReminder();
     });
     registerReminderHandlers(
@@ -456,6 +461,7 @@ if (!app.requestSingleInstanceLock()) {
           // Main decides whether it counts: once per break, and only if the
           // ritual really took its time.
           if (ritualTracker.finish(Date.now())) needs.dispatch({ type: 'ritualCompleted' });
+          playSound('ritualDone');
           ritualPoses.update();
         },
         close: () => closeRitual(),
@@ -490,6 +496,16 @@ if (!app.requestSingleInstanceLock()) {
     // What stands in Mocha's room, checked and saved the same way.
     let room = validRoom(saved.room ?? EMPTY_ROOM, finds.state);
 
+    // Sounds: off unless the user turns them on in Settings. The overlay
+    // plays them; main says when.
+    let soundsOn = saved.sounds ?? false;
+    function sendSounds() {
+      if (!window.isDestroyed()) window.webContents.send(IpcChannel.OverlaySounds, soundsOn);
+    }
+    function playSound(kind: SoundKind) {
+      if (soundsOn && !window.isDestroyed()) window.webContents.send(IpcChannel.OverlaySound, kind);
+    }
+
     // Settings: one window at a time, opened from the tray. Saved values
     // apply at once: the break rules take the new durations on the next tick.
     const settingsWindow = singleWindow(() => {
@@ -505,19 +521,31 @@ if (!app.requestSingleInstanceLock()) {
     registerSettingsHandlers(
       () => settingsWindow.current?.webContents,
       {
-        load: () => preferences,
-        save: (next) => {
-          preferences = next;
-          breaks.setConfig(breakConfigFor(next));
-          void settings.update({ preferences: next });
+        preferences: {
+          load: () => preferences,
+          save: (next) => {
+            preferences = next;
+            breaks.setConfig(breakConfigFor(next));
+            void settings.update({ preferences: next });
+          },
         },
-      },
-      // Only the installed app becomes a login item (see loginItemView).
-      {
-        get: () => loginItemView(app.isPackaged, app.getLoginItemSettings()),
-        set: (open) => {
-          if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: open });
-          return loginItemView(app.isPackaged, app.getLoginItemSettings());
+        // Only the installed app becomes a login item (see loginItemView).
+        loginItem: {
+          get: () => loginItemView(app.isPackaged, app.getLoginItemSettings()),
+          set: (open) => {
+            if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: open });
+            return loginItemView(app.isPackaged, app.getLoginItemSettings());
+          },
+        },
+        sounds: {
+          get: () => soundsOn,
+          set: (enabled) => {
+            soundsOn = enabled;
+            void settings.update({ sounds: enabled });
+            sendSounds();
+            playSound('pet'); // a sample, so turning sounds on is heard at once
+            return soundsOn;
+          },
         },
       },
       [pageUrl('settings')],
