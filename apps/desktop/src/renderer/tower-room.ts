@@ -1,4 +1,6 @@
+import { EMPTY_ROOM, type Room } from '@mocha/core';
 import type { PixelPainter } from './placeholder-sprite.ts';
+import { drawDecor } from './tower-decor.ts';
 
 /** The room's size in art pixels; CSS scales it up without smoothing. */
 export const ROOM_WIDTH = 120;
@@ -49,8 +51,11 @@ function ellipse(
   }
 }
 
-/** Draws the Tower's room: a stone wall with a moonlit window and a shelf, a floor and a rug. */
-export function drawRoom(painter: PixelPainter): void {
+/**
+ * Draws the Tower's room: a stone wall with a moonlit window and two
+ * shelves, a floor and a rug, and the decor placed in it.
+ */
+export function drawRoom(painter: PixelPainter, room: Room = EMPTY_ROOM): void {
   // Wall with staggered bricks.
   rect(painter, COLORS.wall, 0, 0, ROOM_WIDTH, FLOOR_Y);
   for (let row = 0; row * 6 < FLOOR_Y; row++) {
@@ -69,8 +74,14 @@ export function drawRoom(painter: PixelPainter): void {
   rect(painter, COLORS.star, 89, 31, 1, 1);
   rect(painter, COLORS.frame, 82, 23, 24, 2);
   rect(painter, COLORS.frame, 93, 10, 2, 28);
+  // The sill under it, for a decor item.
+  rect(painter, COLORS.shelf, 78, 40, 32, 2);
 
-  // A shelf with two books and a cup of coffee.
+  // An upper shelf for a decor item, and a shelf with two books and a cup
+  // of coffee.
+  rect(painter, COLORS.shelf, 10, 18, 28, 2);
+  rect(painter, COLORS.shelf, 12, 20, 2, 3);
+  rect(painter, COLORS.shelf, 34, 20, 2, 3);
   rect(painter, COLORS.shelf, 10, 34, 28, 2);
   rect(painter, COLORS.shelf, 12, 36, 2, 3);
   rect(painter, COLORS.shelf, 34, 36, 2, 3);
@@ -87,4 +98,6 @@ export function drawRoom(painter: PixelPainter): void {
     rect(painter, COLORS.plank, 0, y, ROOM_WIDTH, 1);
   ellipse(painter, COLORS.rugEdge, MOCHA_SPOT.x, MOCHA_SPOT.y, 24, 5);
   ellipse(painter, COLORS.rug, MOCHA_SPOT.x, MOCHA_SPOT.y, 22, 4);
+
+  drawDecor(painter, room);
 }
