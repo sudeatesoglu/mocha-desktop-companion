@@ -115,6 +115,7 @@ Every animation has a `loop` flag and at least one frame. A looping animation re
 | `beak` | Tip of the beak, where food and speech bubbles attach. |
 | `head` | Top of the head (or hat). The app draws its effects around it: a heart rising to the right, stars circling it. Keep about 12 pixels to the right of and 5 pixels above the anchor free of important detail. |
 | `feet` | Bottom center of the feet (the left of the two middle pixels). The app draws a ground shadow and, during a slip, dust puffs there. The ground line is the `feet` position in the first `idle` frame; when a frame lifts the feet above it, the shadow stays on the ground and shrinks. Omit it to cast no shadow. |
+| `neck` | Front of the neck, just inside the outline under the beak. Accessories worn on the neck are drawn around it: a bow tie on it, a scarf tied at it, a pendant hanging below it. Move it with the head when the head sinks, rises or tilts. Omit it, and neck accessories are not drawn in that frame. |
 
 Anchors move with the drawing. If a frame lowers the head by one pixel, its anchors move down by one pixel too, so effects stay attached.
 

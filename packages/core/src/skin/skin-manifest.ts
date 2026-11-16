@@ -46,12 +46,14 @@ const pointSchema = z.strictObject({
  * - beak: tip of the beak (where food and speech start)
  * - head: top of the head (where hearts and "z"s appear)
  * - feet: bottom center of the feet (where the ground shadow is cast)
+ * - neck: front of the neck, under the beak (where neck accessories sit)
  */
 const anchorsSchema = z.strictObject({
   eye: pointSchema.optional(),
   beak: pointSchema.optional(),
   head: pointSchema.optional(),
   feet: pointSchema.optional(),
+  neck: pointSchema.optional(),
 });
 
 const frameSchema = z.strictObject({

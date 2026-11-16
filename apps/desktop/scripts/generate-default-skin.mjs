@@ -358,15 +358,18 @@ function dizzyEye(grid) {
 const base = drawRaven();
 // `dy` moves the body; `feetDy` moves the feet, which stay put when the
 // body squashes and only rise when the whole bird leaves the ground.
+// The neck moves with the head: a scarf stays under the chin when the head
+// sinks or rises.
 const anchors = (dy, feetDy = 0) => ({
   eye: { x: 18, y: 19 + dy }, // top-left of the 2x2 pupil
   beak: { x: 5, y: 20 + dy },
   head: { x: 23, y: 5 + dy },
   feet: { x: 24, y: 46 + feetDy }, // between the two legs, on the toes
+  neck: { x: 16, y: 25 + dy }, // front of the neck, inside the outline
 });
 const closedAnchors = (dy, feetDy = 0) => {
-  const { beak, head, feet } = anchors(dy, feetDy);
-  return { beak, head, feet };
+  const { eye: _closed, ...rest } = anchors(dy, feetDy);
+  return rest;
 };
 
 // Tired: the silhouette changes, not just the eye, so it reads at 48px.
@@ -481,21 +484,22 @@ const FRAMES = [
 
 /** Slip anchors: the body shifted by (dx, dy), the feet by feetDx. */
 const slipAnchors = (dx, dy, feetDx) => {
-  const { eye, beak, head, feet } = anchors(dy);
+  const { eye, beak, head, feet, neck } = anchors(dy);
   const move = ({ x, y }) => ({ x: x + dx, y });
   return {
     eye: move(eye),
     beak: move(beak),
     head: move(head),
     feet: { x: feet.x + feetDx, y: feet.y },
+    neck: move(neck),
   };
 };
 
 /** Anchors of a sheared frame: the beak and head move with their rows. */
 const shearedAnchors = (dx, { pivot, top }, dy) => {
-  const { beak, head, feet } = closedAnchors(dy);
+  const { beak, head, feet, neck } = closedAnchors(dy);
   const move = ({ x, y }) => ({ x: x + shearShift(dx, y, pivot, top), y });
-  return { beak: move(beak), head: move(head), feet };
+  return { beak: move(beak), head: move(head), feet, neck: move(neck) };
 };
 
 /** A pose that eases into `full` through `half`, holds, and eases out: `ms` in all. */
@@ -507,8 +511,9 @@ const easeAndHold = (half, full, ms, ease = 1000) => [
 
 /** Dizzy anchors: crossed-out eye (no pupil), head swaying with the body. */
 const dizzyAnchors = (dx) => {
-  const { beak, head, feet } = anchors(0);
-  return { beak: { x: beak.x + dx, y: beak.y }, head: { x: head.x + dx, y: head.y }, feet };
+  const { beak, head, feet, neck } = closedAnchors(0);
+  const move = ({ x, y }) => ({ x: x + dx, y });
+  return { beak: move(beak), head: move(head), feet, neck: move(neck) };
 };
 
 const manifest = {

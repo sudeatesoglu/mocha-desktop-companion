@@ -48,6 +48,7 @@ describe('parseSkinManifest', () => {
         beak: { x: 2, y: 2 },
         head: { x: 3, y: 3 },
         feet: { x: 4, y: 4 },
+        neck: { x: 5, y: 5 },
       },
     };
     const animations = Object.fromEntries(
