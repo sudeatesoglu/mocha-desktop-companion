@@ -103,3 +103,4 @@ export {
 } from './skin/skin-manifest.ts';
 export { formatDuration } from './time/format-duration.ts';
 export { localDay } from './time/local-day.ts';
+export { type TimeOfDay, timeOfDay } from './time/time-of-day.ts';
