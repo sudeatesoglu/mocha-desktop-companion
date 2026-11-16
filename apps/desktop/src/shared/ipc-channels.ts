@@ -1,4 +1,5 @@
 import type { AccessorySlot, DecorSlot, ItemId, Look, RitualId, RitualPose } from '@mocha/core';
+import type { LoginItem } from './login-item.ts';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
 import type { RitualShow } from './ritual.ts';
@@ -71,6 +72,10 @@ export const IpcChannel = {
   SettingsLoad: 'settings:load',
   /** Settings → main (invoke): save and apply preferences; resolves to whether they were saved. */
   SettingsSave: 'settings:save',
+  /** Settings → main (invoke, no data): whether Mocha opens at login. */
+  SettingsLoginItem: 'settings:login-item',
+  /** Settings → main (invoke): open Mocha at login or not; resolves to the new state. */
+  SettingsOpenAtLogin: 'settings:open-at-login',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -126,6 +131,10 @@ export interface SettingsBridge {
   load(): Promise<Preferences>;
   /** Resolves to false if the main process rejected the values. */
   save(preferences: Preferences): Promise<boolean>;
+  /** Whether Mocha opens at login, read from the system. */
+  loginItem(): Promise<LoginItem>;
+  /** Asks the system to open Mocha at login or not; resolves to the new state. */
+  setOpenAtLogin(open: boolean): Promise<LoginItem>;
 }
 
 /** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */
