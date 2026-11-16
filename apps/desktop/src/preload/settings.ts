@@ -8,6 +8,8 @@ const bridge: SettingsBridge = {
   save: (preferences) => ipcRenderer.invoke(IpcChannel.SettingsSave, preferences),
   loginItem: () => ipcRenderer.invoke(IpcChannel.SettingsLoginItem),
   setOpenAtLogin: (open) => ipcRenderer.invoke(IpcChannel.SettingsOpenAtLogin, open),
+  sounds: () => ipcRenderer.invoke(IpcChannel.SettingsSounds),
+  setSounds: (enabled) => ipcRenderer.invoke(IpcChannel.SettingsSetSounds, enabled),
 };
 
 contextBridge.exposeInMainWorld('settings', bridge);

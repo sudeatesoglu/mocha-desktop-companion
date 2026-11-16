@@ -11,6 +11,7 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 - Decorate Mocha's room with what it found: place a fern, a lantern, an ink drawing, a crystal ball, a stack of books or a teacup on the shelf, the wall, the floor or the window sill from the Collection ([#151](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/151))
 - The Tower follows your day: its window shows dawn, day, dusk or night, the room's light changes with it, and a candle flickers on the shelf at night and during breaks ([#152](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/152))
 - Open Mocha when you log in, from a new General section in Settings. It is off by default and shows what macOS reports, including when macOS waits for you to allow it ([#153](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/153))
+- Optional sounds, off by default: short, quiet chirps when you pet Mocha, a break is due, a ritual ends or Mocha finds something, synthesized in the app with no audio files ([#154](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/154))
 
 ## [0.4.0] - 2026-11-15
 

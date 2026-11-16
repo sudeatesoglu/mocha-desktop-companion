@@ -3,6 +3,7 @@ import type { LoginItem } from './login-item.ts';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
 import type { RitualShow } from './ritual.ts';
+import type { SoundKind } from './sounds.ts';
 import type { FocusMinutes, TowerAction, TowerView } from './tower.ts';
 
 /**
@@ -40,6 +41,10 @@ export const IpcChannel = {
   OverlayFound: 'overlay:found',
   /** Main → overlay: what Mocha wears, when the page loads and when it changes. */
   OverlayLook: 'overlay:look',
+  /** Main → overlay: whether sounds are on, when the page loads and when it changes. */
+  OverlaySounds: 'overlay:sounds',
+  /** Main → overlay: a moment that has a sound; played only while sounds are on. */
+  OverlaySound: 'overlay:sound',
   /** Overlay → main (send): the user petted Mocha on the desktop. */
   OverlayPetted: 'overlay:petted',
   /** Main → tower: Mocha's needs, sent when the page loads and when they change. */
@@ -76,6 +81,10 @@ export const IpcChannel = {
   SettingsLoginItem: 'settings:login-item',
   /** Settings → main (invoke): open Mocha at login or not; resolves to the new state. */
   SettingsOpenAtLogin: 'settings:open-at-login',
+  /** Settings → main (invoke, no data): whether sounds are on. */
+  SettingsSounds: 'settings:sounds',
+  /** Settings → main (invoke): turn sounds on or off; resolves to the new state. */
+  SettingsSetSounds: 'settings:set-sounds',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -112,6 +121,10 @@ export interface MochaBridge {
   onFound(callback: () => void): () => void;
   /** Overlay only: what Mocha wears. Returns an unsubscribe function. */
   onLookChange(callback: (look: Look) => void): () => void;
+  /** Overlay only: sounds were turned on or off. Returns an unsubscribe function. */
+  onSoundsChange(callback: (enabled: boolean) => void): () => void;
+  /** Overlay only: a moment with a sound. Returns an unsubscribe function. */
+  onSound(callback: (kind: SoundKind) => void): () => void;
   /** Overlay only: open Mocha's Tower. */
   openTower(): void;
   /** Overlay only: the user petted Mocha, which lifts its mood. */
@@ -135,6 +148,10 @@ export interface SettingsBridge {
   loginItem(): Promise<LoginItem>;
   /** Asks the system to open Mocha at login or not; resolves to the new state. */
   setOpenAtLogin(open: boolean): Promise<LoginItem>;
+  /** Whether Mocha makes sounds. */
+  sounds(): Promise<boolean>;
+  /** Turns sounds on or off; resolves to the new state. */
+  setSounds(enabled: boolean): Promise<boolean>;
 }
 
 /** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */

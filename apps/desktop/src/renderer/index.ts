@@ -18,6 +18,7 @@ import { createEffects } from './effects.ts';
 import { isOpaqueAt, type Point } from './hit-test.ts';
 import { loadImage } from './load-image.ts';
 import { createPressGesture } from './press-gesture.ts';
+import { createSoundPlayer } from './sound-player.ts';
 
 // Synchronous exceptions fire 'error'; rejected promises fire
 // 'unhandledrejection'. Both are forwarded to the main-process log.
@@ -79,6 +80,8 @@ const animator = createPetAnimator(animations, { random: Math.random });
 // animation and an effect.
 const reactions = createReactionDetector();
 const effects = createEffects();
+// Sounds, while the user has them on; main says so and when to play.
+const sounds = createSoundPlayer(() => new AudioContext());
 
 function react(reaction: Reaction | undefined): void {
   // Opening the Tower is a request to the app, not a reaction of Mocha's.
@@ -92,6 +95,7 @@ function react(reaction: Reaction | undefined): void {
   if (reaction === 'pet') {
     animator.play('hop');
     effects.add('heart');
+    sounds.play('pet');
     window.mocha.petted(); // lifts Mocha's mood, within its cap
   } else if (reaction === 'dizzy') {
     animator.play('dizzy');
@@ -280,8 +284,12 @@ window.mocha.onLookChange((next) => {
 window.mocha.onFound(() => {
   if (paused) return;
   effects.add('sparkle');
+  sounds.play('found');
   loop.invalidate();
 });
+
+window.mocha.onSoundsChange((enabled) => sounds.setEnabled(enabled));
+window.mocha.onSound((kind) => sounds.play(kind));
 
 // Low energy: Mocha holds its tired pose instead of idle.
 window.mocha.onTiredChange((tired) => {

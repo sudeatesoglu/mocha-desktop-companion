@@ -17,6 +17,12 @@ export interface LoginItemAccess {
   set(open: boolean): LoginItem;
 }
 
+export interface SoundsAccess {
+  get(): boolean;
+  /** Turns sounds on or off, keeps the choice and returns it. */
+  set(enabled: boolean): boolean;
+}
+
 /**
  * Lets the settings window read and change the preferences. Only the open
  * settings window (`currentSender`) on its own page may call these, and a
@@ -24,8 +30,11 @@ export interface LoginItemAccess {
  */
 export function registerSettingsHandlers(
   currentSender: () => unknown,
-  preferences: PreferencesAccess,
-  loginItem: LoginItemAccess,
+  {
+    preferences,
+    loginItem,
+    sounds,
+  }: { preferences: PreferencesAccess; loginItem: LoginItemAccess; sounds: SoundsAccess },
   trustedUrls: readonly string[],
   logger: IpcLogger,
 ): void {
@@ -69,5 +78,18 @@ export function registerSettingsHandlers(
     if (!fromSettings(IpcChannel.SettingsOpenAtLogin, event)) return undefined;
     const result = setOpenAtLogin(senderUrl(event), payload);
     return result.ok ? result.value : loginItem.get();
+  });
+
+  ipcMain.handle(IpcChannel.SettingsSounds, (event) =>
+    fromSettings(IpcChannel.SettingsSounds, event) ? sounds.get() : undefined,
+  );
+  const setSounds = validated(IpcChannel.SettingsSetSounds, z.boolean(), sounds.set, {
+    isTrusted,
+    logger,
+  });
+  ipcMain.handle(IpcChannel.SettingsSetSounds, (event, payload: unknown) => {
+    if (!fromSettings(IpcChannel.SettingsSetSounds, event)) return undefined;
+    const result = setSounds(senderUrl(event), payload);
+    return result.ok ? result.value : sounds.get();
   });
 }
