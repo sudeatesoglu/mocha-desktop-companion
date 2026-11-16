@@ -26,6 +26,7 @@ export {
   itemById,
 } from './collection/items.ts';
 export { BARE_LOOK, type Look, validLook, wear } from './collection/look.ts';
+export { EMPTY_ROOM, place, type Room, validRoom } from './collection/room.ts';
 export {
   type BreakConfig,
   type BreakEvent,
