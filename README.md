@@ -109,6 +109,9 @@ macOS only for now.
 - [x] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
 - [x] **v0.4 Together:** break rituals and working side by side
 - [x] **v0.5 Make it yours:** decorations and accessories
+- [ ] **v0.6 Shiny things:** a browser extension and a local API, so Mocha can notice what you add to a shopping cart
+- [ ] **v0.7 Smart:** opt-in AI to chat with Mocha and get insights about your day
+- [ ] **v1.0:** signed and notarized installers, automatic updates, Windows and Linux
 
 See the [changelog](CHANGELOG.md) for what each release contains.
 
@@ -140,6 +143,8 @@ gh attestation verify Mocha-<version>-arm64.dmg --repo sudeatesoglu/mocha-deskto
 <summary><b>For developers</b></summary>
 <br>
 
+You need Node 24 (as in `.node-version`) and pnpm 12.
+
 ```bash
 git clone https://github.com/sudeatesoglu/mocha-desktop-companion.git
 cd mocha-desktop-companion
@@ -147,7 +152,7 @@ pnpm install
 pnpm dev
 ```
 
-Built with Electron, TypeScript and a small hand-written Canvas 2D engine. `pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build` runs every check, and `pnpm --filter @mocha/desktop generate:skin`, `generate:readme-art` and `generate:icon` redraw the placeholder skin, the README art and the app icon. In development, `MOCHA_DEV_WORK_MS=60000 pnpm dev` shortens the work stretch and `MOCHA_DEV_FOCUS_MS=60000` every focus session, so reminders and breaks can be tried without waiting. Development keeps its data in `~/Library/Application Support/Mocha Dev`, apart from the installed app's.
+Built with Electron, TypeScript and a small hand-written Canvas 2D engine. `pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build` runs every check, and `pnpm --filter @mocha/desktop generate:skin`, `generate:readme-art` and `generate:icon` redraw the placeholder skin, the README art and the app icon. Run them on Node 24: other versions compress the same pixels into different PNG bytes. In development, `MOCHA_DEV_WORK_MS=60000 pnpm dev` shortens the work stretch and `MOCHA_DEV_FOCUS_MS=60000` every focus session, so reminders and breaks can be tried without waiting. Development keeps its data in `~/Library/Application Support/Mocha Dev`, apart from the installed app's.
 
 - [Skin format](docs/skins.md): how to draw your own Mocha
 - [Architecture decisions](docs/adr/README.md): why it is built this way
