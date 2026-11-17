@@ -4,14 +4,33 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
+"Make it yours": Mocha finds little things during your breaks, to wear and to decorate its Tower, which now follows your day.
+
 ### Added
 
-- Mocha finds things during breaks. Rest that follows at least 20 minutes of work fills a meter in the Tower, and every 3 points Mocha finds something new, at most 2 a day, with a sparkle on the desktop. Nothing is bought or lost ([ADR-0010](docs/adr/0010-finds-earned-by-breaks.md), [#147](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/147), [#148](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/148))
-- Dress Mocha up with what it found: open the Collection from the Finds row in the Tower and wear a scarf, a bow tie or a moon pendant, and a feather or a flower on the hat. Mocha wears them on the desktop and in the Tower ([#150](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/150))
-- Decorate Mocha's room with what it found: place a fern, a lantern, an ink drawing, a crystal ball, a stack of books or a teacup on the shelf, the wall, the floor or the window sill from the Collection ([#151](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/151))
-- The Tower follows your day: its window shows dawn, day, dusk or night, the room's light changes with it, and a candle flickers on the shelf at night and during breaks ([#152](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/152))
-- Open Mocha when you log in, from a new General section in Settings. It is off by default and shows what macOS reports, including when macOS waits for you to allow it ([#153](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/153))
-- Optional sounds, off by default: short, quiet chirps when you pet Mocha, a break is due, a ritual ends or Mocha finds something, synthesized in the app with no audio files ([#154](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/154))
+- Mocha finds things during breaks. Rest that follows at least 20 minutes of work fills a meter in the Tower, and every 3 points Mocha finds something new, at most 2 a day, with a sparkle on the desktop. The timing is predictable, and nothing is bought or lost ([ADR-0010](docs/adr/0010-finds-earned-by-breaks.md), ([#156](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/156), [#159](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/159)))
+- Dress Mocha up with what it found: open the Collection from the Finds row in the Tower and wear a scarf, a bow tie or a moon pendant, and a feather or a flower on the hat. Mocha wears them on the desktop and in the Tower, in every pose ([#160](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/160), [#161](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/161))
+- Decorate Mocha's room with what it found: place a fern, a lantern, an ink drawing, a crystal ball, a stack of books or a teacup on the shelf, the wall, the floor or the window sill ([#162](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/162))
+- The Tower follows your day: its window shows dawn, day, dusk or night, the room's light changes with it, and a candle flickers on the shelf at night and during breaks ([#163](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/163))
+- Open Mocha when you log in, from a new General section in Settings. It is off by default and shows what macOS reports, including when macOS waits for you to allow it ([#164](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/164))
+- Optional sounds, off by default: short, quiet chirps when you pet Mocha, a break is due, a ritual ends or Mocha finds something, synthesized in the app with no audio files ([#165](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/165))
+- Skins can provide a `neck` anchor, where neck accessories sit ([#160](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/160))
+
+### Security
+
+- The Tower can only ask to wear or place a known item in a known slot, and main checks every request against what Mocha really found. What Mocha wears and what stands in its room are read from the settings file through the same checks ([#161](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/161), [#162](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/162))
+- The new settings take only on or off: a page cannot pass Electron's login item options, such as another app's path ([#164](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/164), [#165](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/165))
+
+### Known limitations
+
+- The accessories, the decor, the Tower's room and the ritual and focus poses are placeholder art drawn in code, until the hand-drawn versions replace them.
+- The parts of the day follow fixed hours (dawn from 6:00, day from 8:00, dusk from 17:00, night from 20:00), not the local sunrise and sunset.
+- Focus sessions count as work in today's numbers; focus time is not shown on its own.
+- Breaks are noticed from keyboard and mouse input only: reading or watching something for 5 minutes without touching anything counts as a break.
+- The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
+- macOS only. Windows and Linux are planned.
 
 ## [0.4.0] - 2026-11-15
 
@@ -124,7 +143,8 @@ The first release, "Hello, Mocha": a pixel-art raven that lives on the macOS des
 - The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
 - macOS only. Windows and Linux are planned.
 
-[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.5.0
 [0.4.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.4.0
 [0.3.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.3.0
 [0.2.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.2.0
