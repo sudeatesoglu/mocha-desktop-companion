@@ -87,6 +87,13 @@ Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks 
 
 **Together.** Choose **Focus with Mocha** for a 25, 40 or 50-minute session: Mocha reads next to you, no reminder interrupts, and a break starts when the time is up. When a break starts, Mocha offers a short ritual in a bubble: breathe, rest your eyes or stretch, step by step, while Mocha does each step with you.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/dressed-dark.png">
+  <img align="right" src="docs/assets/readme/dressed-light.png" width="96" alt="Mocha in a red scarf with a red feather in its top hat">
+</picture>
+
+**Make it yours.** Rest after real work fills a meter in the Tower, and every few breaks Mocha finds something: a scarf, a bow tie or a feather to wear, or a fern, a lantern or a crystal ball for its room. Click the Finds row to open the Collection, then dress Mocha up and decorate. Nothing can be bought or lost. The Tower's window follows your day, and a candle burns at night. In **Settings**, Mocha can open when you log in and play quiet sounds; both stay off until you turn them on.
+
 ## Install
 
 1. [Download the DMG](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest) for your Mac (`arm64` for Apple Silicon) and drag **Mocha** into **Applications**.
@@ -101,7 +108,7 @@ macOS only for now.
 - [x] **v0.2 Healthy habits:** notices long stretches of work and reminds you to take a break
 - [x] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
 - [x] **v0.4 Together:** break rituals and working side by side
-- [ ] **v0.5 Make it yours:** decorations and accessories
+- [x] **v0.5 Make it yours:** decorations and accessories
 
 See the [changelog](CHANGELOG.md) for what each release contains.
 
@@ -109,7 +116,7 @@ See the [changelog](CHANGELOG.md) for what each release contains.
 <summary><b>Your data</b></summary>
 <br>
 
-Mocha is local-first: it has no account and no telemetry. To notice when you step away it reads only how long it has been since your last keyboard or mouse input, never what you type, where you click or which apps you use. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it, your break settings, what Mocha wears and what stands in its room, and `mocha.db`, which holds when your work stretches and breaks started and ended, Mocha's mood and energy, and what Mocha found, with nothing about what you do in them. Deleting them resets Mocha.
+Mocha is local-first: it has no account and no telemetry. To notice when you step away it reads only how long it has been since your last keyboard or mouse input, never what you type, where you click or which apps you use. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it, your break settings, whether sounds are on, what Mocha wears and what stands in its room, and `mocha.db`, which holds when your work stretches and breaks started and ended, Mocha's mood and energy, and what Mocha found, with nothing about what you do in them. Deleting them resets Mocha.
 
 </details>
 
