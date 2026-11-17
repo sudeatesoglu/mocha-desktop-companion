@@ -1,20 +1,24 @@
 // Overlay renderer entry: draws Mocha on a transparent canvas.
 import {
+  BARE_LOOK,
   createGameLoop,
   createPetAnimator,
   createReactionDetector,
   type Gaze,
   gazeOffset,
+  type Look,
   type Reaction,
   type RitualPose,
 } from '@mocha/core';
 import { OVERLAY_SCALE, OVERLAY_SIZE, SPRITE_SIZE } from '../shared/overlay.ts';
+import { drawAccessories } from './accessories.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
 import { loadDefaultLook } from './default-skin.ts';
 import { createEffects } from './effects.ts';
 import { isOpaqueAt, type Point } from './hit-test.ts';
 import { loadImage } from './load-image.ts';
 import { createPressGesture } from './press-gesture.ts';
+import { createSoundPlayer } from './sound-player.ts';
 
 // Synchronous exceptions fire 'error'; rejected promises fire
 // 'unhandledrejection'. Both are forwarded to the main-process log.
@@ -76,6 +80,8 @@ const animator = createPetAnimator(animations, { random: Math.random });
 // animation and an effect.
 const reactions = createReactionDetector();
 const effects = createEffects();
+// Sounds, while the user has them on; main says so and when to play.
+const sounds = createSoundPlayer(() => new AudioContext());
 
 function react(reaction: Reaction | undefined): void {
   // Opening the Tower is a request to the app, not a reaction of Mocha's.
@@ -89,6 +95,7 @@ function react(reaction: Reaction | undefined): void {
   if (reaction === 'pet') {
     animator.play('hop');
     effects.add('heart');
+    sounds.play('pet');
     window.mocha.petted(); // lifts Mocha's mood, within its cap
   } else if (reaction === 'dizzy') {
     animator.play('dizzy');
@@ -119,12 +126,18 @@ function updateGaze(): boolean {
   return true;
 }
 
+// What Mocha wears, from main.
+let look: Look = BARE_LOOK;
+
 // Draws one frame. Defined as a const so TypeScript keeps `context`
 // narrowed to non-null inside it.
 const render = (): void => {
   context.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
   updateGaze(); // the eye may have moved with the frame
   appearance.draw(context, { frame: animator.frame, hovered: interactive, gaze });
+  // What Mocha wears is part of Mocha: clicks on it count, effects do not.
+  const { frame } = animator;
+  drawAccessories(context, { head: appearance.head(frame), neck: appearance.neck(frame) }, look);
   // Read the pixels once per drawing, not on every mouse move, and before
   // effects: a heart or a star is not part of Mocha's body.
   pixels = context.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE);
@@ -258,6 +271,25 @@ window.mocha.onRitualChange((pose) => {
 window.mocha.onFocusingChange((focusing) => {
   if (animator.setFocus(focusing)) loop.invalidate();
 });
+
+// Something to wear was put on or taken off in the Tower. A paused Mocha
+// has no running loop, so it is redrawn at once.
+window.mocha.onLookChange((next) => {
+  look = next;
+  if (paused) render();
+  else loop.invalidate();
+});
+
+// Mocha found something during the break: twinkles as it wakes up.
+window.mocha.onFound(() => {
+  if (paused) return;
+  effects.add('sparkle');
+  sounds.play('found');
+  loop.invalidate();
+});
+
+window.mocha.onSoundsChange((enabled) => sounds.setEnabled(enabled));
+window.mocha.onSound((kind) => sounds.play(kind));
 
 // Low energy: Mocha holds its tired pose instead of idle.
 window.mocha.onTiredChange((tired) => {

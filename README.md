@@ -47,6 +47,36 @@
       <br><b>Let it rest</b><br>Pause it from the menu bar.
     </td>
   </tr>
+  <tr>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/focus-dark.png">
+        <img src="docs/assets/readme/focus-light.png" width="144" alt="Mocha reads an open book and now and then turns a page">
+      </picture>
+      <br><b>Focus together</b><br>It reads while you work.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/breathe-dark.png">
+        <img src="docs/assets/readme/breathe-light.png" width="144" alt="Mocha breathes in, holds and breathes out with its eyes closed">
+      </picture>
+      <br><b>Breathe with it</b><br>A short ritual in every break.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/stretch-dark.png">
+        <img src="docs/assets/readme/stretch-light.png" width="144" alt="Mocha rolls its shoulders, reaches up high and leans to each side">
+      </picture>
+      <br><b>Stretch with it</b><br>It does every step with you.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/tired-dark.png">
+        <img src="docs/assets/readme/tired-light.png" width="144" alt="Mocha slumps under its slipping hat, nods off and yawns">
+      </picture>
+      <br><b>Mind its energy</b><br>Long stretches make it sleepy.
+    </td>
+  </tr>
 </table>
 
 Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks pass through everywhere except Mocha itself.
@@ -56,6 +86,13 @@ Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks 
 **A home of its own.** Double-click Mocha, or choose **Open Tower** in the menu bar, to visit its room. Mocha has a mood and an energy that follow your rest: energy drains while you work and comes back with every break, so a tired Mocha slumps and yawns on your desktop when you need a pause. Nothing bad ever happens if you forget about it. Pet it, give it a treat or rest together.
 
 **Together.** Choose **Focus with Mocha** for a 25, 40 or 50-minute session: Mocha reads next to you, no reminder interrupts, and a break starts when the time is up. When a break starts, Mocha offers a short ritual in a bubble: breathe, rest your eyes or stretch, step by step, while Mocha does each step with you.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/dressed-dark.png">
+  <img align="right" src="docs/assets/readme/dressed-light.png" width="96" alt="Mocha in a red scarf with a red feather in its top hat">
+</picture>
+
+**Make it yours.** Rest after real work fills a meter in the Tower, and every few breaks Mocha finds something: a scarf, a bow tie or a feather to wear, or a fern, a lantern or a crystal ball for its room. Click the Finds row to open the Collection, then dress Mocha up and decorate. Nothing can be bought or lost. The Tower's window follows your day, and a candle burns at night. In **Settings**, Mocha can open when you log in and play quiet sounds; both stay off until you turn them on.
 
 ## Install
 
@@ -71,7 +108,7 @@ macOS only for now.
 - [x] **v0.2 Healthy habits:** notices long stretches of work and reminds you to take a break
 - [x] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
 - [x] **v0.4 Together:** break rituals and working side by side
-- [ ] **v0.5 Make it yours:** decorations and accessories
+- [x] **v0.5 Make it yours:** decorations and accessories
 
 See the [changelog](CHANGELOG.md) for what each release contains.
 
@@ -79,7 +116,7 @@ See the [changelog](CHANGELOG.md) for what each release contains.
 <summary><b>Your data</b></summary>
 <br>
 
-Mocha is local-first: it has no account and no telemetry. To notice when you step away it reads only how long it has been since your last keyboard or mouse input, never what you type, where you click or which apps you use. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it and your break settings, and `mocha.db`, which holds when your work stretches and breaks started and ended and Mocha's mood and energy, with nothing about what you do in them. Deleting them resets Mocha.
+Mocha is local-first: it has no account and no telemetry. To notice when you step away it reads only how long it has been since your last keyboard or mouse input, never what you type, where you click or which apps you use. It writes two things to `~/Library/Application Support/Mocha/`: `settings.json`, which holds where you placed it, your break settings, whether sounds are on, what Mocha wears and what stands in its room, and `mocha.db`, which holds when your work stretches and breaks started and ended, Mocha's mood and energy, and what Mocha found, with nothing about what you do in them. Deleting them resets Mocha.
 
 </details>
 
@@ -110,7 +147,7 @@ pnpm install
 pnpm dev
 ```
 
-Built with Electron, TypeScript and a small hand-written Canvas 2D engine. `pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build` runs every check, and `pnpm --filter @mocha/desktop generate:skin`, `generate:readme-art` and `generate:icon` redraw the placeholder skin, the README art and the app icon. In development, `MOCHA_DEV_WORK_MS=60000 pnpm dev` shortens the work stretch and `MOCHA_DEV_FOCUS_MS=60000` every focus session, so reminders and breaks can be tried without waiting.
+Built with Electron, TypeScript and a small hand-written Canvas 2D engine. `pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build` runs every check, and `pnpm --filter @mocha/desktop generate:skin`, `generate:readme-art` and `generate:icon` redraw the placeholder skin, the README art and the app icon. In development, `MOCHA_DEV_WORK_MS=60000 pnpm dev` shortens the work stretch and `MOCHA_DEV_FOCUS_MS=60000` every focus session, so reminders and breaks can be tried without waiting. Development keeps its data in `~/Library/Application Support/Mocha Dev`, apart from the installed app's.
 
 - [Skin format](docs/skins.md): how to draw your own Mocha
 - [Architecture decisions](docs/adr/README.md): why it is built this way

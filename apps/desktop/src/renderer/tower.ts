@@ -1,8 +1,23 @@
-import { createGameLoop, createPetAnimator, type Gaze, gazeOffset } from '@mocha/core';
+import {
+  type AccessorySlot,
+  BARE_LOOK,
+  createGameLoop,
+  createPetAnimator,
+  type DecorSlot,
+  EMPTY_ROOM,
+  type Gaze,
+  gazeOffset,
+  type ItemId,
+  type Look,
+  type Room,
+  type TimeOfDay,
+} from '@mocha/core';
 import { FOCUS_MINUTES, type TowerAction, type TowerView } from '../shared/tower.ts';
+import { drawAccessories } from './accessories.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
 import { loadDefaultLook } from './default-skin.ts';
 import { createEffects } from './effects.ts';
+import { createFlicker } from './flicker.ts';
 import { loadImage } from './load-image.ts';
 import { towerControls } from './tower-controls.ts';
 import { drawRoom, MOCHA_SPOT, ROOM_HEIGHT, ROOM_WIDTH } from './tower-room.ts';
@@ -45,11 +60,22 @@ canvas.addEventListener('pointermove', (event) => {
   loop.invalidate();
 });
 
+// What Mocha wears, what stands in its room and the part of the day, from
+// the view. The candle burns at night and through a break.
+let look: Look = BARE_LOOK;
+let room: Room = EMPTY_ROOM;
+let time: TimeOfDay = 'night';
+let resting = false;
+const flicker = createFlicker();
+const candleLit = () => time === 'night' || resting;
+
 const render = (): void => {
-  drawRoom(context);
+  drawRoom(context, { room, time, flame: candleLit() ? flicker.frame : null });
   context.save();
   context.translate(offset.x, offset.y);
-  appearance.draw(context, { frame: animator.frame, hovered: false, gaze });
+  const { frame } = animator;
+  appearance.draw(context, { frame, hovered: false, gaze });
+  drawAccessories(context, { head: appearance.head(frame), neck: appearance.neck(frame) }, look);
   effects.draw(context, {
     head: appearance.head(animator.frame),
     feet: appearance.feet(animator.frame),
@@ -63,7 +89,8 @@ const loop = createGameLoop({
   update(stepMs) {
     const animated = animator.update(stepMs);
     const affected = effects.update(stepMs);
-    return animated || affected;
+    const flickered = flicker.update(stepMs, candleLit());
+    return animated || affected || flickered;
   },
   render,
 });
@@ -84,8 +111,17 @@ const focusLabel = element('focus-label', HTMLElement);
 const focusLengths = element('focus-lengths', HTMLElement);
 const focusEnd = element('focus-end', HTMLButtonElement);
 const lengthButtons = [...focusLengths.querySelectorAll('button')];
+const findsButton = element('finds', HTMLButtonElement);
+const findsDots = element('finds-dots', HTMLElement);
+const findsText = element('finds-text', HTMLElement);
+const main = element('main', HTMLElement);
+const collection = element('collection', HTMLElement);
+const collectionBack = element('collection-back', HTMLButtonElement);
+const wardrobe = element('wardrobe', HTMLUListElement);
+const wardrobeNote = element('wardrobe-note', HTMLElement);
+const roomItems = element('room-items', HTMLUListElement);
+const roomNote = element('room-note', HTMLElement);
 
-let resting = false;
 // What the rest button does now: start a break, or end the one running.
 let restAction: TowerAction = 'rest';
 
@@ -104,6 +140,18 @@ function show(view: TowerView): void {
   focusLengths.hidden = controls.focus.running;
   focusEnd.hidden = !controls.focus.running;
   for (const button of lengthButtons) button.disabled = controls.focus.disabled;
+  findsDots.textContent = controls.finds.dots;
+  findsDots.hidden = controls.finds.dots === '';
+  findsDots.setAttribute('aria-label', controls.finds.dotsLabel);
+  findsText.textContent = controls.finds.text;
+  showList(wardrobe, wardrobeNote, controls.wardrobe, (slot, id) => window.tower.wear(slot, id));
+  showList(roomItems, roomNote, controls.room, (slot, id) => window.tower.place(slot, id));
+  if (view.look !== look || view.room !== room || view.timeOfDay !== time) {
+    look = view.look;
+    room = view.room;
+    time = view.timeOfDay;
+    loop.invalidate();
+  }
   // Reading during a session comes before looking tired.
   const posed = animator.setTired(view.tired);
   if (animator.setFocus(view.focusMinutesLeft !== null) || posed) loop.invalidate();
@@ -117,6 +165,54 @@ function show(view: TowerView): void {
     if (!resting) effects.add('heart');
     loop.invalidate();
   }
+}
+
+/**
+ * One of the Collection view's lists, rebuilt from the controls on every
+ * view: each row's title, where it goes and its button.
+ */
+function showList<S extends AccessorySlot | DecorSlot>(
+  list: HTMLUListElement,
+  noteLine: HTMLElement,
+  {
+    rows,
+    note,
+  }: {
+    rows: {
+      title: string;
+      where: string;
+      label: string;
+      request: { slot: S; id: ItemId | null };
+    }[];
+    note: string;
+  },
+  send: (slot: S, id: ItemId | null) => void,
+): void {
+  list.replaceChildren(
+    ...rows.map(({ title, where, label, request }) => {
+      const item = document.createElement('li');
+      const name = document.createElement('span');
+      name.className = 'title';
+      name.textContent = title;
+      const place = document.createElement('span');
+      place.className = 'where';
+      place.textContent = where;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.addEventListener('click', () => send(request.slot, request.id));
+      item.append(name, place, button);
+      return item;
+    }),
+  );
+  noteLine.textContent = note;
+}
+
+/** Swaps the care controls for the Collection view and back, moving focus along. */
+function showCollection(open: boolean): void {
+  main.hidden = open;
+  collection.hidden = !open;
+  (open ? collectionBack : findsButton).focus();
 }
 
 function act(action: TowerAction): void {
@@ -137,6 +233,8 @@ for (const button of lengthButtons) {
   if (minutes) button.addEventListener('click', () => window.tower.focus(minutes));
 }
 focusEnd.addEventListener('click', () => window.tower.focus(null));
+findsButton.addEventListener('click', () => showCollection(true));
+collectionBack.addEventListener('click', () => showCollection(false));
 window.tower.onNeeds(show);
 window.tower.ready(); // listening now: ask main for the needs
 

@@ -2,12 +2,19 @@ import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
+  BARE_LOOK,
+  EMPTY_ROOM,
+  findsEventForBreakChange,
   isQuietTime,
   isTired,
   minuteOfDay,
   needsActivity,
   needsEventsForBreakChange,
+  place,
   type RitualPose,
+  validLook,
+  validRoom,
+  wear,
 } from '@mocha/core';
 import {
   app,
@@ -25,6 +32,7 @@ import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { DEFAULT_PREFERENCES, type Preferences, toBreakConfig } from '../shared/preferences.ts';
 import { REMINDER_HEIGHT, REMINDER_WIDTH, type ReminderShow } from '../shared/reminder.ts';
 import { RITUAL_HEIGHT, RITUAL_WIDTH, type RitualShow } from '../shared/ritual.ts';
+import type { SoundKind } from '../shared/sounds.ts';
 import type { FocusMinutes } from '../shared/tower.ts';
 import { createActivityTracker } from './activity/activity-tracker.ts';
 import { createBreakController } from './activity/break-controller.ts';
@@ -33,6 +41,7 @@ import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-
 import { createTodayStats } from './activity/today-stats.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
+import { createFindsRepository } from './db/finds-repository.ts';
 import { createNeedsRepository } from './db/needs-repository.ts';
 import { openDatabase } from './db/open-database.ts';
 import { createSessionRepository } from './db/session-repository.ts';
@@ -42,6 +51,7 @@ import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
 import { registerRitualHandlers } from './ipc/register-ritual-handlers.ts';
 import { registerSettingsHandlers } from './ipc/register-settings-handlers.ts';
 import { registerTowerHandlers } from './ipc/register-tower-handlers.ts';
+import { createFindsKeeper } from './pet/finds-keeper.ts';
 import { createNeedsKeeper } from './pet/needs-keeper.ts';
 import { towerView } from './pet/tower-view.ts';
 import { type DueState, reminderInfo } from './reminder/reminder-info.ts';
@@ -50,6 +60,7 @@ import { reminderTransition } from './reminder/reminder-transition.ts';
 import { followRitualPoses } from './ritual/ritual-poses.ts';
 import { createRitualTracker } from './ritual/ritual-tracker.ts';
 import { ritualTransition } from './ritual/ritual-transition.ts';
+import { loginItemView } from './settings/login-item.ts';
 import { createSettingsStore } from './settings/settings-store.ts';
 import { watchSpaceChanges } from './space/space-watcher.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
@@ -99,6 +110,11 @@ function createTrayIcon() {
   icon.setTemplateImage(true); // let macOS tint it for light and dark menu bars
   return icon;
 }
+
+// Development keeps its own data, so a development build never upgrades
+// the installed app's database or writes test runs into its history. Set
+// before the lock and before ready, so Chromium's storage moves too.
+if (devServerUrl) app.setPath('userData', join(app.getPath('appData'), 'Mocha Dev'));
 
 // Only one Mocha at a time: a second launch exits immediately.
 if (!app.requestSingleInstanceLock()) {
@@ -284,6 +300,8 @@ if (!app.requestSingleInstanceLock()) {
       ritualReporter.report(ritualTracker.poseAt(Date.now())?.pose ?? null);
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
+      sendLook();
+      sendSounds();
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
     }
     const activity = createActivityTracker(
@@ -356,7 +374,10 @@ if (!app.requestSingleInstanceLock()) {
     window.on('move', () => followRitual());
     breaks.onChange((next, previous) => {
       const transition = reminderTransition(next, previous);
-      if (transition === 'open' && next.phase === 'due') openReminder(next);
+      if (transition === 'open' && next.phase === 'due') {
+        openReminder(next);
+        playSound('reminder');
+      }
       if (transition === 'close') closeReminder();
     });
     registerReminderHandlers(
@@ -440,6 +461,7 @@ if (!app.requestSingleInstanceLock()) {
           // Main decides whether it counts: once per break, and only if the
           // ritual really took its time.
           if (ritualTracker.finish(Date.now())) needs.dispatch({ type: 'ritualCompleted' });
+          playSound('ritualDone');
           ritualPoses.update();
         },
         close: () => closeRitual(),
@@ -447,6 +469,42 @@ if (!app.requestSingleInstanceLock()) {
       [pageUrl('ritual')],
       console,
     );
+
+    // What Mocha finds (ADR-0010): the meter moves when a break ends, with
+    // the ritual done in it, and a find makes Mocha sparkle as it wakes.
+    const finds = createFindsKeeper(
+      database ? createFindsRepository(database) : undefined,
+      Date.now(),
+      console,
+    );
+    breaks.onChange((next, previous) => {
+      const event = findsEventForBreakChange(previous, next, Date.now(), ritualTracker.rewarded);
+      if (event) finds.dispatch(event);
+    });
+    finds.onChange((_state, found) => {
+      if (found.length > 0 && !window.isDestroyed()) {
+        window.webContents.send(IpcChannel.OverlayFound);
+      }
+    });
+
+    // What Mocha wears: only found accessories, each in its slot, saved in
+    // the settings. A look edited by hand loses what Mocha may not wear.
+    let look = validLook(saved.look ?? BARE_LOOK, finds.state);
+    function sendLook() {
+      if (!window.isDestroyed()) window.webContents.send(IpcChannel.OverlayLook, look);
+    }
+    // What stands in Mocha's room, checked and saved the same way.
+    let room = validRoom(saved.room ?? EMPTY_ROOM, finds.state);
+
+    // Sounds: off unless the user turns them on in Settings. The overlay
+    // plays them; main says when.
+    let soundsOn = saved.sounds ?? false;
+    function sendSounds() {
+      if (!window.isDestroyed()) window.webContents.send(IpcChannel.OverlaySounds, soundsOn);
+    }
+    function playSound(kind: SoundKind) {
+      if (soundsOn && !window.isDestroyed()) window.webContents.send(IpcChannel.OverlaySound, kind);
+    }
 
     // Settings: one window at a time, opened from the tray. Saved values
     // apply at once: the break rules take the new durations on the next tick.
@@ -463,11 +521,31 @@ if (!app.requestSingleInstanceLock()) {
     registerSettingsHandlers(
       () => settingsWindow.current?.webContents,
       {
-        load: () => preferences,
-        save: (next) => {
-          preferences = next;
-          breaks.setConfig(breakConfigFor(next));
-          void settings.update({ preferences: next });
+        preferences: {
+          load: () => preferences,
+          save: (next) => {
+            preferences = next;
+            breaks.setConfig(breakConfigFor(next));
+            void settings.update({ preferences: next });
+          },
+        },
+        // Only the installed app becomes a login item (see loginItemView).
+        loginItem: {
+          get: () => loginItemView(app.isPackaged, app.getLoginItemSettings()),
+          set: (open) => {
+            if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: open });
+            return loginItemView(app.isPackaged, app.getLoginItemSettings());
+          },
+        },
+        sounds: {
+          get: () => soundsOn,
+          set: (enabled) => {
+            soundsOn = enabled;
+            void settings.update({ sounds: enabled });
+            sendSounds();
+            playSound('pet'); // a sample, so turning sounds on is heard at once
+            return soundsOn;
+          },
         },
       },
       [pageUrl('settings')],
@@ -481,7 +559,10 @@ if (!app.requestSingleInstanceLock()) {
     const sendTowerView = (force: boolean) => {
       const target = towerWindow.current;
       if (!target) return;
-      const view = towerView(needs.state, breaks.state, Date.now());
+      const view = towerView(
+        { needs: needs.state, breaks: breaks.state, finds: finds.state, look, room },
+        Date.now(),
+      );
       const key = JSON.stringify(view);
       if (!force && key === shownView) return;
       shownView = key;
@@ -498,6 +579,7 @@ if (!app.requestSingleInstanceLock()) {
     }
     needs.onChange(() => sendTowerView(false));
     breaks.onChange(() => sendTowerView(false)); // a break starts or ends
+    finds.onChange(() => sendTowerView(false));
     registerTowerHandlers(
       () => towerWindow.current?.webContents,
       {
@@ -511,6 +593,22 @@ if (!app.requestSingleInstanceLock()) {
           else needs.dispatch({ type: action, now });
         },
         focus: (minutes) => (minutes === null ? endFocus() : startFocus(minutes)),
+        // Main decides: only found accessories, in their own slot.
+        wear: ({ slot, id }) => {
+          const next = wear(look, finds.state, slot, id);
+          if (next === look) return;
+          look = next;
+          void settings.update({ look });
+          sendLook();
+          sendTowerView(false);
+        },
+        place: ({ slot, id }) => {
+          const next = place(room, finds.state, slot, id);
+          if (next === room) return;
+          room = next;
+          void settings.update({ room });
+          sendTowerView(false);
+        },
       },
       [pageUrl('tower')],
       console,

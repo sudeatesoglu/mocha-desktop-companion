@@ -7,6 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { crc32, deflateSync, inflateSync } from 'node:zlib';
 import { createPetAnimator, gazeOffset, parseSkinManifest } from '@mocha/core';
+import { drawAccessories } from '../src/renderer/accessories.ts';
 import { skinAppearance } from '../src/renderer/appearance.ts';
 import { createEffects } from '../src/renderer/effects.ts';
 
@@ -199,8 +200,12 @@ function seededRandom(seed) {
   };
 }
 
-/** Steps the app's own code for `durationMs`, merging identical frames. */
-function renderScene(skin, { durationMs, start, gazeAt, seed = 1 }) {
+/**
+ * Steps the app's own code for `durationMs`, merging identical frames.
+ * `timeline` plays animations at given times, like a ritual's steps, and
+ * `look` is what Mocha wears.
+ */
+function renderScene(skin, { durationMs, start, timeline = [], look, gazeAt, seed = 1 }) {
   const appearance = skinAppearance(skin);
   const animator = createPetAnimator(skin.manifest.animations, { random: seededRandom(seed) });
   const effects = createEffects();
@@ -208,10 +213,18 @@ function renderScene(skin, { durationMs, start, gazeAt, seed = 1 }) {
 
   const frames = [];
   for (let t = 0; t < durationMs; t += STEP_MS) {
+    for (const [at, name] of timeline) if (at === t) animator.play(name);
     const canvas = createCanvas();
     const eye = appearance.eyeCenter(animator.frame);
     const gaze = gazeAt && eye ? gazeOffset(eye, gazeAt(t)) : { x: 0, y: 0 };
     appearance.draw(canvas, { frame: animator.frame, hovered: false, gaze });
+    if (look) {
+      const anchors = {
+        head: appearance.head(animator.frame),
+        neck: appearance.neck(animator.frame),
+      };
+      drawAccessories(canvas, anchors, look);
+    }
     effects.draw(canvas, {
       head: appearance.head(animator.frame),
       feet: appearance.feet(animator.frame),
@@ -257,6 +270,28 @@ const SCENES = {
     },
   },
   sleep: { scale: 3, durationMs: 2_400, start: (animator) => animator.play('sleep') },
+  // One whole loop of each, so the images repeat without a jump.
+  focus: { scale: 3, durationMs: 8_100, start: (animator) => animator.setFocus(true) },
+  breathe: { scale: 3, durationMs: 12_000, timeline: [[0, 'breathe']] },
+  // A few stretch steps, shortened.
+  stretch: {
+    scale: 3,
+    durationMs: 9_000,
+    timeline: [
+      [0, 'shoulderRoll'],
+      [2_500, 'reachUp'],
+      [5_000, 'leanLeft'],
+      [7_000, 'leanRight'],
+    ],
+  },
+  tired: { scale: 3, durationMs: 11_250, start: (animator) => animator.setTired(true) },
+  // Dressed up in things Mocha found: one idle breath, then a hop.
+  dressed: {
+    scale: 3,
+    durationMs: 2_400,
+    look: { neck: 'redScarf', hat: 'hatFeather' },
+    timeline: [[1_600, 'hop']],
+  },
 };
 
 // --- main ---

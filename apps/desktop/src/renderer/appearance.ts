@@ -46,6 +46,8 @@ export interface Appearance<I> {
   head(frame: SkinFrame): Point | undefined;
   /** Bottom center of the feet, where effects such as dust attach. */
   feet(frame: SkinFrame): Point | undefined;
+  /** Front of the neck, where neck accessories sit. */
+  neck(frame: SkinFrame): Point | undefined;
 }
 
 /** The pupil is 2x2; its center is one pixel right of and below its top-left anchor. */
@@ -63,6 +65,7 @@ export function skinAppearance<I extends SkinImage>(skin: LoadedSkin<I>): Appear
     },
     head: (frame) => frame.anchors?.head,
     feet: (frame) => frame.anchors?.feet,
+    neck: (frame) => frame.anchors?.neck,
     draw(painter, { frame, hovered, gaze }) {
       // Behind the sprite, so the feet stand on it.
       const feet = frame.anchors?.feet;
@@ -99,6 +102,8 @@ export function placeholderAppearance<I>(): Appearance<I> {
     head: (frame) => ({ x: 24, y: 8 + (frame.index % 2) }),
     // The placeholder's body ends at y = 40.
     feet: () => ({ x: 23, y: 40 }),
+    // Blocks have no neck: the placeholder wears nothing.
+    neck: () => undefined,
     draw(painter, { frame, hovered, gaze }) {
       drawPlaceholderMocha(painter, { offsetY: frame.index % 2, hovered, gaze });
     },

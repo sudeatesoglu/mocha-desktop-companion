@@ -142,6 +142,95 @@ button:focus-visible {
   padding: 4px 8px;
 }
 
+/* The Finds row is a button that opens the Collection view. */
+button.finds {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 0 0;
+  text-align: left;
+  border: 0;
+  border-top: 2px solid var(--track);
+}
+
+#finds-dots {
+  color: var(--energy);
+  letter-spacing: 2px;
+}
+
+#finds-text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Below the room, scrolling when the lists are long. */
+#collection {
+  box-sizing: border-box;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.collection-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.collection-head button {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+}
+
+#collection h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+#collection h3 {
+  margin: 16px 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.items li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 2px solid var(--track);
+}
+
+.items .title {
+  flex: 1 1 auto;
+}
+
+.items .where {
+  color: var(--muted);
+}
+
+.items button {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+}
+
+.note {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
 #status {
   min-height: 1.4em;
   margin: 12px 0 0;

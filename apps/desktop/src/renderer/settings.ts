@@ -1,3 +1,4 @@
+import { type LoginItem, loginItemHint } from '../shared/login-item.ts';
 import {
   DEFAULT_PREFERENCES,
   PREFERENCE_LIMITS,
@@ -106,3 +107,28 @@ form.addEventListener('submit', async (event) => {
 });
 
 window.settings.load().then((preferences) => fill(toFormValues(preferences)));
+
+// Opening at login is the system's setting: it applies at once, and the box
+// always shows what the system reports, not what was clicked.
+const openAtLogin = element('open-at-login', HTMLInputElement);
+const openAtLoginHint = element('open-at-login-hint', HTMLElement);
+
+function showLoginItem(item: LoginItem): void {
+  openAtLogin.checked = item.openAtLogin;
+  openAtLogin.disabled = !item.available;
+  openAtLoginHint.textContent = loginItemHint(item);
+}
+
+openAtLogin.addEventListener('change', async () => {
+  showLoginItem(await window.settings.setOpenAtLogin(openAtLogin.checked));
+});
+window.settings.loginItem().then(showLoginItem);
+
+// Sounds apply at once too: turning them on plays a sample chirp.
+const sounds = element('sounds', HTMLInputElement);
+sounds.addEventListener('change', async () => {
+  sounds.checked = await window.settings.setSounds(sounds.checked);
+});
+window.settings.sounds().then((enabled) => {
+  sounds.checked = enabled;
+});

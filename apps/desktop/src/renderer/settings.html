@@ -12,6 +12,24 @@
   </head>
   <body>
     <main>
+      <!-- Applied at once, like a system setting; the form below is saved. -->
+      <fieldset class="general">
+        <legend>General</legend>
+        <label class="toggle">
+          <input id="open-at-login" type="checkbox" aria-describedby="open-at-login-hint" />
+          Open Mocha when you log in
+        </label>
+        <p class="hint" id="open-at-login-hint"></p>
+        <label class="toggle">
+          <input id="sounds" type="checkbox" aria-describedby="sounds-hint" />
+          Play sounds
+        </label>
+        <p class="hint" id="sounds-hint">
+          Short, quiet chirps when you pet Mocha, a break is due, a ritual ends or Mocha finds
+          something.
+        </p>
+      </fieldset>
+
       <!-- novalidate: the shared schema gives the messages, not the browser. -->
       <form id="settings" novalidate>
         <fieldset>

@@ -1,7 +1,10 @@
+import { ITEMS, type ItemId } from '@mocha/core';
 import { z } from 'zod';
 import { preferencesSchema } from '../../shared/preferences.ts';
 
 const MAX_COORDINATE = 100_000; // far beyond any real desktop
+
+const itemIdSchema = z.enum(ITEMS.map(({ id }) => id) as [ItemId, ...ItemId[]]);
 
 const pointSchema = z.object({
   x: z.int().min(-MAX_COORDINATE).max(MAX_COORDINATE),
@@ -20,6 +23,26 @@ const settingsSchema = z.object({
    * version with other limits), only they fall back to the defaults.
    */
   preferences: preferencesSchema.optional().catch(undefined),
+  /**
+   * What Mocha wears. An id this version does not know is dropped; main
+   * also drops what Mocha has not found.
+   */
+  look: z
+    .object({ neck: itemIdSchema.nullable().catch(null), hat: itemIdSchema.nullable().catch(null) })
+    .optional()
+    .catch(undefined),
+  /** Whether Mocha makes sounds; off unless the user turned them on. */
+  sounds: z.boolean().optional().catch(undefined),
+  /** What stands in Mocha's room, checked the same way. */
+  room: z
+    .object({
+      shelf: itemIdSchema.nullable().catch(null),
+      wall: itemIdSchema.nullable().catch(null),
+      floor: itemIdSchema.nullable().catch(null),
+      sill: itemIdSchema.nullable().catch(null),
+    })
+    .optional()
+    .catch(undefined),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;

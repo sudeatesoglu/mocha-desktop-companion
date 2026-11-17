@@ -1,4 +1,5 @@
-import type { TowerAction, TowerView } from '../shared/tower.ts';
+import type { AccessorySlot, DecorSlot } from '@mocha/core';
+import type { TowerAction, TowerFinds, TowerView } from '../shared/tower.ts';
 
 /** What the Tower's buttons and status line show for a view of Mocha's needs. */
 export function towerControls(view: TowerView) {
@@ -26,6 +27,9 @@ export function towerControls(view: TowerView) {
       // The break rules are paused too: no session can start.
       disabled: view.paused,
     },
+    finds: findsControls(view.finds),
+    wardrobe: wardrobeControls(view.wardrobe),
+    room: roomControls(view.decor),
     status: resting
       ? restingStatus(view.breakMinutesLeft)
       : view.paused
@@ -43,4 +47,77 @@ function restingStatus(minutesLeft: number | null): string {
   return minutesLeft
     ? `Resting together: ${minutesLeft} min left. Mocha is napping.`
     : 'Resting together. Mocha is napping.';
+}
+
+/** The find meter's dots, their spoken label and the line beside them (ADR-0010). */
+function findsControls(finds: TowerFinds) {
+  if (finds.complete) return { dots: '', dotsLabel: '', text: `All ${finds.total} found` };
+  const latest = finds.latest ? `, last: ${finds.latest}` : '';
+  return {
+    dots: '●'.repeat(finds.points) + '○'.repeat(finds.pointsPerFind - finds.points),
+    dotsLabel: `${finds.points} of ${finds.pointsPerFind} points toward the next find`,
+    text: finds.waiting
+      ? 'Mocha looks again tomorrow'
+      : `${finds.found} of ${finds.total} found${latest}`,
+  };
+}
+
+/** How the Collection view names each slot. */
+const SLOT_NAMES: Record<AccessorySlot | DecorSlot, string> = {
+  neck: 'Neck',
+  hat: 'Hat',
+  shelf: 'Shelf',
+  wall: 'Wall',
+  floor: 'Floor',
+  sill: 'Window sill',
+};
+
+/** The line under a list: nothing found yet, how many are left, or all found. */
+function collectionNote(found: number, toFind: number, empty: string, complete: string) {
+  if (found === 0) return empty;
+  return toFind > 0 ? `${toFind} more to find` : complete;
+}
+
+/**
+ * The Collection view's Wear list: each found accessory with the button
+ * that puts it on, or takes it off when worn.
+ */
+function wardrobeControls({ items, toFind }: TowerView['wardrobe']) {
+  return {
+    rows: items.map(({ id, title, slot, worn }) => ({
+      id,
+      title,
+      where: SLOT_NAMES[slot],
+      label: worn ? 'Take off' : 'Wear',
+      request: { slot, id: worn ? null : id },
+    })),
+    note: collectionNote(
+      items.length,
+      toFind,
+      'Nothing to wear yet. Mocha finds things during breaks.',
+      'Everything to wear is found.',
+    ),
+  };
+}
+
+/**
+ * The Collection view's Room list: each found decor item with the button
+ * that places it in its slot, replacing what stood there, or removes it.
+ */
+function roomControls({ items, toFind }: TowerView['decor']) {
+  return {
+    rows: items.map(({ id, title, slot, placed }) => ({
+      id,
+      title,
+      where: SLOT_NAMES[slot],
+      label: placed ? 'Remove' : 'Place',
+      request: { slot, id: placed ? null : id },
+    })),
+    note: collectionNote(
+      items.length,
+      toFind,
+      'No decor yet. Mocha finds things during breaks.',
+      'Every decor item is found.',
+    ),
+  };
 }

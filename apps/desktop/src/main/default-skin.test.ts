@@ -51,4 +51,13 @@ describe('default skin', () => {
 
     expect(frames.every((frame) => frame.anchors?.feet !== undefined)).toBe(true);
   });
+
+  it('gives every frame a neck, so a worn accessory never disappears', () => {
+    if (!parsed.ok) throw new Error('manifest is invalid');
+    const frames = Object.values(parsed.value.animations).flatMap(
+      (animation) => animation?.frames ?? [],
+    );
+
+    expect(frames.every((frame) => frame.anchors?.neck !== undefined)).toBe(true);
+  });
 });

@@ -47,6 +47,7 @@ describe('createEffects', () => {
     effects.add('heart');
     effects.add('stars');
     effects.add('dust');
+    effects.add('sparkle');
     for (let t = 0; t < 1_800; t += 50) {
       const painter = recordingPainter();
       effects.draw(painter, { head: HEAD, feet: FEET });
@@ -59,6 +60,22 @@ describe('createEffects', () => {
       }
       effects.update(50);
     }
+  });
+
+  it('lights golden twinkles around the hat one after another, each growing and fading', () => {
+    const effects = createEffects();
+    effects.add('sparkle');
+    const counts: number[] = [];
+    for (let frame = 0; frame < 12; frame++) {
+      const painter = recordingPainter();
+      effects.draw(painter, { head: HEAD });
+      expect(painter.pixels.every((pixel) => pixel.startsWith('#ffd27a'))).toBe(true);
+      counts.push(painter.pixels.length);
+      effects.update(150);
+    }
+
+    // One twinkle grows 1 → 5 → 9 pixels and fades; the next starts as it fades.
+    expect(counts).toEqual([1, 5, 9, 6, 6, 9, 6, 6, 9, 5, 1, 0]);
   });
 
   it('draws two stars that move around the hat', () => {

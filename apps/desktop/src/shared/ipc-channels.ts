@@ -1,7 +1,9 @@
-import type { RitualId, RitualPose } from '@mocha/core';
+import type { AccessorySlot, DecorSlot, ItemId, Look, RitualId, RitualPose } from '@mocha/core';
+import type { LoginItem } from './login-item.ts';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
 import type { RitualShow } from './ritual.ts';
+import type { SoundKind } from './sounds.ts';
 import type { FocusMinutes, TowerAction, TowerView } from './tower.ts';
 
 /**
@@ -35,6 +37,14 @@ export const IpcChannel = {
   OverlayFocusing: 'overlay:focusing',
   /** Main → overlay: Mocha's energy fell below (true) or rose above (false) the tired line. */
   OverlayTired: 'overlay:tired',
+  /** Main → overlay (no data): Mocha found something during the break that just ended. */
+  OverlayFound: 'overlay:found',
+  /** Main → overlay: what Mocha wears, when the page loads and when it changes. */
+  OverlayLook: 'overlay:look',
+  /** Main → overlay: whether sounds are on, when the page loads and when it changes. */
+  OverlaySounds: 'overlay:sounds',
+  /** Main → overlay: a moment that has a sound; played only while sounds are on. */
+  OverlaySound: 'overlay:sound',
   /** Overlay → main (send): the user petted Mocha on the desktop. */
   OverlayPetted: 'overlay:petted',
   /** Main → tower: Mocha's needs, sent when the page loads and when they change. */
@@ -43,6 +53,10 @@ export const IpcChannel = {
   TowerReady: 'tower:ready',
   /** Tower → main (send): start a focus session of 25, 40 or 50 minutes, or end it (null). */
   TowerFocus: 'tower:focus',
+  /** Tower → main (send): put a found accessory on in its slot, or take it off (null). */
+  TowerWear: 'tower:wear',
+  /** Tower → main (send): put a found decor item in its slot of the room, or clear it (null). */
+  TowerPlace: 'tower:place',
   /** Tower → main (send): pet, treat or rest together. */
   TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
@@ -63,6 +77,14 @@ export const IpcChannel = {
   SettingsLoad: 'settings:load',
   /** Settings → main (invoke): save and apply preferences; resolves to whether they were saved. */
   SettingsSave: 'settings:save',
+  /** Settings → main (invoke, no data): whether Mocha opens at login. */
+  SettingsLoginItem: 'settings:login-item',
+  /** Settings → main (invoke): open Mocha at login or not; resolves to the new state. */
+  SettingsOpenAtLogin: 'settings:open-at-login',
+  /** Settings → main (invoke, no data): whether sounds are on. */
+  SettingsSounds: 'settings:sounds',
+  /** Settings → main (invoke): turn sounds on or off; resolves to the new state. */
+  SettingsSetSounds: 'settings:set-sounds',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -95,6 +117,14 @@ export interface MochaBridge {
   onFocusingChange(callback: (focusing: boolean) => void): () => void;
   /** Overlay only: Mocha became tired or rested. Returns an unsubscribe function. */
   onTiredChange(callback: (tired: boolean) => void): () => void;
+  /** Overlay only: Mocha found something. Returns an unsubscribe function. */
+  onFound(callback: () => void): () => void;
+  /** Overlay only: what Mocha wears. Returns an unsubscribe function. */
+  onLookChange(callback: (look: Look) => void): () => void;
+  /** Overlay only: sounds were turned on or off. Returns an unsubscribe function. */
+  onSoundsChange(callback: (enabled: boolean) => void): () => void;
+  /** Overlay only: a moment with a sound. Returns an unsubscribe function. */
+  onSound(callback: (kind: SoundKind) => void): () => void;
   /** Overlay only: open Mocha's Tower. */
   openTower(): void;
   /** Overlay only: the user petted Mocha, which lifts its mood. */
@@ -114,6 +144,14 @@ export interface SettingsBridge {
   load(): Promise<Preferences>;
   /** Resolves to false if the main process rejected the values. */
   save(preferences: Preferences): Promise<boolean>;
+  /** Whether Mocha opens at login, read from the system. */
+  loginItem(): Promise<LoginItem>;
+  /** Asks the system to open Mocha at login or not; resolves to the new state. */
+  setOpenAtLogin(open: boolean): Promise<LoginItem>;
+  /** Whether Mocha makes sounds. */
+  sounds(): Promise<boolean>;
+  /** Turns sounds on or off; resolves to the new state. */
+  setSounds(enabled: boolean): Promise<boolean>;
 }
 
 /** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */
@@ -126,6 +164,10 @@ export interface TowerBridge {
   act(action: TowerAction): void;
   /** Starts a focus session of `minutes`, or ends the running one (null). */
   focus(minutes: FocusMinutes | null): void;
+  /** Puts a found accessory on in `slot`, or takes the slot's off (null). */
+  wear(slot: AccessorySlot, id: ItemId | null): void;
+  /** Puts a found decor item in `slot` of the room, or clears the slot (null). */
+  place(slot: DecorSlot, id: ItemId | null): void;
 }
 
 /** The API the ritual bubble's own preload exposes as `window.ritual`. Nothing else. */

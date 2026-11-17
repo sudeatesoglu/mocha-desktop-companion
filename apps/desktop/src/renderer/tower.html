@@ -13,7 +13,7 @@
   <body>
     <!-- Drawn at art resolution; CSS scales it up without smoothing. -->
     <canvas id="room" aria-label="Mocha in its room in the Tower"></canvas>
-    <main>
+    <main id="main">
       <div class="needs">
         <label for="mood">Mood</label>
         <meter id="mood" min="0" max="100" value="0"></meter>
@@ -34,8 +34,27 @@
         </div>
         <button type="button" id="focus-end" hidden>End</button>
       </div>
+      <!-- Opens the Collection view. -->
+      <button type="button" id="finds" class="finds" aria-controls="collection">
+        <span>Finds</span>
+        <span id="finds-dots" role="img" aria-label="Find meter"></span>
+        <span id="finds-text"></span>
+        <span aria-hidden="true">›</span>
+      </button>
       <p id="status" role="status" aria-live="polite"></p>
     </main>
+    <section id="collection" aria-labelledby="collection-title" hidden>
+      <div class="collection-head">
+        <button type="button" id="collection-back">‹ Back</button>
+        <h2 id="collection-title">Collection</h2>
+      </div>
+      <h3>Wear</h3>
+      <ul id="wardrobe" class="items"></ul>
+      <p id="wardrobe-note" class="note"></p>
+      <h3>Room</h3>
+      <ul id="room-items" class="items"></ul>
+      <p id="room-note" class="note"></p>
+    </section>
     <script type="module" src="./tower.ts"></script>
   </body>
 </html>

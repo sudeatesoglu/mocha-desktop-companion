@@ -6,6 +6,28 @@
  */
 
 export {
+  DEFAULT_FINDS_CONFIG,
+  type Find,
+  type FindsConfig,
+  type FindsEvent,
+  type FindsState,
+  findStatus,
+  pointsForBreak,
+  reduceFinds,
+  startFinds,
+} from './collection/finds.ts';
+export { findsEventForBreakChange } from './collection/finds-from-breaks.ts';
+export {
+  type AccessorySlot,
+  type DecorSlot,
+  ITEMS,
+  type Item,
+  type ItemId,
+  itemById,
+} from './collection/items.ts';
+export { BARE_LOOK, type Look, validLook, wear } from './collection/look.ts';
+export { EMPTY_ROOM, place, type Room, validRoom } from './collection/room.ts';
+export {
   type BreakConfig,
   type BreakEvent,
   type BreakState,
@@ -81,3 +103,4 @@ export {
 } from './skin/skin-manifest.ts';
 export { formatDuration } from './time/format-duration.ts';
 export { localDay } from './time/local-day.ts';
+export { type TimeOfDay, timeOfDay } from './time/time-of-day.ts';

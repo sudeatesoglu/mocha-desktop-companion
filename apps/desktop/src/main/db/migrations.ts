@@ -43,6 +43,23 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    version: 4,
+    // What Mocha found (ADR-0010): item ids with when they were found, and
+    // the find meter in one row. Nothing about what the user does.
+    sql: `
+      CREATE TABLE finds (
+        item_id TEXT PRIMARY KEY,
+        found_at INTEGER NOT NULL
+      );
+      CREATE TABLE find_meter (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        points INTEGER NOT NULL CHECK (points >= 0),
+        day INTEGER NOT NULL,
+        finds_today INTEGER NOT NULL CHECK (finds_today >= 0)
+      );
+    `,
+  },
 ];
 
 // `PRAGMA user_version` always returns exactly one row.
