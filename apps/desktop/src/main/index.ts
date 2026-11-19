@@ -4,10 +4,12 @@ import { pathToFileURL } from 'node:url';
 import {
   BARE_LOOK,
   EMPTY_ROOM,
+  EXTENSION_ORIGIN,
   findsEventForBreakChange,
   isQuietTime,
   isTired,
   minuteOfDay,
+  NO_BROWSER_CAPABILITIES,
   needsActivity,
   needsEventsForBreakChange,
   place,
@@ -39,6 +41,10 @@ import { createBreakController } from './activity/break-controller.ts';
 import { createChangeReporter } from './activity/change-reporter.ts';
 import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-recorder.ts';
 import { createTodayStats } from './activity/today-stats.ts';
+import { handleApiRequest } from './api/api-handler.ts';
+import { type ApiServer, startApiServer } from './api/api-server.ts';
+import { createBrowsingAwareness } from './api/browsing-awareness.ts';
+import { createRateLimiter } from './api/rate-limiter.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { createFindsRepository } from './db/finds-repository.ts';
@@ -61,7 +67,7 @@ import { followRitualPoses } from './ritual/ritual-poses.ts';
 import { createRitualTracker } from './ritual/ritual-tracker.ts';
 import { ritualTransition } from './ritual/ritual-transition.ts';
 import { loginItemView } from './settings/login-item.ts';
-import { createSettingsStore } from './settings/settings-store.ts';
+import { createSettingsStore, type Settings } from './settings/settings-store.ts';
 import { watchSpaceChanges } from './space/space-watcher.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
 import { trayMenuTemplate } from './tray/tray-menu.ts';
@@ -100,6 +106,9 @@ const after = (ms: number, callback: () => void) => {
 };
 
 const workAreas = () => screen.getAllDisplays().map((display) => display.workArea);
+
+/** Where the local API listens unless that port is taken (ADR-0011). */
+const DEFAULT_API_PORT = 47213;
 
 // Kept at module level: a tray that is garbage-collected disappears.
 let tray: Tray | undefined;
@@ -614,13 +623,56 @@ if (!app.requestSingleInstanceLock()) {
       console,
     );
 
-    const markAway = () => activity.markAway();
+    // The browser companion (ADR-0011, ADR-0012). The local API listens
+    // only while the user allows the extension and it is paired; what
+    // Mocha knows lives in memory and is forgotten on pause, sleep or lock.
+    let browser: NonNullable<Settings['browser']> = saved.browser ?? {
+      allowed: false,
+      capabilities: NO_BROWSER_CAPABILITIES,
+    };
+    const awareness = createBrowsingAwareness({ staleMs: 3 * 60_000, now: Date.now });
+    const apiLimiter = createRateLimiter(120, 60_000, Date.now);
+    let apiServer: ApiServer | undefined;
+    async function syncApi() {
+      if (!(browser.allowed && browser.token)) {
+        await apiServer?.close();
+        apiServer = undefined;
+        awareness.forget();
+        return;
+      }
+      if (apiServer) return;
+      apiServer = await startApiServer({
+        port: browser.port ?? DEFAULT_API_PORT,
+        logger: console,
+        // Read per request, so a new pairing code applies at once.
+        handle: (request) =>
+          handleApiRequest(request, {
+            token: browser.token ?? '',
+            origin: EXTENSION_ORIGIN,
+            allowRequest: () => apiLimiter.allow(),
+            capabilities: () => browser.capabilities,
+            report: (context) => awareness.report(context),
+          }),
+      });
+      if (apiServer.port !== browser.port) {
+        browser = { ...browser, port: apiServer.port };
+        void settings.update({ browser });
+      }
+    }
+    void syncApi().catch((error: unknown) => console.warn('[api] could not start', error));
+    app.on('will-quit', () => void apiServer?.close());
+
+    const markAway = () => {
+      activity.markAway();
+      awareness.forget();
+    };
     powerMonitor.on('suspend', markAway);
     powerMonitor.on('lock-screen', markAway);
 
     const pause = createPauseController();
     pause.onChange((paused) => {
       window.webContents.send(IpcChannel.OverlayPaused, paused);
+      if (paused) awareness.forget();
       breaks.dispatch({ type: paused ? 'pause' : 'resume', now: Date.now() });
       if (paused) {
         stopCursorTracking?.();

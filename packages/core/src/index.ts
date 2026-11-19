@@ -6,6 +6,19 @@
  */
 
 export {
+  allowedContext,
+  BROWSER_CAPABILITIES,
+  type BrowserCapabilities,
+  type BrowserCapability,
+  type BrowsingContext,
+  browsingContextSchema,
+  NO_BROWSER_CAPABILITIES,
+  SITE_KINDS,
+  type SiteKind,
+} from './browsing/context.ts';
+export { EXTENSION_ID, EXTENSION_ORIGIN, EXTENSION_PUBLIC_KEY } from './browsing/extension.ts';
+export { MAX_TITLE_LENGTH, scrubTitle } from './browsing/scrub-title.ts';
+export {
   DEFAULT_FINDS_CONFIG,
   type Find,
   type FindsConfig,
