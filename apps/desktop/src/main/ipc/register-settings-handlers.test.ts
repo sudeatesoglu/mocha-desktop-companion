@@ -1,3 +1,4 @@
+import { NO_BROWSER_CAPABILITIES } from '@mocha/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IpcChannel } from '../../shared/ipc-channels.ts';
 import { DEFAULT_PREFERENCES } from '../../shared/preferences.ts';
@@ -20,6 +21,18 @@ describe('registerSettingsHandlers', () => {
   const ON = { ...OFF, openAtLogin: true };
   const loginItem = { get: vi.fn(() => OFF), set: vi.fn(() => ON) };
   const sounds = { get: vi.fn(() => false), set: vi.fn((enabled: boolean) => enabled) };
+  const VIEW = {
+    allowed: true,
+    pairingCode: '47213-ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    capabilities: NO_BROWSER_CAPABILITIES,
+  };
+  const browser = {
+    get: vi.fn(() => VIEW),
+    allow: vi.fn(async (allowed: boolean) => ({ ...VIEW, allowed })),
+    newPairingCode: vi.fn(() => VIEW),
+    copyPairingCode: vi.fn(() => true),
+    setCapability: vi.fn(() => VIEW),
+  };
   const logger = { warn: vi.fn() };
   let current: unknown;
 
@@ -32,7 +45,7 @@ describe('registerSettingsHandlers', () => {
     current = settingsContents;
     registerSettingsHandlers(
       () => current,
-      { preferences: access, loginItem, sounds },
+      { preferences: access, loginItem, sounds, browser },
       [TRUSTED],
       logger,
     );
@@ -133,5 +146,63 @@ describe('registerSettingsHandlers', () => {
         expect(sounds.set).not.toHaveBeenCalled();
       },
     );
+  });
+
+  describe('browser companion', () => {
+    it('reads the state', () => {
+      expect(invoke(IpcChannel.SettingsBrowser, settingsContents)).toBe(VIEW);
+    });
+
+    it('allows the extension or not, answering with the new state', async () => {
+      await expect(
+        invoke(IpcChannel.SettingsAllowBrowser, settingsContents, false),
+      ).resolves.toMatchObject({
+        allowed: false,
+      });
+      expect(browser.allow).toHaveBeenCalledWith(false);
+    });
+
+    it('makes a new pairing code and copies it, with no data', () => {
+      expect(invoke(IpcChannel.SettingsNewPairingCode, settingsContents)).toBe(VIEW);
+      expect(invoke(IpcChannel.SettingsCopyPairingCode, settingsContents)).toBe(true);
+    });
+
+    it('turns one known capability on or off', () => {
+      invoke(IpcChannel.SettingsSetCapability, settingsContents, { name: 'title', enabled: true });
+
+      expect(browser.setCapability).toHaveBeenCalledWith('title', true);
+    });
+
+    it.each([
+      [IpcChannel.SettingsAllowBrowser, 'yes'],
+      [IpcChannel.SettingsNewPairingCode, { token: 'MINEMINEMINEMINEMINEMINEMI' }],
+      [IpcChannel.SettingsSetCapability, { name: 'everything', enabled: true }],
+      [IpcChannel.SettingsSetCapability, { name: 'title', enabled: true, extra: 1 }],
+    ])('refuses a wrong payload on %s, answering with the unchanged state', (channel, payload) => {
+      expect(invoke(channel, settingsContents, payload)).toBe(VIEW);
+      expect(browser.allow).not.toHaveBeenCalled();
+      expect(browser.newPairingCode).not.toHaveBeenCalled();
+      expect(browser.setCapability).not.toHaveBeenCalled();
+    });
+
+    it('refuses to copy when asked with data', () => {
+      expect(invoke(IpcChannel.SettingsCopyPairingCode, settingsContents, 'clipboard')).toBe(false);
+      expect(browser.copyPairingCode).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      IpcChannel.SettingsBrowser,
+      IpcChannel.SettingsAllowBrowser,
+      IpcChannel.SettingsNewPairingCode,
+      IpcChannel.SettingsSetCapability,
+    ])('answers %s only to the open settings window', (channel) => {
+      expect(invoke(channel, { id: 1 }, true)).toBeUndefined();
+      expect(browser.get).not.toHaveBeenCalled();
+    });
+
+    it('copies nothing for another window', () => {
+      expect(invoke(IpcChannel.SettingsCopyPairingCode, { id: 1 })).toBe(false);
+      expect(browser.copyPairingCode).not.toHaveBeenCalled();
+    });
   });
 });

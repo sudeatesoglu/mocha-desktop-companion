@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   BARE_LOOK,
+  type BrowserCapability,
   EMPTY_ROOM,
   EXTENSION_ORIGIN,
   findsEventForBreakChange,
@@ -21,6 +22,7 @@ import {
 import {
   app,
   type BrowserWindow,
+  clipboard,
   Menu,
   nativeImage,
   powerMonitor,
@@ -43,7 +45,9 @@ import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-
 import { createTodayStats } from './activity/today-stats.ts';
 import { handleApiRequest } from './api/api-handler.ts';
 import { type ApiServer, startApiServer } from './api/api-server.ts';
+import { browserView } from './api/browser-view.ts';
 import { createBrowsingAwareness } from './api/browsing-awareness.ts';
+import { newPairingToken } from './api/pairing-token.ts';
 import { createRateLimiter } from './api/rate-limiter.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
@@ -515,6 +519,75 @@ if (!app.requestSingleInstanceLock()) {
       if (soundsOn && !window.isDestroyed()) window.webContents.send(IpcChannel.OverlaySound, kind);
     }
 
+    // The browser companion (ADR-0011, ADR-0012). The local API listens
+    // only while the user allows the extension and it is paired; what
+    // Mocha knows lives in memory and is forgotten on pause, sleep or lock.
+    let browser: NonNullable<Settings['browser']> = saved.browser ?? {
+      allowed: false,
+      capabilities: NO_BROWSER_CAPABILITIES,
+    };
+    const awareness = createBrowsingAwareness({ staleMs: 3 * 60_000, now: Date.now });
+    const apiLimiter = createRateLimiter(120, 60_000, Date.now);
+    let apiServer: ApiServer | undefined;
+    async function syncApi() {
+      if (!(browser.allowed && browser.token)) {
+        await apiServer?.close();
+        apiServer = undefined;
+        awareness.forget();
+        return;
+      }
+      if (apiServer) return;
+      apiServer = await startApiServer({
+        port: browser.port ?? DEFAULT_API_PORT,
+        logger: console,
+        // Read per request, so a new pairing code applies at once.
+        handle: (request) =>
+          handleApiRequest(request, {
+            token: browser.token ?? '',
+            origin: EXTENSION_ORIGIN,
+            allowRequest: () => apiLimiter.allow(),
+            capabilities: () => browser.capabilities,
+            report: (context) => awareness.report(context),
+          }),
+      });
+      if (apiServer.port !== browser.port) {
+        browser = { ...browser, port: apiServer.port };
+        void settings.update({ browser });
+      }
+    }
+    const startApi = () =>
+      syncApi().catch((error: unknown) => console.warn('[api] could not start', error));
+    void startApi();
+    app.on('will-quit', () => void apiServer?.close());
+    function setBrowser(next: typeof browser) {
+      browser = next;
+      void settings.update({ browser });
+    }
+    // What the Browser section of Settings may do; main keeps the rules.
+    const browserAccess = {
+      get: () => browserView(browser, apiServer?.port),
+      allow: async (allowed: boolean) => {
+        setBrowser({ ...browser, allowed, token: browser.token ?? newPairingToken() });
+        await startApi();
+        return browserAccess.get();
+      },
+      // The handler reads the token on every request: the old one fails at once.
+      newPairingCode: () => {
+        setBrowser({ ...browser, token: newPairingToken() });
+        return browserAccess.get();
+      },
+      copyPairingCode: () => {
+        const code = browserAccess.get().pairingCode;
+        if (code === null) return false;
+        clipboard.writeText(code);
+        return true;
+      },
+      setCapability: (name: BrowserCapability, enabled: boolean) => {
+        setBrowser({ ...browser, capabilities: { ...browser.capabilities, [name]: enabled } });
+        return browserAccess.get();
+      },
+    };
+
     // Settings: one window at a time, opened from the tray. Saved values
     // apply at once: the break rules take the new durations on the next tick.
     const settingsWindow = singleWindow(() => {
@@ -546,6 +619,7 @@ if (!app.requestSingleInstanceLock()) {
             return loginItemView(app.isPackaged, app.getLoginItemSettings());
           },
         },
+        browser: browserAccess,
         sounds: {
           get: () => soundsOn,
           set: (enabled) => {
@@ -622,45 +696,6 @@ if (!app.requestSingleInstanceLock()) {
       [pageUrl('tower')],
       console,
     );
-
-    // The browser companion (ADR-0011, ADR-0012). The local API listens
-    // only while the user allows the extension and it is paired; what
-    // Mocha knows lives in memory and is forgotten on pause, sleep or lock.
-    let browser: NonNullable<Settings['browser']> = saved.browser ?? {
-      allowed: false,
-      capabilities: NO_BROWSER_CAPABILITIES,
-    };
-    const awareness = createBrowsingAwareness({ staleMs: 3 * 60_000, now: Date.now });
-    const apiLimiter = createRateLimiter(120, 60_000, Date.now);
-    let apiServer: ApiServer | undefined;
-    async function syncApi() {
-      if (!(browser.allowed && browser.token)) {
-        await apiServer?.close();
-        apiServer = undefined;
-        awareness.forget();
-        return;
-      }
-      if (apiServer) return;
-      apiServer = await startApiServer({
-        port: browser.port ?? DEFAULT_API_PORT,
-        logger: console,
-        // Read per request, so a new pairing code applies at once.
-        handle: (request) =>
-          handleApiRequest(request, {
-            token: browser.token ?? '',
-            origin: EXTENSION_ORIGIN,
-            allowRequest: () => apiLimiter.allow(),
-            capabilities: () => browser.capabilities,
-            report: (context) => awareness.report(context),
-          }),
-      });
-      if (apiServer.port !== browser.port) {
-        browser = { ...browser, port: apiServer.port };
-        void settings.update({ browser });
-      }
-    }
-    void syncApi().catch((error: unknown) => console.warn('[api] could not start', error));
-    app.on('will-quit', () => void apiServer?.close());
 
     const markAway = () => {
       activity.markAway();
