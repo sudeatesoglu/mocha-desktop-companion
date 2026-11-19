@@ -1,6 +1,6 @@
 # ADR-0012: Let the user decide what Mocha may know about their browsing
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-19
 
 ## Context

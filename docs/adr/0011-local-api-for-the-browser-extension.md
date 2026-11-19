@@ -1,6 +1,6 @@
 # ADR-0011: Let the paired browser extension reach Mocha through a local API
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-19
 
 ## Context
