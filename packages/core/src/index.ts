@@ -17,6 +17,7 @@ export {
   type SiteKind,
 } from './browsing/context.ts';
 export { EXTENSION_ID, EXTENSION_ORIGIN, EXTENSION_PUBLIC_KEY } from './browsing/extension.ts';
+export { formatPairingCode, parsePairingCode } from './browsing/pairing.ts';
 export { MAX_TITLE_LENGTH, scrubTitle } from './browsing/scrub-title.ts';
 export {
   DEFAULT_FINDS_CONFIG,
