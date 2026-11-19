@@ -1,10 +1,37 @@
-import { ITEMS, type ItemId } from '@mocha/core';
+import { ITEMS, type ItemId, NO_BROWSER_CAPABILITIES } from '@mocha/core';
 import { z } from 'zod';
 import { preferencesSchema } from '../../shared/preferences.ts';
 
 const MAX_COORDINATE = 100_000; // far beyond any real desktop
 
 const itemIdSchema = z.enum(ITEMS.map(({ id }) => id) as [ItemId, ...ItemId[]]);
+
+// A capability the file does not say is on is off (ADR-0012).
+const capability = z.boolean().catch(false);
+
+/** The browser companion: whether the extension may connect, its pairing, and what Mocha may do. */
+const browserSchema = z.object({
+  allowed: z.boolean().catch(false),
+  /** The pairing token: 128 random bits in base32. */
+  token: z
+    .string()
+    .regex(/^[A-Z2-7]{26}$/)
+    .optional()
+    .catch(undefined),
+  /** The port the API last listened on, so the pairing code stays valid. */
+  port: z.int().min(1024).max(65535).optional().catch(undefined),
+  capabilities: z
+    .object({
+      kind: capability,
+      site: capability,
+      title: capability,
+      talk: capability,
+      nudge: capability,
+      browserActivity: capability,
+      pageActivity: capability,
+    })
+    .catch(NO_BROWSER_CAPABILITIES),
+});
 
 const pointSchema = z.object({
   x: z.int().min(-MAX_COORDINATE).max(MAX_COORDINATE),
@@ -31,6 +58,8 @@ const settingsSchema = z.object({
     .object({ neck: itemIdSchema.nullable().catch(null), hat: itemIdSchema.nullable().catch(null) })
     .optional()
     .catch(undefined),
+  /** The browser companion (ADR-0011, ADR-0012); everything off unless turned on. */
+  browser: browserSchema.optional().catch(undefined),
   /** Whether Mocha makes sounds; off unless the user turned them on. */
   sounds: z.boolean().optional().catch(undefined),
   /** What stands in Mocha's room, checked the same way. */

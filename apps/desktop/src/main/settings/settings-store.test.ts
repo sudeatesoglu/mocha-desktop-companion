@@ -103,6 +103,46 @@ describe('createSettingsStore', () => {
       });
     });
 
+    it('reads the browser companion, with unknown or broken parts off', async () => {
+      const { files } = memoryFiles(
+        JSON.stringify({
+          browser: {
+            allowed: true,
+            token: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            port: 47213,
+            capabilities: { kind: true, title: 'yes', hacked: true },
+          },
+        }),
+      );
+
+      await expect(createSettingsStore(PATH, files, logger).load()).resolves.toEqual({
+        browser: {
+          allowed: true,
+          token: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+          port: 47213,
+          capabilities: {
+            kind: true,
+            site: false,
+            title: false,
+            talk: false,
+            nudge: false,
+            browserActivity: false,
+            pageActivity: false,
+          },
+        },
+      });
+    });
+
+    it('drops a token that is not a pairing token', async () => {
+      const { files } = memoryFiles(
+        JSON.stringify({ browser: { allowed: true, token: 'short', capabilities: {} } }),
+      );
+
+      const loaded = await createSettingsStore(PATH, files, logger).load();
+      expect(loaded.browser?.token).toBeUndefined();
+      expect(loaded.browser?.allowed).toBe(true);
+    });
+
     it('drops a look that is not an object and keeps the rest', async () => {
       const { files } = memoryFiles(
         JSON.stringify({ look: 'fancy', overlayPosition: { x: 1, y: 2 } }),
