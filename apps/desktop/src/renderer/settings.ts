@@ -1,3 +1,5 @@
+import type { BrowserCapability } from '@mocha/core';
+import { type BrowserView, CAPABILITY_TEXTS } from '../shared/browser.ts';
 import { type LoginItem, loginItemHint } from '../shared/login-item.ts';
 import {
   DEFAULT_PREFERENCES,
@@ -132,3 +134,62 @@ sounds.addEventListener('change', async () => {
 window.settings.sounds().then((enabled) => {
   sounds.checked = enabled;
 });
+
+// The browser companion. Everything applies at once and main answers with
+// the new state, which is what the page shows, never what was clicked.
+const browserAllowed = element('browser-allowed', HTMLInputElement);
+const pairing = element('pairing', HTMLElement);
+const pairingCode = element('pairing-code', HTMLElement);
+const pairingStatus = element('pairing-status', HTMLElement);
+const capabilityBoxes = new Map<BrowserCapability, HTMLInputElement>();
+
+// One row per capability, from the shared texts.
+const capabilities = element('capabilities', HTMLElement);
+for (const { name, label, hint } of CAPABILITY_TEXTS) {
+  const row = document.createElement('div');
+  row.className = 'capability';
+  const toggle = document.createElement('label');
+  toggle.className = 'toggle';
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.id = `capability-${name}`;
+  box.setAttribute('aria-describedby', `capability-${name}-hint`);
+  const text = document.createElement('span');
+  text.textContent = label;
+  toggle.append(box, text);
+  const help = document.createElement('p');
+  help.className = 'hint';
+  help.id = `capability-${name}-hint`;
+  help.textContent = hint;
+  row.append(toggle, help);
+  capabilities.append(row);
+  capabilityBoxes.set(name, box);
+  box.addEventListener('change', async () => {
+    showBrowser(await window.settings.setCapability(name, box.checked));
+  });
+}
+
+function showBrowser(view: BrowserView): void {
+  browserAllowed.checked = view.allowed;
+  pairing.hidden = view.pairingCode === null;
+  pairingCode.textContent = view.pairingCode ?? '';
+  for (const [name, box] of capabilityBoxes) {
+    box.checked = view.capabilities[name];
+    // Capabilities mean nothing until the extension may connect.
+    box.disabled = !view.allowed;
+  }
+}
+
+browserAllowed.addEventListener('change', async () => {
+  pairingStatus.textContent = '';
+  showBrowser(await window.settings.allowBrowser(browserAllowed.checked));
+});
+element('copy-code', HTMLButtonElement).addEventListener('click', async () => {
+  const copied = await window.settings.copyPairingCode();
+  pairingStatus.textContent = copied ? 'Copied. Paste it into the extension’s options.' : '';
+});
+element('new-code', HTMLButtonElement).addEventListener('click', async () => {
+  showBrowser(await window.settings.newPairingCode());
+  pairingStatus.textContent = 'New code made. The old one no longer works.';
+});
+window.settings.browser().then(showBrowser);

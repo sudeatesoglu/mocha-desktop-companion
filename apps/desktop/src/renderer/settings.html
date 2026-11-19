@@ -86,6 +86,33 @@
         </div>
         <p id="status" role="status" aria-live="polite"></p>
       </form>
+
+      <!-- The browser companion (ADR-0011, ADR-0012): applied at once, all off by default. -->
+      <fieldset class="browser">
+        <legend>Browser</legend>
+        <label class="toggle">
+          <input id="browser-allowed" type="checkbox" aria-describedby="browser-hint" />
+          Let the Mocha extension connect
+        </label>
+        <p class="hint" id="browser-hint">
+          Only from this computer, and only after you paste the pairing code into the extension.
+        </p>
+        <div class="pairing" id="pairing" hidden>
+          <code id="pairing-code"></code>
+          <button type="button" id="copy-code">Copy</button>
+          <button type="button" id="new-code">New code</button>
+        </div>
+        <p class="hint" id="pairing-status" role="status" aria-live="polite"></p>
+
+        <fieldset id="capabilities" class="capabilities">
+          <legend class="subheading">What Mocha may know and do</legend>
+        </fieldset>
+        <p class="hint">
+          Never sent: private windows, banking and payments, health, government, mail and
+          messaging, password managers, adult sites, and login or checkout pages. Nothing about
+          your browsing is kept.
+        </p>
+      </fieldset>
     </main>
     <script type="module" src="./settings.ts"></script>
   </body>
