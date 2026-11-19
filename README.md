@@ -109,7 +109,7 @@ macOS only for now.
 - [x] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
 - [x] **v0.4 Together:** break rituals and working side by side
 - [x] **v0.5 Make it yours:** decorations and accessories
-- [ ] **v0.6 Shiny things:** a browser extension and a local API, so Mocha can notice what you add to a shopping cart
+- [ ] **v0.6 Shiny things:** a browser extension, so Mocha can keep you company in the browser and talk about what you do, with what it may know up to you
 - [ ] **v0.7 Smart:** opt-in AI to chat with Mocha and get insights about your day
 - [ ] **v1.0:** signed and notarized installers, automatic updates, Windows and Linux
 

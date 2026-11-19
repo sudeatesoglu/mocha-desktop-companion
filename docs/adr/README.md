@@ -29,3 +29,5 @@ Accepted records are immutable. When a decision changes, write a new ADR that su
 | [0008](0008-punishment-free-needs.md) | Give Mocha punishment-free needs that follow the user's rest | Accepted |
 | [0009](0009-focus-sessions-in-the-break-rules.md) | Make focus sessions part of the break rules | Accepted |
 | [0010](0010-finds-earned-by-breaks.md) | Let Mocha find things through a predictable meter fed by breaks | Accepted |
+| [0011](0011-local-api-for-the-browser-extension.md) | Let the paired browser extension reach Mocha through a local API | Proposed |
+| [0012](0012-what-mocha-may-know-about-browsing.md) | Let the user decide what Mocha may know about their browsing | Proposed |
