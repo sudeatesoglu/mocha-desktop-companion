@@ -1,4 +1,13 @@
-import type { AccessorySlot, DecorSlot, ItemId, Look, RitualId, RitualPose } from '@mocha/core';
+import type {
+  AccessorySlot,
+  BrowserCapability,
+  DecorSlot,
+  ItemId,
+  Look,
+  RitualId,
+  RitualPose,
+} from '@mocha/core';
+import type { BrowserView } from './browser.ts';
 import type { LoginItem } from './login-item.ts';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
@@ -85,6 +94,16 @@ export const IpcChannel = {
   SettingsSounds: 'settings:sounds',
   /** Settings → main (invoke): turn sounds on or off; resolves to the new state. */
   SettingsSetSounds: 'settings:set-sounds',
+  /** Settings → main (invoke, no data): the browser companion's state. */
+  SettingsBrowser: 'settings:browser',
+  /** Settings → main (invoke): let the extension connect or not; resolves to the new state. */
+  SettingsAllowBrowser: 'settings:allow-browser',
+  /** Settings → main (invoke, no data): a new pairing code; the old one stops working. */
+  SettingsNewPairingCode: 'settings:new-pairing-code',
+  /** Settings → main (invoke, no data): put the pairing code on the clipboard. */
+  SettingsCopyPairingCode: 'settings:copy-pairing-code',
+  /** Settings → main (invoke): turn one capability on or off; resolves to the new state. */
+  SettingsSetCapability: 'settings:set-capability',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -152,6 +171,13 @@ export interface SettingsBridge {
   sounds(): Promise<boolean>;
   /** Turns sounds on or off; resolves to the new state. */
   setSounds(enabled: boolean): Promise<boolean>;
+  /** The browser companion: allowed, pairing code and capabilities. */
+  browser(): Promise<BrowserView>;
+  allowBrowser(allowed: boolean): Promise<BrowserView>;
+  newPairingCode(): Promise<BrowserView>;
+  /** Resolves to false when there is no code to copy. */
+  copyPairingCode(): Promise<boolean>;
+  setCapability(name: BrowserCapability, enabled: boolean): Promise<BrowserView>;
 }
 
 /** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */
