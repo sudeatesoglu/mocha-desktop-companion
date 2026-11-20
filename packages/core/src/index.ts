@@ -16,9 +16,18 @@ export {
   SITE_KINDS,
   type SiteKind,
 } from './browsing/context.ts';
+export { matchesDomain, registrableDomain } from './browsing/domains.ts';
 export { EXTENSION_ID, EXTENSION_ORIGIN, EXTENSION_PUBLIC_KEY } from './browsing/extension.ts';
+export { filterPage, type HoldReason, type PageVerdict } from './browsing/filter.ts';
 export { formatPairingCode, parsePairingCode } from './browsing/pairing.ts';
 export { MAX_TITLE_LENGTH, scrubTitle } from './browsing/scrub-title.ts';
+export {
+  isSensitivePath,
+  SENSITIVE_DOMAINS,
+  type SensitiveKind,
+  sensitiveKind,
+} from './browsing/sensitive.ts';
+export { classifySite, SITE_KIND_DOMAINS } from './browsing/site-kinds.ts';
 export {
   DEFAULT_FINDS_CONFIG,
   type Find,
