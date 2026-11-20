@@ -10,6 +10,7 @@ import {
 import { CONNECTION_TEXTS } from './connection-texts.ts';
 import { parseExclusion, withExclusion } from './exclusions.ts';
 import { createMochaClient } from './mocha-client.ts';
+import { needsTabs } from './page-context.ts';
 import { SENSITIVE_KIND_LABELS } from './sensitive-texts.ts';
 import { loadSettings, saveExclusions, savePairing, savePaused } from './settings.ts';
 
@@ -25,6 +26,7 @@ const connectionLine = element('connection', HTMLElement);
 const codeInput = element('pairing-code', HTMLInputElement);
 const forget = element('forget', HTMLButtonElement);
 const capabilityList = element('capabilities', HTMLElement);
+const tabsNotice = element('tabs-notice', HTMLElement);
 const exclusionInput = element('exclusion', HTMLInputElement);
 const exclusionStatus = element('exclusion-status', HTMLElement);
 const exclusionList = element('exclusions', HTMLElement);
@@ -67,7 +69,19 @@ async function showConnection(): Promise<void> {
   connectionLine.dataset['state'] =
     connection === 'connected' ? 'connected' : connection === 'not paired' ? '' : 'problem';
   showCapabilities(connection === 'connected' ? capabilities : undefined);
+  tabsNotice.hidden = !(
+    connection === 'connected' &&
+    needsTabs(capabilities) &&
+    !(await chrome.permissions.contains({ permissions: ['tabs'] }))
+  );
 }
+
+// Chrome asks only after a click on the page: a permission is never asked
+// for in the background.
+element('allow-tabs', HTMLButtonElement).addEventListener('click', async () => {
+  await chrome.permissions.request({ permissions: ['tabs'] });
+  await showConnection();
+});
 
 element('pair-form', HTMLFormElement).addEventListener('submit', async (event) => {
   event.preventDefault();

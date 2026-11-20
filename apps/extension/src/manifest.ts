@@ -19,7 +19,8 @@ export function extensionManifest(version: string) {
     action: { default_title: 'Mocha', default_icon: { 128: 'icon.png' } },
     background: { service_worker: 'background.js', type: 'module' },
     options_ui: { page: 'options.html', open_in_tab: true },
-    permissions: ['storage'],
+    // No warnings: storage for the settings, alarms for a check once a minute.
+    permissions: ['storage', 'alarms'],
     optional_permissions: ['tabs'],
     // No host access at all, not even to Mocha: requests to 127.0.0.1 are
     // then ordinary CORS requests, and Chrome always sends the extension's

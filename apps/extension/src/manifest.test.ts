@@ -14,8 +14,8 @@ describe('extensionManifest', () => {
     expect(manifest.key).toBe(EXTENSION_PUBLIC_KEY);
   });
 
-  it('asks only for storage up front, and for tabs when the user turns something on', () => {
-    expect(manifest.permissions).toEqual(['storage']);
+  it('asks up front only for what shows no warning, and for tabs when the user turns something on', () => {
+    expect(manifest.permissions).toEqual(['storage', 'alarms']);
     expect(manifest.optional_permissions).toEqual(['tabs']);
   });
 

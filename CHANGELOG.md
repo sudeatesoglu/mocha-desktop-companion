@@ -6,7 +6,7 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ### Added
 
-- A browser extension for Chrome and other Chromium browsers, so Mocha can keep you company while you browse. Its options page says plainly what Mocha may know, what is never sent and what is kept, and holds the pairing code, the sites to leave out and a pause switch. It tells you when Mocha isn't running, isn't paired or the code is wrong ([#183](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/183), [#184](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/184))
+- A browser extension for Chrome and other Chromium browsers, so Mocha can keep you company while you browse. With what you allow, it tells Mocha the kind of site in front, its domain, a cleaned-up title and how busy the browser is, whenever you switch tabs and once a minute, and nothing while another app is in front. Its options page says plainly what Mocha may know, what is never sent and what is kept, asks for Chrome's permission only once you need it, and holds the pairing code, the sites to leave out and a pause switch. The toolbar icon shows when it is paused or needs you, and the options page tells you when Mocha isn't running, isn't paired or the code is wrong ([#183](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/183), [#184](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/184), [#185](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/185))
 - A Browser section in Settings: let the extension connect, copy its pairing code or make a new one, and choose, one by one, what Mocha may know and do. Everything is off by default ([#182](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/182))
 
 ### Security
