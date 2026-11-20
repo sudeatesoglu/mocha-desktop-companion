@@ -1,5 +1,5 @@
-import type { BrowserCapability } from '@mocha/core';
-import { type BrowserView, CAPABILITY_TEXTS } from '../shared/browser.ts';
+import { type BrowserCapability, CAPABILITY_TEXTS } from '@mocha/core';
+import type { BrowserView } from '../shared/browser.ts';
 import { type LoginItem, loginItemHint } from '../shared/login-item.ts';
 import {
   DEFAULT_PREFERENCES,

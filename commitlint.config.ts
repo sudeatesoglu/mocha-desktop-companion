@@ -18,6 +18,7 @@ const config: UserConfig = {
         'pet',
         'tracker',
         'api',
+        'extension', // the browser extension (apps/extension)
         'db',
         'docs',
         'readme',
