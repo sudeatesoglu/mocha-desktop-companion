@@ -4,6 +4,17 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Added
+
+- A browser extension for Chrome and other Chromium browsers, so Mocha can keep you company while you browse. Its options page says plainly what Mocha may know, what is never sent and what is kept, and holds the pairing code, the sites to leave out and a pause switch. It tells you when Mocha isn't running, isn't paired or the code is wrong ([#183](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/183), [#184](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/184))
+- A Browser section in Settings: let the extension connect, copy its pairing code or make a new one, and choose, one by one, what Mocha may know and do. Everything is off by default ([#182](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/182))
+
+### Security
+
+- Mocha opens a local port only when you let the extension connect, on 127.0.0.1 only. Every request must carry the right Host, the extension's own origin and the pairing token, within size and rate limits. Nothing about your browsing is stored or logged ([ADR-0011](docs/adr/0011-local-api-for-the-browser-extension.md), [ADR-0012](docs/adr/0012-what-mocha-may-know-about-browsing.md), [#181](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/181))
+- The extension never sends private windows, pages on your computer or network, banking, health, government, mail and messaging, password manager or adult sites, or sign-in, checkout and account pages. Addresses and numbers are taken out of titles ([#183](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/183))
+- The extension asks Chrome for no access to websites up front, can reach only Mocha on your computer, and runs only its own code. The pairing code is hidden from scripts in web pages ([#184](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/184))
+
 ## [0.5.0] - 2026-11-17
 
 "Make it yours": Mocha finds little things during your breaks, to wear and to decorate its Tower, which now follows your day.
