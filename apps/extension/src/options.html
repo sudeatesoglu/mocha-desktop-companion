@@ -83,6 +83,13 @@
       <section aria-labelledby="allowed-title">
         <h2 id="allowed-title">What you allowed</h2>
         <p class="hint">Change these in Mocha’s Settings, under Browser.</p>
+        <div class="notice" id="tabs-notice" hidden>
+          <p>
+            Chrome needs your OK before the extension can see the tab in front. Chrome calls this
+            “Read your browsing history”; your history itself is never read.
+          </p>
+          <button type="button" id="allow-tabs">Allow</button>
+        </div>
         <ul class="capabilities" id="capabilities"></ul>
       </section>
 

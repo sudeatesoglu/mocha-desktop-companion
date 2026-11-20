@@ -140,6 +140,21 @@ button.link {
   color: var(--error);
 }
 
+.notice {
+  margin: 8px 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+
+.notice p {
+  margin: 0 0 8px;
+}
+
+.notice[hidden] {
+  display: none;
+}
+
 .capabilities,
 .exclusions {
   margin: 0;
