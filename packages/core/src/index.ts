@@ -5,6 +5,7 @@
  * internals can be reorganized without breaking consumers.
  */
 
+export { CAPABILITY_TEXTS } from './browsing/capability-texts.ts';
 export {
   allowedContext,
   BROWSER_CAPABILITIES,
