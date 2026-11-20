@@ -4,10 +4,12 @@ import {
   filterPage,
   scrubTitle,
 } from '@mocha/core';
+import type { PageCounts } from './activity-counter.ts';
 import type { BrowserStats } from './browser-activity.ts';
 
 /** The tab in front, as Chrome describes it. */
 export interface ActiveTab {
+  id?: number | undefined;
   url?: string | undefined;
   title?: string | undefined;
   incognito: boolean;
@@ -23,6 +25,7 @@ export function pageContext(input: {
   exclusions: readonly string[];
   capabilities: BrowserCapabilities;
   browser: BrowserStats | undefined;
+  page?: PageCounts | undefined;
 }): BrowsingContext {
   const { tab, capabilities } = input;
   if (!tab?.url) return {};
@@ -40,10 +43,14 @@ export function pageContext(input: {
     if (title) context.title = title;
   }
   if (capabilities.browserActivity && input.browser) context.browser = input.browser;
+  if (capabilities.pageActivity && input.page) context.page = input.page;
   return context;
 }
 
-/** The capabilities that need to see the tab in front, and so Chrome's `tabs`. */
+/**
+ * The capabilities that need to see the tab in front, and so Chrome's
+ * `tabs`. Page activity needs Chrome's access to https sites instead.
+ */
 export const TAB_CAPABILITIES = ['kind', 'site', 'title', 'browserActivity'] as const;
 
 export function needsTabs(capabilities: BrowserCapabilities): boolean {

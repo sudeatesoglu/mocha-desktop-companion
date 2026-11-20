@@ -90,6 +90,14 @@
           </p>
           <button type="button" id="allow-tabs">Allow</button>
         </div>
+        <div class="notice" id="pages-notice" hidden>
+          <p>
+            Chrome needs your OK before the extension can count typing, scrolling and clicking on
+            pages. Chrome calls this “Read and change all your data on all websites”; the counting
+            script reads and changes nothing.
+          </p>
+          <button type="button" id="allow-pages">Allow</button>
+        </div>
         <ul class="capabilities" id="capabilities"></ul>
       </section>
 
@@ -106,9 +114,10 @@
           </dd>
           <dt>“Read and change all your data on all websites”</dt>
           <dd>
-            Asked only if you allow “Notice how busy you are on a page”. A small script then counts
-            typing, scrolling and clicking on each page. It reads and changes nothing, and does not
-            count keys in password fields.
+            Asked only if you allow “Notice how busy you are on a page”, and only for https pages.
+            A small script then counts typing, scrolling and clicking on each page, and sends the
+            counts every 30 seconds. It reads and changes nothing, does not count keys in password,
+            one-time code or card fields, and does not run at all on the sites that are never sent.
           </dd>
         </dl>
       </section>

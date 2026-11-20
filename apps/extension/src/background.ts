@@ -3,6 +3,13 @@
 import { parseActivity } from './browser-activity.ts';
 import { createCompanion } from './companion.ts';
 import { createMochaClient } from './mocha-client.ts';
+import {
+  PAGE_PERMISSIONS,
+  PAGE_SCRIPT,
+  PAGE_SCRIPT_ID,
+  pageActivityMessageSchema,
+  parseSavedCounts,
+} from './page-script.ts';
 import { loadSettings } from './settings.ts';
 
 // The pairing token is kept in storage: only the extension's own pages and
@@ -16,7 +23,10 @@ restrictStorage();
 const companion = createCompanion({
   settings: () => loadSettings(chrome.storage.local),
   client: createMochaClient((url, init) => fetch(url, init)),
-  canSeeTabs: () => chrome.permissions.contains({ permissions: ['tabs'] }),
+  permissions: async () => ({
+    tabs: await chrome.permissions.contains({ permissions: ['tabs'] }),
+    pages: await chrome.permissions.contains(PAGE_PERMISSIONS),
+  }),
   async activeTab() {
     // No browser window, or another app is in front: no tab to tell about.
     const window = await chrome.windows
@@ -24,7 +34,7 @@ const companion = createCompanion({
       .catch(() => undefined);
     if (!window?.focused || window.id === undefined) return undefined;
     const [tab] = await chrome.tabs.query({ active: true, windowId: window.id });
-    return tab && { url: tab.url, title: tab.title, incognito: tab.incognito };
+    return tab && { id: tab.id, url: tab.url, title: tab.title, incognito: tab.incognito };
   },
   async tabs() {
     const open = (await chrome.tabs.query({})).filter((tab) => !tab.incognito);
@@ -36,6 +46,24 @@ const companion = createCompanion({
     state
       ? chrome.storage.session.set({ activity: state })
       : chrome.storage.session.remove('activity'),
+  loadPageCounts: async () =>
+    parseSavedCounts((await chrome.storage.session.get('pageCounts'))['pageCounts']),
+  savePageCounts: (saved) =>
+    saved
+      ? chrome.storage.session.set({ pageCounts: saved })
+      : chrome.storage.session.remove('pageCounts'),
+  // Registered only while allowed; pages already open stop on their own
+  // when the worker next tells them no.
+  async setPageScript(enabled) {
+    // Without the permission, there is no scripting API and nothing to remove.
+    if (!chrome.scripting) return;
+    const ids = (await chrome.scripting.getRegisteredContentScripts()).map(({ id }) => id);
+    const registered = ids.includes(PAGE_SCRIPT_ID);
+    if (enabled && !registered) await chrome.scripting.registerContentScripts([PAGE_SCRIPT]);
+    if (!enabled && registered) {
+      await chrome.scripting.unregisterContentScripts({ ids: [PAGE_SCRIPT_ID] });
+    }
+  },
   showBadge({ text, title }) {
     void chrome.action.setBadgeText({ text });
     void chrome.action.setTitle({ title });
@@ -95,6 +123,25 @@ chrome.permissions.onRemoved.addListener(update);
 chrome.storage.local.onChanged.addListener((changes) => {
   if (changes['pairing']) companion.forgetCapabilities();
   update();
+});
+
+// Counts from the page-activity script: only from this extension, from a
+// tab's main page, and in the expected shape. The answer tells the script
+// whether to keep counting.
+chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
+  const parsed = pageActivityMessageSchema.safeParse(message);
+  const tabId = sender.tab?.id;
+  if (!parsed.success || sender.id !== chrome.runtime.id || sender.frameId !== 0 || !tabId) {
+    return false;
+  }
+  companion.pageActivity(tabId, parsed.data.counts).then(
+    (keepCounting) => {
+      respond({ keepCounting });
+      if (keepCounting) update();
+    },
+    () => respond({ keepCounting: false }),
+  );
+  return true; // the answer comes later
 });
 
 chrome.action.onClicked.addListener(() => void chrome.runtime.openOptionsPage());

@@ -56,6 +56,28 @@ describe('pageContext', () => {
     expect(context(tab('https://old.reddit.com/r/all'), ALL, ['reddit.com'])).toEqual({});
   });
 
+  it('passes on page activity only when allowed', () => {
+    const page = { keys: 4, scrolls: 2, clicks: 1, windowSeconds: 30 };
+    const pagesOnly = { ...NO_BROWSER_CAPABILITIES, pageActivity: true };
+    const active = tab('https://github.com/');
+
+    expect(
+      pageContext({ tab: active, exclusions: [], capabilities: pagesOnly, browser: STATS, page }),
+    ).toEqual({ page });
+    expect(
+      pageContext({ tab: active, exclusions: [], capabilities: ALL, browser: STATS, page }),
+    ).not.toHaveProperty('page');
+    expect(
+      pageContext({
+        tab: tab('https://github.com/login'),
+        exclusions: [],
+        capabilities: pagesOnly,
+        browser: STATS,
+        page,
+      }),
+    ).toEqual({});
+  });
+
   it('leaves out the titles of AI chats and titles that scrub to nothing', () => {
     expect(context(tab('https://claude.ai/chat/1', 'My private question'))).not.toHaveProperty(
       'title',
