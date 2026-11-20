@@ -16,12 +16,12 @@ describe('extensionManifest', () => {
 
   it('asks up front only for what shows no warning, and for tabs when the user turns something on', () => {
     expect(manifest.permissions).toEqual(['storage', 'alarms']);
-    expect(manifest.optional_permissions).toEqual(['tabs']);
+    expect(manifest.optional_permissions).toEqual(['tabs', 'scripting']);
   });
 
-  it('asks for no host access, so Chrome always sends Mocha its Origin', () => {
+  it('never asks for access to where Mocha listens, so Chrome always sends Mocha its Origin', () => {
     expect(manifest).not.toHaveProperty('host_permissions');
-    expect(manifest).not.toHaveProperty('optional_host_permissions');
+    expect(manifest.optional_host_permissions).toEqual(['https://*/*']);
   });
 
   it('may reach Mocha on this computer and nothing else', () => {

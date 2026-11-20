@@ -1,4 +1,5 @@
 import { EXTENSION_PUBLIC_KEY } from '@mocha/core';
+import { PAGE_PERMISSIONS } from './page-script.ts';
 
 /**
  * The extension's manifest, written at build time. It asks for as little as
@@ -21,12 +22,15 @@ export function extensionManifest(version: string) {
     options_ui: { page: 'options.html', open_in_tab: true },
     // No warnings: storage for the settings, alarms for a check once a minute.
     permissions: ['storage', 'alarms'],
-    optional_permissions: ['tabs'],
-    // No host access at all, not even to Mocha: requests to 127.0.0.1 are
-    // then ordinary CORS requests, and Chrome always sends the extension's
-    // Origin, which Mocha checks (ADR-0011). With host access to
-    // http://127.0.0.1, Chrome leaves Origin out of GET requests and Mocha
-    // refuses them.
+    // Asked for only when the user allows what needs them (ADR-0012):
+    // `tabs` to see the tab in front, `scripting` and https sites to count
+    // activity on pages.
+    optional_permissions: ['tabs', 'scripting'],
+    // https only, never http://127.0.0.1: requests to Mocha then stay
+    // ordinary CORS requests, and Chrome always sends the extension's
+    // Origin, which Mocha checks (ADR-0011). With host access to Mocha's
+    // address, Chrome leaves Origin out of GET requests and Mocha refuses them.
+    optional_host_permissions: PAGE_PERMISSIONS.origins,
     // Only the extension's own code, and requests to Mocha only: even a bug
     // cannot load a script from elsewhere or send anything to another server.
     content_security_policy: {

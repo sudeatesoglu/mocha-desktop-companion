@@ -18,7 +18,7 @@ export default defineConfig({
         // keep logic out of them so it stays unit-tested.
         'apps/desktop/src/{main,preload,renderer}/index.ts',
         'apps/desktop/src/{preload,renderer}/{reminder,ritual,settings,tower}.ts',
-        'apps/extension/src/{background,options}.ts',
+        'apps/extension/src/{background,options,page-activity}.ts',
       ],
       reporter: ['text', 'html', 'lcov'],
       thresholds: {

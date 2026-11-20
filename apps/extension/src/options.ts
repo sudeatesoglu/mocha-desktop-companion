@@ -11,6 +11,7 @@ import { CONNECTION_TEXTS } from './connection-texts.ts';
 import { parseExclusion, withExclusion } from './exclusions.ts';
 import { createMochaClient } from './mocha-client.ts';
 import { needsTabs } from './page-context.ts';
+import { PAGE_PERMISSIONS } from './page-script.ts';
 import { SENSITIVE_KIND_LABELS } from './sensitive-texts.ts';
 import { loadSettings, saveExclusions, savePairing, savePaused } from './settings.ts';
 
@@ -27,6 +28,7 @@ const codeInput = element('pairing-code', HTMLInputElement);
 const forget = element('forget', HTMLButtonElement);
 const capabilityList = element('capabilities', HTMLElement);
 const tabsNotice = element('tabs-notice', HTMLElement);
+const pagesNotice = element('pages-notice', HTMLElement);
 const exclusionInput = element('exclusion', HTMLInputElement);
 const exclusionStatus = element('exclusion-status', HTMLElement);
 const exclusionList = element('exclusions', HTMLElement);
@@ -69,10 +71,16 @@ async function showConnection(): Promise<void> {
   connectionLine.dataset['state'] =
     connection === 'connected' ? 'connected' : connection === 'not paired' ? '' : 'problem';
   showCapabilities(connection === 'connected' ? capabilities : undefined);
+  const connected = connection === 'connected';
   tabsNotice.hidden = !(
-    connection === 'connected' &&
+    connected &&
     needsTabs(capabilities) &&
     !(await chrome.permissions.contains({ permissions: ['tabs'] }))
+  );
+  pagesNotice.hidden = !(
+    connected &&
+    capabilities.pageActivity &&
+    !(await chrome.permissions.contains(PAGE_PERMISSIONS))
   );
 }
 
@@ -80,6 +88,10 @@ async function showConnection(): Promise<void> {
 // for in the background.
 element('allow-tabs', HTMLButtonElement).addEventListener('click', async () => {
   await chrome.permissions.request({ permissions: ['tabs'] });
+  await showConnection();
+});
+element('allow-pages', HTMLButtonElement).addEventListener('click', async () => {
+  await chrome.permissions.request(PAGE_PERMISSIONS);
   await showConnection();
 });
 

@@ -2,9 +2,10 @@ import { type BrowserCapabilities, NO_BROWSER_CAPABILITIES } from '@mocha/core';
 import { describe, expect, it, vi } from 'vitest';
 import type { Badge } from './badge.ts';
 import type { ActivityState } from './browser-activity.ts';
-import { CAPABILITIES_TTL_MS, createCompanion } from './companion.ts';
+import { CAPABILITIES_TTL_MS, createCompanion, type SavedCounts } from './companion.ts';
 import type { Connection } from './mocha-client.ts';
 import type { ActiveTab } from './page-context.ts';
+import { COUNTS_TTL_MS } from './page-script.ts';
 import type { ExtensionSettings } from './settings.ts';
 
 const PAIRING = { port: 47213, token: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' };
@@ -15,10 +16,13 @@ function setup() {
     capabilities: { ...NO_BROWSER_CAPABILITIES, kind: true, title: true } as BrowserCapabilities,
     connection: 'connected' as Connection,
     canSee: true,
-    tab: { url: 'https://github.com/a/b', title: 'Mocha', incognito: false } as
+    canCount: true,
+    tab: { id: 7, url: 'https://github.com/a/b', title: 'Mocha', incognito: false } as
       | ActiveTab
       | undefined,
     activity: undefined as ActivityState | undefined,
+    counts: undefined as SavedCounts | undefined,
+    pageScript: false,
     now: 0,
   };
   const client = {
@@ -32,12 +36,19 @@ function setup() {
   const companion = createCompanion({
     settings: async () => world.settings,
     client,
-    canSeeTabs: async () => world.canSee,
+    permissions: async () => ({ tabs: world.canSee, pages: world.canCount }),
     activeTab: async () => world.tab,
     tabs: async () => ({ count: 3, sound: true }),
     loadActivity: async () => world.activity,
     saveActivity: async (state) => {
       world.activity = state;
+    },
+    loadPageCounts: async () => world.counts,
+    savePageCounts: async (saved) => {
+      world.counts = saved;
+    },
+    setPageScript: async (enabled) => {
+      world.pageScript = enabled;
     },
     showBadge: (badge) => badges.push(badge),
     now: () => world.now,
@@ -203,5 +214,116 @@ describe('createCompanion', () => {
     await expect(companion.update()).rejects.toThrow('boom');
     await companion.update();
     expect(client.report).toHaveBeenCalledTimes(1);
+  });
+
+  describe('page activity', () => {
+    const COUNTS = { keys: 12, scrolls: 3, clicks: 2, windowSeconds: 30 };
+
+    function counting() {
+      const started = setup();
+      started.world.capabilities = { ...NO_BROWSER_CAPABILITIES, kind: true, pageActivity: true };
+      return started;
+    }
+
+    it('runs the page script only while allowed and granted, and not while paused', async () => {
+      const { world, companion } = counting();
+      await companion.update();
+      expect(world.pageScript).toBe(true);
+
+      world.canCount = false;
+      companion.forgetCapabilities();
+      await companion.update();
+      expect(world.pageScript).toBe(false);
+
+      world.canCount = true;
+      await companion.update();
+      world.settings = { ...world.settings, paused: true };
+      await companion.update();
+      expect(world.pageScript).toBe(false);
+    });
+
+    it('takes counts from the tab in front and passes them on', async () => {
+      const { client, companion } = counting();
+
+      expect(await companion.pageActivity(7, COUNTS)).toBe(true);
+      await companion.update();
+      expect(client.report).toHaveBeenLastCalledWith(PAIRING, { kind: 'code', page: COUNTS });
+    });
+
+    it('drops counts from another tab, or old ones', async () => {
+      const { world, client, companion } = counting();
+      await companion.pageActivity(8, COUNTS);
+      await companion.update();
+      expect(client.report).toHaveBeenLastCalledWith(PAIRING, { kind: 'code' });
+
+      await companion.pageActivity(7, COUNTS);
+      world.now = COUNTS_TTL_MS;
+      await companion.update();
+      expect(client.report).toHaveBeenLastCalledWith(PAIRING, { kind: 'code' });
+    });
+
+    it('drops counts from a page the filter holds back', async () => {
+      const { world, client, companion } = counting();
+      world.tab = { id: 7, url: 'https://github.com/login', title: 'Sign in', incognito: false };
+      await companion.pageActivity(7, COUNTS);
+      await companion.update();
+
+      expect(client.report).toHaveBeenLastCalledWith(PAIRING, {});
+    });
+
+    it('tells a page to stop counting when it may not, and keeps nothing', async () => {
+      const { world, companion } = counting();
+      world.capabilities = { ...world.capabilities, pageActivity: false };
+      expect(await companion.pageActivity(7, COUNTS)).toBe(false);
+
+      world.capabilities = { ...world.capabilities, pageActivity: true };
+      world.canCount = false;
+      companion.forgetCapabilities();
+      expect(await companion.pageActivity(7, COUNTS)).toBe(false);
+
+      world.canCount = true;
+      world.settings = { ...world.settings, paused: true };
+      expect(await companion.pageActivity(7, COUNTS)).toBe(false);
+
+      world.settings = { exclusions: [], paused: false };
+      expect(await companion.pageActivity(7, COUNTS)).toBe(false);
+      expect(world.counts).toBeUndefined();
+    });
+
+    it('asks Mocha for a page’s counts when the worker has just woken up', async () => {
+      const { client, companion } = counting();
+
+      expect(await companion.pageActivity(7, COUNTS)).toBe(true);
+      expect(client.capabilities).toHaveBeenCalledTimes(1);
+    });
+
+    it('forgets counts when page activity is no longer allowed', async () => {
+      const { world, companion } = counting();
+      await companion.pageActivity(7, COUNTS);
+      world.capabilities = { ...world.capabilities, pageActivity: false };
+      companion.forgetCapabilities();
+      await companion.update();
+
+      expect(world.counts).toBeUndefined();
+    });
+
+    it('counts without `tabs`, telling nothing that needs it', async () => {
+      const { world, client, companion, lastBadge } = counting();
+      world.canSee = false;
+      await companion.pageActivity(7, COUNTS);
+      await companion.update();
+
+      expect(client.report).toHaveBeenLastCalledWith(PAIRING, { page: COUNTS });
+      expect(lastBadge()?.text).toBe('!');
+    });
+
+    it('marks the toolbar while Chrome has not granted access to pages', async () => {
+      const { world, companion, lastBadge } = counting();
+      world.capabilities = { ...NO_BROWSER_CAPABILITIES, pageActivity: true };
+      world.canCount = false;
+      await companion.update();
+
+      expect(lastBadge()?.text).toBe('!');
+    });
   });
 });
