@@ -8,15 +8,20 @@ import {
   browsingPose,
   EMPTY_ROOM,
   EXTENSION_ORIGIN,
+  FRESH_TALK,
   findsEventForBreakChange,
+  hushEnd,
   isQuietTime,
   isTired,
+  localDay,
   minuteOfDay,
   NO_BROWSER_CAPABILITIES,
   needsActivity,
   needsEventsForBreakChange,
+  nextTalk,
   place,
   type RitualPose,
+  type Saying,
   validLook,
   validRoom,
   wear,
@@ -33,6 +38,12 @@ import {
   systemPreferences,
   Tray,
 } from 'electron';
+import {
+  COMMENT_HEIGHT,
+  COMMENT_SHOW_MS,
+  COMMENT_WIDTH,
+  type CommentShow,
+} from '../shared/comment.ts';
 import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { DEFAULT_PREFERENCES, type Preferences, toBreakConfig } from '../shared/preferences.ts';
@@ -75,6 +86,7 @@ import { ritualTransition } from './ritual/ritual-transition.ts';
 import { loginItemView } from './settings/login-item.ts';
 import { createSettingsStore, type Settings } from './settings/settings-store.ts';
 import { watchSpaceChanges } from './space/space-watcher.ts';
+import { keepQuiet } from './talk/keep-quiet.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
 import { trayMenuTemplate } from './tray/tray-menu.ts';
 import { createBubbleWindow } from './windows/create-bubble-window.ts';
@@ -93,8 +105,8 @@ const rendererFile = join(import.meta.dirname, '../renderer/index.html');
 // Set by electron-vite in development only.
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL'];
 
-// The reminder, ritual, settings and Tower windows each have their own preload and page.
-type Page = 'reminder' | 'ritual' | 'settings' | 'tower';
+// The reminder, ritual, comment, settings and Tower windows each have their own preload and page.
+type Page = 'comment' | 'reminder' | 'ritual' | 'settings' | 'tower';
 const pagePreload = (page: Page) => join(import.meta.dirname, `../preload/${page}.cjs`);
 const pageFile = (page: Page) => join(import.meta.dirname, `../renderer/${page}.html`);
 const pageUrl = (page: Page) =>
@@ -736,6 +748,106 @@ if (!app.requestSingleInstanceLock()) {
       }
     });
 
+    // Mocha talks about what the user does in the browser, if they let it
+    // (#176): the rules are in core; main only tells them when to keep quiet
+    // and shows what Mocha says in a bubble that fades on its own.
+    let talk = FRESH_TALK;
+    let hushedUntil = saved.hushedUntil;
+    let comment: BrowserWindow | undefined;
+    let commentShow: CommentShow | undefined;
+    let commentTimer: ReturnType<typeof setTimeout> | undefined;
+    const placeComment = () => {
+      const bounds = window.getBounds();
+      return reminderPosition(
+        bounds,
+        { width: COMMENT_WIDTH, height: COMMENT_HEIGHT },
+        screen.getDisplayMatching(bounds).workArea,
+      );
+    };
+    function closeComment() {
+      clearTimeout(commentTimer);
+      comment?.close();
+      comment = undefined;
+    }
+    const openComment = (saying: Saying) => {
+      const placed = placeComment();
+      commentShow = { text: saying.text, side: placed.side };
+      const opened = createBubbleWindow(
+        pagePreload('comment'),
+        placed,
+        { width: COMMENT_WIDTH, height: COMMENT_HEIGHT, title: 'Mocha: comment' },
+        process.platform,
+      );
+      // It only shows words: clicks go through to whatever is under it.
+      opened.setIgnoreMouseEvents(true);
+      comment = opened;
+      opened.webContents.once('did-finish-load', () =>
+        opened.webContents.send(IpcChannel.CommentShow, commentShow),
+      );
+      opened.on('closed', () => {
+        if (comment === opened) comment = undefined;
+      });
+      loadPage(opened, 'comment');
+      commentTimer = setTimeout(closeComment, COMMENT_SHOW_MS);
+      playSound('comment');
+    };
+    window.on('move', () => {
+      if (!comment || !commentShow) return;
+      const placed = placeComment();
+      comment.setPosition(placed.x, placed.y);
+      if (placed.side === commentShow.side) return;
+      commentShow = { ...commentShow, side: placed.side };
+      comment.webContents.send(IpcChannel.CommentShow, commentShow);
+    });
+    // Whenever the latest context changes, which the extension reports at
+    // least once a minute while the user browses.
+    awareness.onChange((context) => {
+      const now = Date.now();
+      const minute = minuteOfDay(now);
+      const next = nextTalk(talk, {
+        now,
+        minute,
+        day: localDay(now).start,
+        context,
+        may: { talk: browser.capabilities.talk, nudge: browser.capabilities.nudge },
+        quiet: keepQuiet({
+          now,
+          paused: pause.paused,
+          phase: breaks.state.phase,
+          ritual: ritual !== undefined,
+          bubble: comment !== undefined || reminder !== undefined,
+          quietHours: isQuietTime(preferences.quietHours, minute),
+          hushedUntil,
+        }),
+        random: Math.random,
+      });
+      talk = next.state;
+      if (next.say) openComment(next.say);
+    });
+    // A break, a focus session, a ritual or a pause comes first: the
+    // comment makes way at once.
+    breaks.onChange((next) => {
+      if (next.phase !== 'working') closeComment();
+    });
+    pause.onChange((paused) => {
+      if (paused) closeComment();
+    });
+    const setHush = (until: number | undefined) => {
+      hushedUntil = until;
+      void settings.update({ hushedUntil: until });
+      if (until !== undefined) closeComment();
+    };
+    /** Hush in the tray menu, while Mocha may talk or nudge at all. */
+    const hushMenu = () => {
+      const { allowed, capabilities } = browser;
+      if (!(allowed && (capabilities.talk || capabilities.nudge))) return undefined;
+      const until = hushedUntil;
+      if (until === undefined || Date.now() >= until) return { until: null };
+      return {
+        until: new Date(until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+    };
+
     app.setAboutPanelOptions({
       applicationName: 'Mocha',
       applicationVersion: app.getVersion(),
@@ -759,9 +871,15 @@ if (!app.requestSingleInstanceLock()) {
               today: todayStats(Date.now()),
               breakLeftMs: leftIn('onBreak', Date.now()),
               focusLeftMs: leftIn('focusing', Date.now()),
+              hush: hushMenu(),
             },
             {
               togglePause: () => pause.toggle(),
+              hush: (length) => {
+                const now = Date.now();
+                setHush(hushEnd(now, minuteOfDay(now), length));
+              },
+              talkAgain: () => setHush(undefined),
               openSettings,
               openTower,
               startFocus,
@@ -785,6 +903,7 @@ if (!app.requestSingleInstanceLock()) {
     window.on('closed', () => {
       closeReminder();
       closeRitual();
+      closeComment();
       settingsWindow.close();
       towerWindow.close();
       activity.stop();

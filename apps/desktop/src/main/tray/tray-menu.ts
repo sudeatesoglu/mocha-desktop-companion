@@ -1,4 +1,4 @@
-import { type DailyStats, formatDuration } from '@mocha/core';
+import { type DailyStats, formatDuration, type HushLength } from '@mocha/core';
 import type { MenuItemConstructorOptions } from 'electron';
 import { FOCUS_MINUTES, type FocusMinutes } from '../../shared/tower.ts';
 
@@ -8,6 +8,8 @@ export interface TrayActions {
   endFocus(): void;
   endBreak(): void;
   togglePause(): void;
+  hush(length: HushLength): void;
+  talkAgain(): void;
   openSettings(): void;
   resetPosition(): void;
   quit(): void;
@@ -25,6 +27,11 @@ export function trayMenuTemplate(
     breakLeftMs?: number | undefined;
     /** Time left in the running focus session, if any. */
     focusLeftMs?: number | undefined;
+    /**
+     * Hush, offered while Mocha may talk or nudge: until when it is hushed
+     * (a time of day to show), or null when it is not.
+     */
+    hush?: { until: string | null } | undefined;
   },
   actions: TrayActions,
 ): MenuItemConstructorOptions[] {
@@ -37,6 +44,7 @@ export function trayMenuTemplate(
       label: state.paused ? 'Resume Mocha' : 'Pause Mocha',
       click: () => actions.togglePause(),
     },
+    ...hushItems(state.hush, actions),
     { label: 'Reset Position', click: () => actions.resetPosition() },
     { type: 'separator' },
     {
@@ -48,6 +56,29 @@ export function trayMenuTemplate(
     { role: 'about', label: 'About Mocha' },
     { type: 'separator' },
     { label: 'Quit Mocha', accelerator: 'CommandOrControl+Q', click: () => actions.quit() },
+  ];
+}
+
+/** Hushing Mocha's comments and nudges, or letting it talk again. */
+function hushItems(
+  hush: { until: string | null } | undefined,
+  actions: TrayActions,
+): MenuItemConstructorOptions[] {
+  if (!hush) return [];
+  if (hush.until !== null) {
+    return [
+      { label: `Hushed until ${hush.until}`, enabled: false },
+      { label: 'Let Mocha Talk Again', click: () => actions.talkAgain() },
+    ];
+  }
+  return [
+    {
+      label: 'Hush Mocha',
+      submenu: [
+        { label: 'For an Hour', click: () => actions.hush('hour') },
+        { label: 'Until Tomorrow Morning', click: () => actions.hush('morning') },
+      ],
+    },
   ];
 }
 

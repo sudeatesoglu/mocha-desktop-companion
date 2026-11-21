@@ -8,6 +8,8 @@ const actions = () => ({
   endFocus: vi.fn(),
   endBreak: vi.fn(),
   togglePause: vi.fn(),
+  hush: vi.fn(),
+  talkAgain: vi.fn(),
   openSettings: vi.fn(),
   resetPosition: vi.fn(),
   quit: vi.fn(),
@@ -135,5 +137,36 @@ describe('trayMenuTemplate', () => {
 
     expect(item(menu, 'On a break').enabled).toBe(false);
     expect(item(menu, 'End Break')).toBeDefined();
+  });
+
+  describe('Hush', () => {
+    it('is offered only while Mocha may talk or nudge', () => {
+      const labels = (hush?: { until: string | null }) =>
+        trayMenuTemplate({ paused: false, hush }, actions()).map((entry) => entry.label);
+
+      expect(labels()).not.toContain('Hush Mocha');
+      expect(labels({ until: null })).toContain('Hush Mocha');
+    });
+
+    it('hushes for an hour or until tomorrow morning', () => {
+      const wired = actions();
+      const submenu = item(
+        trayMenuTemplate({ paused: false, hush: { until: null } }, wired),
+        'Hush Mocha',
+      ).submenu as MenuItemConstructorOptions[];
+
+      click(item(submenu, 'For an Hour'));
+      click(item(submenu, 'Until Tomorrow Morning'));
+      expect(wired.hush.mock.calls).toEqual([['hour'], ['morning']]);
+    });
+
+    it('says until when, and lets Mocha talk again', () => {
+      const wired = actions();
+      const menu = trayMenuTemplate({ paused: false, hush: { until: '06:00' } }, wired);
+
+      expect(item(menu, 'Hushed until 06:00').enabled).toBe(false);
+      click(item(menu, 'Let Mocha Talk Again'));
+      expect(wired.talkAgain).toHaveBeenCalled();
+    });
   });
 });

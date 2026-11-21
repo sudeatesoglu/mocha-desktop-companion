@@ -1,0 +1,43 @@
+@import "./bubble.css";
+
+/* A few words: centered, and no buttons to make room for. */
+.bubble {
+  justify-content: center;
+}
+
+#text {
+  margin: 0;
+}
+
+/* It fades in, stays and fades out on its own; main closes the window after. */
+body[data-ready] .bubble {
+  animation: speak var(--show-ms, 7000ms) ease both;
+}
+
+@keyframes speak {
+  0% {
+    opacity: 0;
+    translate: 0 3px;
+  }
+  6%,
+  92% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes speak {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    6%,
+    92% {
+      opacity: 1;
+    }
+  }
+}

@@ -62,6 +62,8 @@ const settingsSchema = z.object({
   browser: browserSchema.optional().catch(undefined),
   /** Whether Mocha makes sounds; off unless the user turned them on. */
   sounds: z.boolean().optional().catch(undefined),
+  /** Until when Mocha keeps its comments and nudges to itself, from Hush. */
+  hushedUntil: z.int().nonnegative().optional().catch(undefined),
   /** What stands in Mocha's room, checked the same way. */
   room: z
     .object({
