@@ -36,6 +36,19 @@ export {
 } from './browsing/sensitive.ts';
 export { classifySite, SITE_KIND_DOMAINS } from './browsing/site-kinds.ts';
 export {
+  COMMENT_GAP_MS,
+  FRESH_TALK,
+  type HushLength,
+  hushEnd,
+  LATE_NIGHT_END_MINUTE,
+  nextTalk,
+  type Saying,
+  SOCIAL_STRETCH_MS,
+  type TalkMoment,
+  type TalkState,
+} from './browsing/talk.ts';
+export { COMMENT_LINES, NUDGE_LINES } from './browsing/talk-lines.ts';
+export {
   DEFAULT_FINDS_CONFIG,
   type Find,
   type FindsConfig,
