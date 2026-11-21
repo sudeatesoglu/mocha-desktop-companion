@@ -96,6 +96,13 @@ The placeholder uses an eight-color ink palette. Skins may use any colors, but s
 | `tiltRight` | Stretching ritual: tilting the head to the right, as seen on screen | No |
 | `flutter` | Stretching ritual: rolling the wrists; a wing tip going round, for example | No |
 | `focus` | During a focus session, keeping the user company: reading, for example | No |
+| `readAlong` | While the user is on a code, docs or reading site in the browser: reading along with them | No |
+| `watch` | While the user watches a video in the browser | No |
+| `bob` | While music plays on a music site in the browser: bobbing to it, for example | No |
+| `shiny` | While the user is on a shopping site in the browser: shiny eyes, for example | No |
+| `scribble` | While the user types a lot on a page in the browser (on average at least a key a second over half a minute), whatever the site | No |
+
+The browser animations need the Mocha browser extension, and play only for what the user lets Mocha know about their browsing ([ADR-0012](adr/0012-what-mocha-may-know-about-browsing.md)). Like `tired`, each one is held instead of `idle` and other animations return to it. A focus session and a tired Mocha come first, and breaks, rituals and pausing win over all of them. They look at the screen or a page rather than at the cursor, so draw the pupil in the sprite and omit the eye anchor.
 
 Every animation has a `loop` flag and at least one frame. A looping animation repeats until another one is requested; a one-shot animation (`"loop": false`) plays once and returns to `idle`. A missing optional animation falls back to `idle`, and a skin without `blink` simply never blinks.
 

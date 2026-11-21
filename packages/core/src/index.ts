@@ -5,6 +5,12 @@
  * internals can be reorganized without breaking consumers.
  */
 
+export {
+  BROWSING_POSES,
+  type BrowsingPose,
+  BUSY_TYPING_KEYS_PER_SECOND,
+  browsingPose,
+} from './browsing/browsing-pose.ts';
 export { CAPABILITY_TEXTS } from './browsing/capability-texts.ts';
 export {
   allowedContext,

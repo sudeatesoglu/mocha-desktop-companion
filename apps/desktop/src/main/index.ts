@@ -4,6 +4,8 @@ import { pathToFileURL } from 'node:url';
 import {
   BARE_LOOK,
   type BrowserCapability,
+  type BrowsingPose,
+  browsingPose,
   EMPTY_ROOM,
   EXTENSION_ORIGIN,
   findsEventForBreakChange,
@@ -298,6 +300,20 @@ if (!app.requestSingleInstanceLock()) {
       window.webContents.send(IpcChannel.OverlayTired, tired),
     );
     needs.onChange((state) => tiredReporter.report(isTired(state)));
+    // What the user does in the browser, if they let Mocha know (ADR-0012):
+    // only the latest context, in memory, gone after three quiet minutes.
+    const awareness = createBrowsingAwareness({
+      staleMs: 3 * 60_000,
+      now: Date.now,
+      schedule: (ms, run) => {
+        const timer = setTimeout(run, ms);
+        return () => clearTimeout(timer);
+      },
+    });
+    const browsingReporter = createChangeReporter<BrowsingPose | null>((pose) =>
+      window.webContents.send(IpcChannel.OverlayBrowsing, pose),
+    );
+    awareness.onChange((context) => browsingReporter.report(browsingPose(context)));
     /**
      * The overlay page said it listens: send it everything it shows, since
      * a page that loaded or reloaded knows nothing. Waiting for the page to
@@ -313,6 +329,8 @@ if (!app.requestSingleInstanceLock()) {
       ritualReporter.report(ritualTracker.poseAt(Date.now())?.pose ?? null);
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
+      browsingReporter.reset();
+      browsingReporter.report(browsingPose(awareness.current));
       sendLook();
       sendSounds();
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
@@ -526,7 +544,6 @@ if (!app.requestSingleInstanceLock()) {
       allowed: false,
       capabilities: NO_BROWSER_CAPABILITIES,
     };
-    const awareness = createBrowsingAwareness({ staleMs: 3 * 60_000, now: Date.now });
     const apiLimiter = createRateLimiter(120, 60_000, Date.now);
     let apiServer: ApiServer | undefined;
     async function syncApi() {

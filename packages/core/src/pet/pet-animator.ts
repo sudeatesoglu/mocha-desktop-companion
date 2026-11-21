@@ -1,3 +1,4 @@
+import type { BrowsingPose } from '../browsing/browsing-pose.ts';
 import type { AnimationName, SkinFrame, SkinManifest } from '../skin/skin-manifest.ts';
 import { createAnimationPlayer } from './animation-player.ts';
 import { createBlinkTimer } from './blink-timer.ts';
@@ -25,6 +26,12 @@ export interface PetAnimator {
    * frame changed.
    */
   setFocus(focusing: boolean): boolean;
+  /**
+   * Keeps the user company in the browser with the pose for what they do
+   * there, or none. Focus and tiredness come first: a tired Mocha shows it
+   * whatever the user is doing. Returns true if the frame changed.
+   */
+  setBrowsing(pose: BrowsingPose | null): boolean;
 }
 
 /**
@@ -41,12 +48,15 @@ export function createPetAnimator(
   const canBlink = animations.blink !== undefined;
   let tired = false;
   let focusing = false;
+  let browsing: BrowsingPose | null = null;
 
   /** The pose held between other animations, from the ones the skin has. */
   function applyBase(): boolean {
     blink.reset();
     if (focusing && animations.focus) return player.setBase('focus');
-    return player.setBase(tired ? 'tired' : 'idle');
+    if (tired && animations.tired) return player.setBase('tired');
+    if (browsing && animations[browsing]) return player.setBase(browsing);
+    return player.setBase('idle');
   }
 
   return {
@@ -71,6 +81,11 @@ export function createPetAnimator(
 
     setFocus(next) {
       focusing = next;
+      return applyBase();
+    },
+
+    setBrowsing(next) {
+      browsing = next;
       return applyBase();
     },
 

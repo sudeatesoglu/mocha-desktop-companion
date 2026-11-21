@@ -1,6 +1,7 @@
 import type {
   AccessorySlot,
   BrowserCapability,
+  BrowsingPose,
   DecorSlot,
   ItemId,
   Look,
@@ -46,6 +47,8 @@ export const IpcChannel = {
   OverlayFocusing: 'overlay:focusing',
   /** Main → overlay: Mocha's energy fell below (true) or rose above (false) the tired line. */
   OverlayTired: 'overlay:tired',
+  /** Main → overlay: the pose for what the user does in the browser, or null for none. */
+  OverlayBrowsing: 'overlay:browsing',
   /** Main → overlay (no data): Mocha found something during the break that just ended. */
   OverlayFound: 'overlay:found',
   /** Main → overlay: what Mocha wears, when the page loads and when it changes. */
@@ -136,6 +139,8 @@ export interface MochaBridge {
   onFocusingChange(callback: (focusing: boolean) => void): () => void;
   /** Overlay only: Mocha became tired or rested. Returns an unsubscribe function. */
   onTiredChange(callback: (tired: boolean) => void): () => void;
+  /** Overlay only: the user does something else in the browser. Returns an unsubscribe function. */
+  onBrowsingChange(callback: (pose: BrowsingPose | null) => void): () => void;
   /** Overlay only: Mocha found something. Returns an unsubscribe function. */
   onFound(callback: () => void): () => void;
   /** Overlay only: what Mocha wears. Returns an unsubscribe function. */

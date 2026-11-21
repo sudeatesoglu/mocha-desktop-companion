@@ -1,4 +1,4 @@
-import type { Look, RitualPose } from '@mocha/core';
+import type { BrowsingPose, Look, RitualPose } from '@mocha/core';
 import { contextBridge, ipcRenderer } from 'electron';
 import { IpcChannel, type MochaBridge } from '../shared/ipc-channels.ts';
 import type { SoundKind } from '../shared/sounds.ts';
@@ -46,6 +46,11 @@ const bridge: MochaBridge = {
     const listener = (_event: unknown, tired: boolean) => callback(tired);
     ipcRenderer.on(IpcChannel.OverlayTired, listener);
     return () => ipcRenderer.removeListener(IpcChannel.OverlayTired, listener);
+  },
+  onBrowsingChange: (callback) => {
+    const listener = (_event: unknown, pose: BrowsingPose | null) => callback(pose);
+    ipcRenderer.on(IpcChannel.OverlayBrowsing, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.OverlayBrowsing, listener);
   },
   onFound: (callback) => {
     const listener = () => callback();
