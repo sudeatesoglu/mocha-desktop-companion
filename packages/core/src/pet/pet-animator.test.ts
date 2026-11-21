@@ -110,4 +110,45 @@ describe('createPetAnimator', () => {
       expect(animator.current).toBe('tired');
     });
   });
+
+  describe('browsing pose', () => {
+    const WITH_POSES: SkinManifest['animations'] = {
+      ...ANIMATIONS,
+      tired: { loop: true, frames: [frame(12, 1400)] },
+      focus: { loop: true, frames: [frame(26, 2200)] },
+      watch: { loop: true, frames: [frame(50, 3000)] },
+    };
+
+    it('keeps the user company with the pose for what they do, and back to idle', () => {
+      const animator = createPetAnimator(WITH_POSES, options);
+
+      expect(animator.setBrowsing('watch')).toBe(true);
+      expect(animator.current).toBe('watch');
+      animator.setBrowsing(null);
+      expect(animator.current).toBe('idle');
+    });
+
+    it('gives way to a focus session and to tiredness', () => {
+      const animator = createPetAnimator(WITH_POSES, options);
+      animator.setBrowsing('watch');
+
+      animator.setTired(true);
+      expect(animator.current).toBe('tired');
+      animator.setFocus(true);
+      expect(animator.current).toBe('focus');
+      animator.setFocus(false);
+      animator.setTired(false);
+      expect(animator.current).toBe('watch');
+    });
+
+    it('stays idle for a pose the skin does not have, and shows tiredness only if it can', () => {
+      const animator = createPetAnimator({ ...ANIMATIONS, watch: WITH_POSES.watch }, options);
+
+      expect(animator.setBrowsing('bob')).toBe(false);
+      expect(animator.current).toBe('idle');
+      animator.setBrowsing('watch');
+      animator.setTired(true);
+      expect(animator.current).toBe('watch');
+    });
+  });
 });

@@ -28,6 +28,12 @@ export const ANIMATION_NAMES = [
   'tiltRight',
   'flutter',
   'focus',
+  // Keeping the user company in the browser (see browsing-pose.ts).
+  'readAlong',
+  'watch',
+  'bob',
+  'shiny',
+  'scribble',
 ] as const;
 export type AnimationName = (typeof ANIMATION_NAMES)[number];
 
@@ -108,6 +114,12 @@ const manifestSchema = z
       tiltRight: animationSchema.optional(),
       flutter: animationSchema.optional(),
       focus: animationSchema.optional(),
+      /** Keeping the user company in the browser, by what they do there (v0.6). */
+      readAlong: animationSchema.optional(),
+      watch: animationSchema.optional(),
+      bob: animationSchema.optional(),
+      shiny: animationSchema.optional(),
+      scribble: animationSchema.optional(),
     }),
   })
   .superRefine((manifest, context) => {
