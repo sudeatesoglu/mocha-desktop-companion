@@ -365,11 +365,18 @@ function ring(grid, cx, cy, inner, outer, color) {
   }
 }
 
-/** Round reading glasses over the eye, with an arm back over the head. */
+/**
+ * Round reading glasses in red, so they stand out on the dark head: a frame
+ * with a band of dark lens between it and the eye, a glint on the lens, the
+ * bridge resting on the beak and an arm back over the head.
+ */
 function spectacles(grid, dy) {
   const result = clone(grid);
-  ring(result, EYE.cx, EYE.cy + dy, 3.5, 4.6, 'L');
-  rect(result, EYE.cx + 5, EYE.cy + dy - 1, EYE.cx + 9, EYE.cy + dy - 1, 'L');
+  const cy = EYE.cy + dy;
+  ring(result, EYE.cx, cy, 4.4, 5.5, 'R');
+  set(result, EYE.cx - 3, cy - 3, 'W');
+  rect(result, EYE.cx - 8, cy - 2, EYE.cx - 6, cy - 2, 'R');
+  rect(result, EYE.cx + 6, cy - 1, EYE.cx + 11, cy - 1, 'R');
   return result;
 }
 
