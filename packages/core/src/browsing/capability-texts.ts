@@ -34,7 +34,7 @@ export const CAPABILITY_TEXTS: readonly {
   {
     name: 'talk',
     label: 'Talk about what you do',
-    hint: 'Short comments in a bubble next to Mocha.',
+    hint: 'Short, playful comments in a bubble next to Mocha. Hush it from the menu bar.',
   },
   {
     name: 'nudge',

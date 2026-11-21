@@ -103,6 +103,16 @@ describe('createSettingsStore', () => {
       });
     });
 
+    it('reads until when Mocha is hushed, and drops anything but a time', async () => {
+      const hushed = memoryFiles(JSON.stringify({ hushedUntil: 1_800_000_000_000 }));
+      const odd = memoryFiles(JSON.stringify({ hushedUntil: 'forever' }));
+
+      await expect(createSettingsStore(PATH, hushed.files, logger).load()).resolves.toEqual({
+        hushedUntil: 1_800_000_000_000,
+      });
+      await expect(createSettingsStore(PATH, odd.files, logger).load()).resolves.toEqual({});
+    });
+
     it('reads the browser companion, with unknown or broken parts off', async () => {
       const { files } = memoryFiles(
         JSON.stringify({

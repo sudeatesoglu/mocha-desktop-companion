@@ -9,6 +9,7 @@ import type {
   RitualPose,
 } from '@mocha/core';
 import type { BrowserView } from './browser.ts';
+import type { CommentShow } from './comment.ts';
 import type { LoginItem } from './login-item.ts';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
@@ -73,6 +74,8 @@ export const IpcChannel = {
   TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
   ReminderShow: 'reminder:show',
+  /** Main → comment: what Mocha says about what the user does in the browser. */
+  CommentShow: 'comment:show',
   /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
   ReminderChoose: 'reminder:choose',
   /** Ritual → main (send): the page listens now; send it where it sits. */
@@ -161,6 +164,12 @@ export interface ReminderBridge {
   onShow(callback: (show: ReminderShow) => void): () => void;
   /** The user's answer. */
   choose(choice: ReminderChoice): void;
+}
+
+/** The API the comment bubble's own preload exposes as `window.comment`. Nothing else. */
+export interface CommentBridge {
+  /** What Mocha says, and where; sent again when the bubble moves. Returns an unsubscribe function. */
+  onShow(callback: (show: CommentShow) => void): () => void;
 }
 
 /** The API the settings window's own preload exposes as `window.settings`. Nothing else. */
