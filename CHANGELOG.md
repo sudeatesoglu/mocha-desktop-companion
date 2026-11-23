@@ -4,15 +4,19 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-24
+
+"Shiny things": Mocha keeps you company in the browser too, and talks about what you do there, knowing only what you allow.
+
 ### Added
 
-- A browser extension for Chrome and other Chromium browsers, attached to each release as `mocha-extension-<version>.zip` with its checksum and build provenance, so Mocha can keep you company while you browse. With what you allow, it tells Mocha the kind of site in front, its domain, a cleaned-up title and how busy the browser is, whenever you switch tabs and once a minute, and nothing while another app is in front. If you also allow it, it counts how often you type, scroll and click on https pages. Its options page says plainly what Mocha may know, what is never sent and what is kept, asks for Chrome's permission only once you need it, and holds the pairing code, the sites to leave out and a pause switch. The toolbar icon shows when it is paused or needs you, and the options page tells you when Mocha isn't running, isn't paired or the code is wrong ([#183](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/183), [#184](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/184), [#185](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/185), [#186](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/186))
-- The extension also recognizes video, music, docs, reading and shopping sites it does not know from hints in their address, like `/watch`, `/episode/` or `/izle/`, read in the browser and never sent ([#193](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/193))
 - Mocha keeps you company in the browser, if you let it know the kind of site you are on: it reads along in red reading glasses on code, docs and articles, watches videos with a box of popcorn, bobs its head while music plays, gets shiny eyes on shopping sites and scribbles along when you type a lot. A focus session and a tired Mocha come first, and breaks, rituals and pausing win over all of them. When the browser goes quiet for three minutes, Mocha goes back to its usual self ([#187](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/187), [#189](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/189))
 - Mocha talks about what you do in the browser, if you let it: a short, playful comment in a bubble that fades on its own, at most every ten minutes and only on a new kind of site, with the site's name and the page title only if you allow them. It keeps quiet during a focus session, a break, a ritual, a pause and the quiet hours. If you let it nudge you, it asks gently after half an hour on social media and once after midnight. Hush it from the menu bar for an hour or until tomorrow morning; a soft chirp comes with it only if sounds are on ([#190](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/190), [#191](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/191))
-- Skins can provide `readAlong`, `watch`, `bob`, `shiny` and `scribble` animations ([#187](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/187))
-- A documentation site: getting started, the browser extension, your data, the skin format, the architecture decisions, and a reference for Mocha's local API from an OpenAPI 3.1 document that a test keeps in step with the app. Like the app, it loads nothing from other sites and tracks nothing ([#194](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/194), [#195](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/195))
+- A browser extension for Chrome and other Chromium browsers, attached to each release as `mocha-extension-<version>.zip` with its checksum and build provenance, so Mocha can keep you company while you browse. With what you allow, it tells Mocha the kind of site in front, its domain, a cleaned-up title and how busy the browser is, whenever you switch tabs and once a minute, and nothing while another app is in front. If you also allow it, it counts how often you type, scroll and click on https pages. Its options page says plainly what Mocha may know, what is never sent and what is kept, asks for Chrome's permission only once you need it, and holds the pairing code, the sites to leave out and a pause switch. The toolbar icon shows when it is paused or needs you, and the options page tells you when Mocha isn't running, isn't paired or the code is wrong ([#183](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/183), [#184](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/184), [#185](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/185), [#186](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/186))
+- The extension also recognizes video, music, docs, reading and shopping sites it does not know from hints in their address, like `/watch`, `/episode/` or `/izle/`, read in the browser and never sent ([#193](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/193))
 - A Browser section in Settings: let the extension connect, copy its pairing code or make a new one, and choose, one by one, what Mocha may know and do. Everything is off by default ([#182](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/182))
+- A documentation site: getting started, the browser extension, your data, the skin format, the architecture decisions, and a reference for Mocha's local API from an OpenAPI 3.1 document that a test keeps in step with the app. Like the app, it loads nothing from other sites and tracks nothing ([#194](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/194), [#195](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/195))
+- Skins can provide `readAlong`, `watch`, `bob`, `shiny` and `scribble` animations ([#187](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/187))
 
 ### Security
 
@@ -20,6 +24,17 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 - The extension never sends private windows, pages on your computer or network, banking, health, government, mail and messaging, password manager or adult sites, or sign-in, checkout and account pages. Addresses and numbers are taken out of titles ([#183](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/183))
 - Page activity is counts over 30 seconds, never which key, what text or what was clicked. Keys in password, one-time code and card fields are not even counted. The counting script exists only while you allow it, never runs on the sensitive sites above, and stops in open pages when you turn it off or pause ([#186](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/186))
 - The extension asks Chrome for no access to websites up front, can reach only Mocha on your computer, and runs only its own code. The pairing code is hidden from scripts in web pages ([#184](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/184))
+
+### Known limitations
+
+- The extension is for Chrome and other Chromium browsers, and is loaded unpacked in Developer mode from the release's zip; it is not in the Chrome Web Store yet, and updates are by hand.
+- The kind of site comes from lists of well-known sites and hints in the address, so some sites are not recognized and a few are guessed wrong. Some harmless pages are held back too, like a bank's blog.
+- Page activity is counted on pages loaded after it is allowed: open tabs need a reload.
+- Mocha's comments are in English only.
+- The browser poses, like the accessories, the decor, the Tower's room and the ritual and focus poses, are placeholder art drawn in code, until the hand-drawn versions replace them.
+- Breaks are noticed from keyboard and mouse input only: watching a video for 5 minutes without touching anything counts as a break.
+- The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
+- macOS only. Windows and Linux are planned.
 
 ## [0.5.0] - 2026-11-17
 
@@ -160,7 +175,8 @@ The first release, "Hello, Mocha": a pixel-art raven that lives on the macOS des
 - The app is ad-hoc signed, not signed with an Apple Developer ID: a downloaded copy must be allowed once in System Settings (see the README).
 - macOS only. Windows and Linux are planned.
 
-[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/sudeatesoglu/mocha-desktop-companion/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.6.0
 [0.5.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.5.0
 [0.4.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.4.0
 [0.3.0]: https://github.com/sudeatesoglu/mocha-desktop-companion/releases/tag/v0.3.0
