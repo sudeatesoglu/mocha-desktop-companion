@@ -11,6 +11,7 @@
 
 [![Download for macOS](https://img.shields.io/github/v/release/sudeatesoglu/mocha-desktop-companion?label=download%20for%20macOS&color=c2213a)](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest)
 [![CI](https://github.com/sudeatesoglu/mocha-desktop-companion/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/sudeatesoglu/mocha-desktop-companion/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-read-5b4478)](https://sudeatesoglu.github.io/mocha-desktop-companion/)
 
 </div>
 
@@ -120,11 +121,11 @@ To update, unzip the new version over the old folder and click the reload button
 - [x] **v0.3 The Tower:** a larger Tamagotchi-style home with stats and actions
 - [x] **v0.4 Together:** break rituals and working side by side
 - [x] **v0.5 Make it yours:** decorations and accessories
-- [ ] **v0.6 Shiny things:** a browser extension, so Mocha can keep you company in the browser and talk about what you do, with what it may know up to you
+- [x] **v0.6 Shiny things:** a browser extension, so Mocha can keep you company in the browser and talk about what you do, with what it may know up to you
 - [ ] **v0.7 Smart:** opt-in AI to chat with Mocha and get insights about your day
 - [ ] **v1.0:** signed and notarized installers, automatic updates, Windows and Linux
 
-See the [changelog](CHANGELOG.md) for what each release contains.
+See the [changelog](CHANGELOG.md) for what each release contains, and the [documentation](https://sudeatesoglu.github.io/mocha-desktop-companion/) for guides, the skin format and the local API.
 
 <details>
 <summary><b>Your data</b></summary>
