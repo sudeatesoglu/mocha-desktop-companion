@@ -34,7 +34,11 @@ export {
   type SensitiveKind,
   sensitiveKind,
 } from './browsing/sensitive.ts';
-export { classifySite, SITE_KIND_DOMAINS } from './browsing/site-kinds.ts';
+export {
+  classifySite,
+  SITE_KIND_DOMAINS,
+  SITE_KIND_PATH_HINTS,
+} from './browsing/site-kinds.ts';
 export {
   COMMENT_GAP_MS,
   FRESH_TALK,

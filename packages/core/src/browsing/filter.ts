@@ -55,6 +55,6 @@ export function filterPage(page: {
   if (page.exclusions.some((domain) => matchesDomain(host, domain))) {
     return { send: false, reason: 'excluded' };
   }
-  const kind = classifySite(host);
+  const kind = classifySite(host, pathname);
   return { send: true, site: registrableDomain(host), kind, titleAllowed: kind !== 'chat' };
 }
