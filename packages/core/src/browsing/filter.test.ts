@@ -14,7 +14,7 @@ describe('filterPage', () => {
       kind: 'code',
       titleAllowed: true,
     });
-    expect(page('https://www.example.org/blog')).toMatchObject({
+    expect(page('https://www.example.org/about')).toMatchObject({
       site: 'example.org',
       kind: 'other',
     });
@@ -133,6 +133,45 @@ describe('classifySite', () => {
   it('recognizes documentation by its address, and calls the rest other', () => {
     expect(classifySite('docs.astro.build')).toBe('docs');
     expect(classifySite('example.org')).toBe('other');
+  });
+
+  it.each([
+    ['sonanime.com', '/anime/ore-dake-level-up-na-ken/season/1/episode/4', 'video'],
+    ['example.tv', '/watch?v=1', 'video'],
+    ['diziizle.example', '/dizi/kara-kuzgun/1-sezon/3-bolum', 'video'],
+    ['films.example', '/izle/kuzgun', 'video'],
+    ['radio.example', '/playlist/lofi', 'music'],
+    ['project.example', '/docs/getting-started', 'docs'],
+    ['someone.example', '/blog/ravens-in-winter.html', 'reading'],
+    ['gazete.example', '/haber/12345', 'reading'],
+    ['crafts.example', '/urun/kuzgun-figuru', 'shopping'],
+    ['blog.example.org', '/', 'reading'],
+    ['shop.example.org', '/', 'shopping'],
+    ['learn.example.org', '/', 'docs'],
+  ])('guesses the kind of %s%s from its address: %s', (host, path, kind) => {
+    expect(classifySite(host, path)).toBe(kind);
+  });
+
+  it.each([
+    ['example.org', '/'],
+    ['example.org', '/watchmen-review'],
+    ['example.org', '/about/videography'],
+    ['example.org', '/user/settings'],
+  ])('does not read a kind into %s%s', (host, path) => {
+    expect(classifySite(host, path)).toBe('other');
+  });
+
+  it('prefers the lists to any hint', () => {
+    expect(classifySite('github.com', '/sudeatesoglu/mocha/blob/dev/docs/video.md')).toBe('code');
+  });
+
+  it('guesses only for pages it would send', () => {
+    expect(
+      filterPage({ url: 'https://stream.example/watch/1', incognito: false, exclusions: [] }),
+    ).toMatchObject({ kind: 'video', site: 'stream.example' });
+    expect(
+      filterPage({ url: 'https://watch.example/login', incognito: false, exclusions: [] }),
+    ).toEqual({ send: false, reason: 'sensitive' });
   });
 
   it('lists no sensitive site as an ordinary kind', () => {

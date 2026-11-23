@@ -121,12 +121,91 @@ export const SITE_KIND_DOMAINS: readonly (readonly [
   ],
 ];
 
-/** The kind of site `hostname` is, or "other" for sites Mocha does not know. */
-export function classifySite(hostname: string): SiteKind {
+// Hints in an address, for sites that are not on the lists, as data. Words
+// are whole path segments (or start one, like "watch?v=1"), in English and
+// Turkish ("izle" watch, "bolum" episode, "haber" news, "urun" product,
+// "sarki" song). The first match wins, so the strongest hints come first.
+export const SITE_KIND_PATH_HINTS: readonly (readonly [
+  Exclude<SiteKind, 'other'>,
+  readonly string[],
+])[] = [
+  [
+    'video',
+    [
+      'watch',
+      'episode',
+      'episodes',
+      'video',
+      'videos',
+      'movie',
+      'movies',
+      'film',
+      'films',
+      'series',
+      'stream',
+      'izle',
+      'bolum',
+      'dizi',
+    ],
+  ],
+  [
+    'music',
+    ['music', 'song', 'songs', 'album', 'albums', 'playlist', 'track', 'tracks', 'sarki', 'muzik'],
+  ],
+  [
+    'docs',
+    ['docs', 'doc', 'documentation', 'reference', 'manual', 'guide', 'guides', 'wiki', 'api'],
+  ],
+  [
+    'reading',
+    [
+      'blog',
+      'article',
+      'articles',
+      'news',
+      'post',
+      'posts',
+      'story',
+      'stories',
+      'haber',
+      'makale',
+      'yazi',
+    ],
+  ],
+  ['shopping', ['product', 'products', 'shop', 'store', 'urun', 'magaza']],
+];
+
+// Hosts that say what they are: docs.example.com, blog.example.com.
+const HOST_HINTS: readonly (readonly [Exclude<SiteKind, 'other'>, RegExp])[] = [
+  ['docs', /^(docs?|developer|developers|learn)\./i],
+  ['reading', /^(blog|news|haber)\./i],
+  ['video', /^(video|tv|watch)\./i],
+  ['music', /^(music|muzik)\./i],
+  ['shopping', /^(shop|store|magaza)\./i],
+];
+
+/** The words of a path, lowercased: "/Watch?v=1" gives ["watch"]. */
+const segments = (pathname: string) =>
+  pathname
+    .toLowerCase()
+    .split('/')
+    .map((segment) => segment.replace(/[?#.;].*$/, ''))
+    .filter(Boolean);
+
+/**
+ * The kind of site `hostname` is, or "other" for sites Mocha does not know.
+ * The lists come first; for other sites, the host and then the path
+ * (`pathname`) may give the kind away. The address is only read here,
+ * never sent (ADR-0012).
+ */
+export function classifySite(hostname: string, pathname = '/'): SiteKind {
   for (const [kind, domains] of SITE_KIND_DOMAINS) {
     if (domains.some((domain) => matchesDomain(hostname, domain))) return kind;
   }
-  // Documentation sites tend to say so in their address.
-  if (/^docs?\./i.test(hostname)) return 'docs';
+  for (const [kind, host] of HOST_HINTS) if (host.test(hostname)) return kind;
+  const words = segments(pathname);
+  for (const [kind, hints] of SITE_KIND_PATH_HINTS) {
+    if (words.some((word) => hints.includes(word))) return kind;
+  }
   return 'other';
 }
