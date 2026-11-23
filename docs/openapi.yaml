@@ -21,6 +21,9 @@ info:
     - **CORS** answers only the extension's origin, including the preflight (`OPTIONS`) on
       every route.
 
+    Requests cannot be sent from a web page, this documentation included: they would not
+    carry the extension's origin. The examples show what the extension sends.
+
     Mocha keeps only the latest context, in memory, and never logs it
     ([ADR-0012](https://github.com/sudeatesoglu/mocha-desktop-companion/blob/main/docs/adr/0012-what-mocha-may-know-about-browsing.md)).
   license:
@@ -45,6 +48,8 @@ paths:
       tags: [Browser extension]
       summary: Check that Mocha answers
       description: Answers who is listening, so a client can tell Mocha from another program on the port.
+      parameters:
+        - $ref: "#/components/parameters/ExtensionOrigin"
       responses:
         "200":
           description: Mocha answers.
@@ -69,6 +74,8 @@ paths:
       description: |
         Every capability is off until the user turns it on in Mocha's Settings. The extension
         sends only the fields these allow; Mocha drops anything else again.
+      parameters:
+        - $ref: "#/components/parameters/ExtensionOrigin"
       responses:
         "200":
           description: The user's choices.
@@ -100,6 +107,8 @@ paths:
         tell: a page the extension's filter holds back, another app in front, or a pause. Mocha
         then forgets the page before at once. Mocha keeps only the fields the user allows and
         scrubs the title again.
+      parameters:
+        - $ref: "#/components/parameters/ExtensionOrigin"
       requestBody:
         required: true
         content:
@@ -146,6 +155,16 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
 components:
+  parameters:
+    ExtensionOrigin:
+      name: Origin
+      in: header
+      required: true
+      description: The extension's own origin. Browsers set it themselves; any other origin gets 403.
+      schema:
+        type: string
+        const: chrome-extension://bklkopgekhoiendfbkifbpmplojpgipp
+      example: chrome-extension://bklkopgekhoiendfbkifbpmplojpgipp
   securitySchemes:
     pairingToken:
       type: http

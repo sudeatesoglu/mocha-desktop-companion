@@ -2,7 +2,12 @@
 // keeps it valid and in step with the code, so it cannot drift.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BROWSER_CAPABILITIES, browsingContextSchema, NO_BROWSER_CAPABILITIES } from '@mocha/core';
+import {
+  BROWSER_CAPABILITIES,
+  browsingContextSchema,
+  EXTENSION_ORIGIN,
+  NO_BROWSER_CAPABILITIES,
+} from '@mocha/core';
 import { Validator } from '@seriousme/openapi-schema-validator';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
@@ -64,6 +69,21 @@ describe('docs/openapi.yaml', () => {
     expect(capabilities.required).toEqual([...BROWSER_CAPABILITIES]);
     for (const property of Object.values(capabilities.properties)) {
       expect(property).toMatchObject({ type: 'boolean' });
+    }
+  });
+
+  it('asks every operation for the origin the API accepts', () => {
+    const origin = spec.components.parameters.ExtensionOrigin;
+
+    expect(origin.schema.const).toBe(EXTENSION_ORIGIN);
+    for (const item of Object.values(
+      spec.paths as Record<string, Record<string, { parameters: unknown[] }>>,
+    )) {
+      for (const operation of Object.values(item)) {
+        expect(operation.parameters).toContainEqual({
+          $ref: '#/components/parameters/ExtensionOrigin',
+        });
+      }
     }
   });
 
