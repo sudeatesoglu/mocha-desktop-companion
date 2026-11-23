@@ -94,6 +94,8 @@ Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks 
 
 **Make it yours.** Rest after real work fills a meter in the Tower, and every few breaks Mocha finds something: a scarf, a bow tie or a feather to wear, or a fern, a lantern or a crystal ball for its room. Click the Finds row to open the Collection, then dress Mocha up and decorate. Nothing can be bought or lost. The Tower's window follows your day, and a candle burns at night. In **Settings**, Mocha can open when you log in and play quiet sounds; both stay off until you turn them on.
 
+**In your browser.** With the Mocha extension for Chrome and other Chromium browsers, Mocha keeps you company while you browse: it reads along in red glasses on code and docs, watches videos with a box of popcorn, bobs its head to music, gets shiny eyes on shopping sites and scribbles along when you type a lot. If you like, it says a playful word now and then, at most every ten minutes, and nudges you gently after a long scroll or past midnight; **Hush Mocha** in the menu bar quiets it. It knows only what you turn on in **Settings → Browser**, all off until then (see Your data below).
+
 ## Install
 
 1. [Download the DMG](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest) for your Mac (`arm64` for Apple Silicon) and drag **Mocha** into **Applications**.
@@ -101,6 +103,15 @@ Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks 
 3. Look for the top hat in your menu bar. That is where you see today's numbers, start a focus session, open the Tower and Settings, pause and quit.
 
 macOS only for now.
+
+### The browser extension
+
+1. Download `mocha-extension-<version>.zip` from the [same release](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest) and unzip it.
+2. In Chrome, open `chrome://extensions`, turn on **Developer mode** and choose **Load unpacked**, then the unzipped folder. Chrome asks for nothing yet; the extension's page opens and explains what Mocha may know.
+3. In Mocha, open **Settings → Browser**, turn on **Let the Mocha extension connect**, choose what Mocha may know and do, and copy the pairing code.
+4. Paste the code on the extension's page under **Pair with Mocha**. Chrome asks for its own permission there once something needs it.
+
+To update, unzip the new version over the old folder and click the reload button on the extension's card in `chrome://extensions`.
 
 ## What's next
 
@@ -132,13 +143,19 @@ Mocha writes two things to `~/Library/Application Support/Mocha/`: `settings.jso
 <br>
 
 ```bash
-shasum -a 256 -c SHA256SUMS.txt
+shasum -a 256 -c --ignore-missing SHA256SUMS.txt
 ```
 
-This checks the file is intact. Releases built by the release workflow (after v0.1.0) can also be traced to this repository:
+This checks the files you downloaded are intact. Releases built by the release workflow (after v0.1.0) can also be traced to this repository:
 
 ```bash
 gh attestation verify Mocha-<version>-arm64.dmg --repo sudeatesoglu/mocha-desktop-companion
+```
+
+The browser extension's zip, from v0.6.0, the same way:
+
+```bash
+gh attestation verify mocha-extension-<version>.zip --repo sudeatesoglu/mocha-desktop-companion
 ```
 
 </details>

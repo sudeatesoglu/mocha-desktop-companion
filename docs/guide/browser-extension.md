@@ -5,6 +5,13 @@ With the Mocha extension for Chrome and other Chromium browsers, Mocha can keep 
 - **Mocha's Settings**, under **Browser**, say what Mocha may know and do. Everything is off until you turn it on.
 - **Chrome** asks for its own permission once you need it, on the extension's page.
 
+## Install it
+
+1. Download `mocha-extension-<version>.zip` from the [latest release](https://github.com/sudeatesoglu/mocha-desktop-companion/releases/latest), next to Mocha's DMG, and unzip it.
+2. In Chrome, open `chrome://extensions`, turn on **Developer mode** and choose **Load unpacked**, then the unzipped folder.
+
+Chrome asks for nothing at this point, and the extension's page opens with what Mocha may know. To update, unzip the new version over the old folder and click the reload button on the extension's card. The extension is not in the Chrome Web Store yet.
+
 ## Pair the extension
 
 1. In Mocha, open **Settings** from the menu bar and turn on **Let the Mocha extension connect**.
