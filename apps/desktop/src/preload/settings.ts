@@ -10,6 +10,12 @@ const bridge: SettingsBridge = {
   setOpenAtLogin: (open) => ipcRenderer.invoke(IpcChannel.SettingsOpenAtLogin, open),
   sounds: () => ipcRenderer.invoke(IpcChannel.SettingsSounds),
   setSounds: (enabled) => ipcRenderer.invoke(IpcChannel.SettingsSetSounds, enabled),
+  browser: () => ipcRenderer.invoke(IpcChannel.SettingsBrowser),
+  allowBrowser: (allowed) => ipcRenderer.invoke(IpcChannel.SettingsAllowBrowser, allowed),
+  newPairingCode: () => ipcRenderer.invoke(IpcChannel.SettingsNewPairingCode),
+  copyPairingCode: () => ipcRenderer.invoke(IpcChannel.SettingsCopyPairingCode),
+  setCapability: (name, enabled) =>
+    ipcRenderer.invoke(IpcChannel.SettingsSetCapability, { name, enabled }),
 };
 
 contextBridge.exposeInMainWorld('settings', bridge);

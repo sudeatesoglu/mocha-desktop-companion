@@ -13,6 +13,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve('src/preload/index.ts'),
+          comment: resolve('src/preload/comment.ts'),
           reminder: resolve('src/preload/reminder.ts'),
           ritual: resolve('src/preload/ritual.ts'),
           settings: resolve('src/preload/settings.ts'),
@@ -30,6 +31,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve('src/renderer/index.html'),
+          comment: resolve('src/renderer/comment.html'),
           reminder: resolve('src/renderer/reminder.html'),
           ritual: resolve('src/renderer/ritual.html'),
           settings: resolve('src/renderer/settings.html'),

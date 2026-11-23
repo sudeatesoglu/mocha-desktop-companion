@@ -1,4 +1,15 @@
-import type { AccessorySlot, DecorSlot, ItemId, Look, RitualId, RitualPose } from '@mocha/core';
+import type {
+  AccessorySlot,
+  BrowserCapability,
+  BrowsingPose,
+  DecorSlot,
+  ItemId,
+  Look,
+  RitualId,
+  RitualPose,
+} from '@mocha/core';
+import type { BrowserView } from './browser.ts';
+import type { CommentShow } from './comment.ts';
 import type { LoginItem } from './login-item.ts';
 import type { Preferences } from './preferences.ts';
 import type { ReminderChoice, ReminderShow } from './reminder.ts';
@@ -37,6 +48,8 @@ export const IpcChannel = {
   OverlayFocusing: 'overlay:focusing',
   /** Main → overlay: Mocha's energy fell below (true) or rose above (false) the tired line. */
   OverlayTired: 'overlay:tired',
+  /** Main → overlay: the pose for what the user does in the browser, or null for none. */
+  OverlayBrowsing: 'overlay:browsing',
   /** Main → overlay (no data): Mocha found something during the break that just ended. */
   OverlayFound: 'overlay:found',
   /** Main → overlay: what Mocha wears, when the page loads and when it changes. */
@@ -61,6 +74,8 @@ export const IpcChannel = {
   TowerAct: 'tower:act',
   /** Main → reminder: what to show (work and break durations). */
   ReminderShow: 'reminder:show',
+  /** Main → comment: what Mocha says about what the user does in the browser. */
+  CommentShow: 'comment:show',
   /** Reminder → main (send): the user's answer: accept, snooze or dismiss. */
   ReminderChoose: 'reminder:choose',
   /** Ritual → main (send): the page listens now; send it where it sits. */
@@ -85,6 +100,16 @@ export const IpcChannel = {
   SettingsSounds: 'settings:sounds',
   /** Settings → main (invoke): turn sounds on or off; resolves to the new state. */
   SettingsSetSounds: 'settings:set-sounds',
+  /** Settings → main (invoke, no data): the browser companion's state. */
+  SettingsBrowser: 'settings:browser',
+  /** Settings → main (invoke): let the extension connect or not; resolves to the new state. */
+  SettingsAllowBrowser: 'settings:allow-browser',
+  /** Settings → main (invoke, no data): a new pairing code; the old one stops working. */
+  SettingsNewPairingCode: 'settings:new-pairing-code',
+  /** Settings → main (invoke, no data): put the pairing code on the clipboard. */
+  SettingsCopyPairingCode: 'settings:copy-pairing-code',
+  /** Settings → main (invoke): turn one capability on or off; resolves to the new state. */
+  SettingsSetCapability: 'settings:set-capability',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -117,6 +142,8 @@ export interface MochaBridge {
   onFocusingChange(callback: (focusing: boolean) => void): () => void;
   /** Overlay only: Mocha became tired or rested. Returns an unsubscribe function. */
   onTiredChange(callback: (tired: boolean) => void): () => void;
+  /** Overlay only: the user does something else in the browser. Returns an unsubscribe function. */
+  onBrowsingChange(callback: (pose: BrowsingPose | null) => void): () => void;
   /** Overlay only: Mocha found something. Returns an unsubscribe function. */
   onFound(callback: () => void): () => void;
   /** Overlay only: what Mocha wears. Returns an unsubscribe function. */
@@ -139,6 +166,12 @@ export interface ReminderBridge {
   choose(choice: ReminderChoice): void;
 }
 
+/** The API the comment bubble's own preload exposes as `window.comment`. Nothing else. */
+export interface CommentBridge {
+  /** What Mocha says, and where; sent again when the bubble moves. Returns an unsubscribe function. */
+  onShow(callback: (show: CommentShow) => void): () => void;
+}
+
 /** The API the settings window's own preload exposes as `window.settings`. Nothing else. */
 export interface SettingsBridge {
   load(): Promise<Preferences>;
@@ -152,6 +185,13 @@ export interface SettingsBridge {
   sounds(): Promise<boolean>;
   /** Turns sounds on or off; resolves to the new state. */
   setSounds(enabled: boolean): Promise<boolean>;
+  /** The browser companion: allowed, pairing code and capabilities. */
+  browser(): Promise<BrowserView>;
+  allowBrowser(allowed: boolean): Promise<BrowserView>;
+  newPairingCode(): Promise<BrowserView>;
+  /** Resolves to false when there is no code to copy. */
+  copyPairingCode(): Promise<boolean>;
+  setCapability(name: BrowserCapability, enabled: boolean): Promise<BrowserView>;
 }
 
 /** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */

@@ -6,6 +6,53 @@
  */
 
 export {
+  BROWSING_POSES,
+  type BrowsingPose,
+  BUSY_TYPING_KEYS_PER_SECOND,
+  browsingPose,
+} from './browsing/browsing-pose.ts';
+export { CAPABILITY_TEXTS } from './browsing/capability-texts.ts';
+export {
+  allowedContext,
+  BROWSER_CAPABILITIES,
+  type BrowserCapabilities,
+  type BrowserCapability,
+  type BrowsingContext,
+  browsingContextSchema,
+  NO_BROWSER_CAPABILITIES,
+  SITE_KINDS,
+  type SiteKind,
+} from './browsing/context.ts';
+export { matchesDomain, registrableDomain } from './browsing/domains.ts';
+export { EXTENSION_ID, EXTENSION_ORIGIN, EXTENSION_PUBLIC_KEY } from './browsing/extension.ts';
+export { filterPage, type HoldReason, type PageVerdict } from './browsing/filter.ts';
+export { formatPairingCode, parsePairingCode } from './browsing/pairing.ts';
+export { MAX_TITLE_LENGTH, scrubTitle } from './browsing/scrub-title.ts';
+export {
+  isSensitivePath,
+  SENSITIVE_DOMAINS,
+  type SensitiveKind,
+  sensitiveKind,
+} from './browsing/sensitive.ts';
+export {
+  classifySite,
+  SITE_KIND_DOMAINS,
+  SITE_KIND_PATH_HINTS,
+} from './browsing/site-kinds.ts';
+export {
+  COMMENT_GAP_MS,
+  FRESH_TALK,
+  type HushLength,
+  hushEnd,
+  LATE_NIGHT_END_MINUTE,
+  nextTalk,
+  type Saying,
+  SOCIAL_STRETCH_MS,
+  type TalkMoment,
+  type TalkState,
+} from './browsing/talk.ts';
+export { COMMENT_LINES, NUDGE_LINES } from './browsing/talk-lines.ts';
+export {
   DEFAULT_FINDS_CONFIG,
   type Find,
   type FindsConfig,

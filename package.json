@@ -1,6 +1,6 @@
 {
   "name": "mocha-desktop-companion",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "A cute desktop companion that lives in the corner of your screen and helps you build healthier work habits.",
   "license": "UNLICENSED",
@@ -24,10 +24,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "docs:dev": "pnpm --filter @mocha/docs dev",
+    "docs:build": "pnpm --filter @mocha/docs build",
+    "docs:preview": "pnpm --filter @mocha/docs preview",
     "prepare": "node scripts/install-git-hooks.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.5",
+    "@biomejs/biome": "2.6.6",
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
     "@commitlint/types": "21.2.3",

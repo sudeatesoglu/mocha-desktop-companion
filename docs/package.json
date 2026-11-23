@@ -1,0 +1,17 @@
+{
+  "name": "@mocha/docs",
+  "version": "0.6.0",
+  "private": true,
+  "description": "Mocha's documentation site, built with VitePress.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "@scalar/api-reference": "1.77.0",
+    "vitepress": "1.6.4"
+  }
+}

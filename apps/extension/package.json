@@ -1,0 +1,20 @@
+{
+  "name": "@mocha/extension",
+  "version": "0.6.0",
+  "private": true,
+  "description": "Mocha's browser extension for Chromium browsers.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "build": "vite build && vite build -c vite.page.config.ts",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@mocha/core": "workspace:*",
+    "@types/chrome": "0.3.7",
+    "vite": "8.3.8",
+    "zod": "4.6.7"
+  }
+}

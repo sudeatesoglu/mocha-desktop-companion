@@ -353,6 +353,89 @@ function dizzyEye(grid) {
   return result;
 }
 
+// --- keeping the user company in the browser ---
+
+/** A ring of `color` around (cx, cy), between `inner` and `outer` radius. */
+function ring(grid, cx, cy, inner, outer, color) {
+  for (let y = Math.floor(cy - outer); y <= Math.ceil(cy + outer); y++) {
+    for (let x = Math.floor(cx - outer); x <= Math.ceil(cx + outer); x++) {
+      const distance = Math.hypot(x - cx, y - cy);
+      if (distance > inner && distance <= outer) set(grid, x, y, color);
+    }
+  }
+}
+
+/**
+ * Round reading glasses in red, so they stand out on the dark head: a frame
+ * with a band of dark lens between it and the eye, a glint on the lens, the
+ * bridge resting on the beak and an arm back over the head.
+ */
+function spectacles(grid, dy) {
+  const result = clone(grid);
+  const cy = EYE.cy + dy;
+  ring(result, EYE.cx, cy, 4.4, 5.5, 'R');
+  set(result, EYE.cx - 3, cy - 3, 'W');
+  rect(result, EYE.cx - 8, cy - 2, EYE.cx - 6, cy - 2, 'R');
+  rect(result, EYE.cx + 6, cy - 1, EYE.cx + 11, cy - 1, 'R');
+  return result;
+}
+
+/** Eyes shining with delight: a big pupil with two white glints. */
+function shiningEye(grid, dy) {
+  const result = clone(grid);
+  const cy = EYE.cy + dy;
+  rect(result, EYE.cx - 2, cy - 1, EYE.cx, cy + 1, 'K');
+  set(result, EYE.cx - 2, cy - 1, 'W');
+  set(result, EYE.cx, cy + 1, 'W');
+  return result;
+}
+
+// A striped box of popcorn, for watching a film.
+const POPCORN = [
+  '..WW.W..',
+  '.WWLWWW.',
+  'KWWWWWLK',
+  'KRWRWRWK',
+  'KRWRWRWK',
+  '.KRWRWK.',
+  '.KRWRWK.',
+  '.KKKKKK.',
+];
+const KERNEL = ['.K.', 'KWK', '.K.'];
+
+// An eighth note, light with an ink outline so it shows on any desktop.
+const NOTE = ['...KKK.', '...KLLK', '...KLKK', '.KKKLK.', 'KLLLLK.', 'KLLLK..', '.KKK...'];
+// A twinkle, large and small.
+const SPARKLE = ['..K..', '.KWK.', 'KWWWK', '.KWK.', '..K..'];
+const SPARKLE_SMALL = ['.K.', 'KWK', '.K.'];
+
+// A sheet of paper held low in front of the chest, three lines written.
+const PAPER = [
+  'KKKKKKKKKKKK',
+  'KWWWWWWWWWWK',
+  'KWLLLLWLLLWK',
+  'KWWWWWWWWWWK',
+  'KWLLLWLLLLWK',
+  'KWWWWWWWWWWK',
+  'KWWWWWWWWWWK',
+  'KKKKKKKKKKKK',
+];
+
+/**
+ * Writing on the paper: the line being written grows to `written` pixels,
+ * and a quill runs from its nib at (nibX, nibY) up into the wing.
+ */
+function scribbling(grid, written, nibX, nibY) {
+  const result = clone(grid);
+  stamp(result, 1, 33, PAPER);
+  rect(result, 3, 39, 2 + written, 39, 'L');
+  // The quill: an ink shaft with a white vane on its upper side.
+  line(result, nibX, nibY, nibX + 7, nibY - 8);
+  for (let i = 3; i <= 7; i++) set(result, nibX + i + 1, nibY - i, 'W');
+  for (let i = 4; i <= 6; i++) set(result, nibX + i + 2, nibY - i, 'W');
+  return result;
+}
+
 // --- frames and anchors ---
 
 const base = drawRaven();
@@ -426,6 +509,43 @@ const sleepB = squash(closeEye(base, false), 1);
 zGlyph(sleepB, 36, 3, 4);
 zGlyph(sleepB, 41, 0, 5);
 
+// The browser poses. Each one changes the silhouette as well as the eye.
+// Reading along: glasses on, leaning in towards the screen, the eye moving
+// along a line and down to the next.
+const READ_LEAN = { pivot: 40, top: 5 };
+const readingAlong = (dx, dy) =>
+  shear(
+    spectacles(pupilAt(drawRaven({ headDrop: 1 }), dx, dy, 1), 1),
+    -2,
+    READ_LEAN.pivot,
+    READ_LEAN.top,
+  );
+// Watching: a box of popcorn in the wing, the eye fixed on the screen; now
+// and then a blink, and a kernel on its way to the beak.
+const watchBody = () => {
+  const grid = drawRaven({ headDrop: -1, wing: 'hold' });
+  stamp(grid, 6, 27, POPCORN);
+  return grid;
+};
+const watching = pupilAt(watchBody(), -1, 0, -1);
+const watchingBlink = closeEye(watchBody(), false, -1);
+const watchingSnack = clone(watching);
+stamp(watchingSnack, 8, 22, KERNEL);
+// Bobbing to the music, eyes closed in delight, a note rising.
+const bobUp = squeezedEye(drawRaven({ headDrop: -1 }), -1);
+stamp(bobUp, 36, 4, NOTE);
+const bobDown = squash(squeezedEye(drawRaven({ headDrop: 1 }), 1), 1);
+stamp(bobDown, 38, 1, NOTE);
+// Shiny eyes: starry eyes, bouncing a little, twinkles around the head.
+const shinyUp = lift(shiningEye(drawRaven(), 0), 1);
+stamp(shinyUp, 37, 6, SPARKLE);
+stamp(shinyUp, 42, 15, SPARKLE_SMALL);
+const shinyDown = shiningEye(drawRaven(), 0);
+stamp(shinyDown, 40, 2, SPARKLE_SMALL);
+stamp(shinyDown, 35, 12, SPARKLE);
+// Scribbling along: a quill in the wing, the eye on the paper.
+const writer = pupilAt(drawRaven({ headDrop: 1, wing: 'hold' }), -1, 1, 1);
+
 const FRAMES = [
   base, // 0 idle: inhale
   squash(base, 1), // 1 idle: exhale
@@ -480,6 +600,20 @@ const FRAMES = [
   tilt(3), // 38 tiltRight: on the way
   tilt(5), // 39 tiltRight: all the way
   ...wristRoll, // 40-43 flutter: the wing tip going round
+  readingAlong(-1, 0), // 44 readAlong: glasses on, eye at the start of a line
+  readingAlong(0, 0), // 45 readAlong: further along the line
+  readingAlong(-1, 1), // 46 readAlong: the next line
+  watching, // 47 watch: eye on the screen
+  watchingBlink, // 48 watch: a blink
+  watchingSnack, // 49 watch: a kernel on its way
+  bobUp, // 50 bob: head up, a note
+  bobDown, // 51 bob: head down on the beat
+  shinyUp, // 52 shiny: starry eyes, bouncing up
+  shinyDown, // 53 shiny: and down, twinkling
+  scribbling(writer, 2, 4, 38), // 54 scribble: starting a word
+  scribbling(writer, 5, 6, 37), // 55 scribble: on it goes
+  scribbling(writer, 8, 9, 38), // 56 scribble: to the end of the word
+  scribbling(writer, 8, 10, 35), // 57 scribble: the quill lifted
 ];
 
 /** Slip anchors: the body shifted by (dx, dy), the feet by feetDx. */
@@ -668,6 +802,55 @@ const manifest = {
         { index: 24, durationMs: 2200, anchors: closedAnchors(1) },
         { index: 25, durationMs: 1500, anchors: closedAnchors(1) },
         { index: 26, durationMs: 400, anchors: closedAnchors(1) },
+      ],
+    },
+    // Keeping the user company in the browser. The pupils are drawn in the
+    // sprite, fixed on the screen or the paper, so no eye anchors.
+    // Reading along on code, docs and articles: along a line, then the next.
+    readAlong: {
+      loop: true,
+      frames: [
+        { index: 44, durationMs: 1400, anchors: shearedAnchors(-2, READ_LEAN, 1) },
+        { index: 45, durationMs: 1200, anchors: shearedAnchors(-2, READ_LEAN, 1) },
+        { index: 46, durationMs: 1600, anchors: shearedAnchors(-2, READ_LEAN, 1) },
+      ],
+    },
+    // Watching a video with popcorn: still, a blink now and then, a snack.
+    watch: {
+      loop: true,
+      frames: [
+        { index: 47, durationMs: 2600, anchors: closedAnchors(-1) },
+        { index: 48, durationMs: 150, anchors: closedAnchors(-1) },
+        { index: 47, durationMs: 2200, anchors: closedAnchors(-1) },
+        { index: 49, durationMs: 500, anchors: closedAnchors(-1) },
+        { index: 47, durationMs: 1800, anchors: closedAnchors(-1) },
+        { index: 48, durationMs: 150, anchors: closedAnchors(-1) },
+      ],
+    },
+    // Bobbing its head to the music, about 100 beats a minute.
+    bob: {
+      loop: true,
+      frames: [
+        { index: 50, durationMs: 300, anchors: closedAnchors(-1) },
+        { index: 51, durationMs: 300, anchors: closedAnchors(2) },
+      ],
+    },
+    // Shiny eyes on shopping sites, bouncing a little.
+    shiny: {
+      loop: true,
+      frames: [
+        { index: 52, durationMs: 450, anchors: closedAnchors(-1, -1) },
+        { index: 53, durationMs: 450, anchors: closedAnchors(0) },
+      ],
+    },
+    // Scribbling along while the user types a lot: a word, then a pause.
+    scribble: {
+      loop: true,
+      frames: [
+        { index: 54, durationMs: 150, anchors: closedAnchors(1) },
+        { index: 55, durationMs: 150, anchors: closedAnchors(1) },
+        { index: 56, durationMs: 150, anchors: closedAnchors(1) },
+        { index: 57, durationMs: 500, anchors: closedAnchors(1) },
       ],
     },
     // Feet slide out, Mocha wobbles twice and catches itself.

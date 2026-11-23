@@ -1,5 +1,7 @@
+import { BROWSER_CAPABILITIES, type BrowserCapability } from '@mocha/core';
 import { type IpcMainInvokeEvent, ipcMain } from 'electron';
 import { z } from 'zod';
+import type { BrowserView } from '../../shared/browser.ts';
 import { IpcChannel } from '../../shared/ipc-channels.ts';
 import type { LoginItem } from '../../shared/login-item.ts';
 import { type Preferences, preferencesSchema } from '../../shared/preferences.ts';
@@ -15,6 +17,17 @@ export interface LoginItemAccess {
   get(): LoginItem;
   /** Asks the system to open Mocha at login or not, and reads the result. */
   set(open: boolean): LoginItem;
+}
+
+export interface BrowserAccess {
+  get(): BrowserView;
+  /** Lets the extension connect or not, starting or stopping the API. */
+  allow(allowed: boolean): Promise<BrowserView>;
+  /** A new pairing token; the old one stops working at once. */
+  newPairingCode(): BrowserView;
+  /** Puts the pairing code on the clipboard; false when there is none. */
+  copyPairingCode(): boolean;
+  setCapability(name: BrowserCapability, enabled: boolean): BrowserView;
 }
 
 export interface SoundsAccess {
@@ -34,7 +47,13 @@ export function registerSettingsHandlers(
     preferences,
     loginItem,
     sounds,
-  }: { preferences: PreferencesAccess; loginItem: LoginItemAccess; sounds: SoundsAccess },
+    browser,
+  }: {
+    preferences: PreferencesAccess;
+    loginItem: LoginItemAccess;
+    sounds: SoundsAccess;
+    browser: BrowserAccess;
+  },
   trustedUrls: readonly string[],
   logger: IpcLogger,
 ): void {
@@ -91,5 +110,59 @@ export function registerSettingsHandlers(
     if (!fromSettings(IpcChannel.SettingsSetSounds, event)) return undefined;
     const result = setSounds(senderUrl(event), payload);
     return result.ok ? result.value : sounds.get();
+  });
+
+  // The browser companion (ADR-0011, ADR-0012): only booleans, a known
+  // capability name, or no data at all.
+  ipcMain.handle(IpcChannel.SettingsBrowser, (event) =>
+    fromSettings(IpcChannel.SettingsBrowser, event) ? browser.get() : undefined,
+  );
+  const allow = validated(IpcChannel.SettingsAllowBrowser, z.boolean(), browser.allow, {
+    isTrusted,
+    logger,
+  });
+  ipcMain.handle(IpcChannel.SettingsAllowBrowser, (event, payload: unknown) => {
+    if (!fromSettings(IpcChannel.SettingsAllowBrowser, event)) return undefined;
+    const result = allow(senderUrl(event), payload);
+    return result.ok ? result.value : browser.get();
+  });
+  const newCode = validated(
+    IpcChannel.SettingsNewPairingCode,
+    z.undefined(),
+    browser.newPairingCode,
+    {
+      isTrusted,
+      logger,
+    },
+  );
+  ipcMain.handle(IpcChannel.SettingsNewPairingCode, (event, payload: unknown) => {
+    if (!fromSettings(IpcChannel.SettingsNewPairingCode, event)) return undefined;
+    const result = newCode(senderUrl(event), payload);
+    return result.ok ? result.value : browser.get();
+  });
+  const copyCode = validated(
+    IpcChannel.SettingsCopyPairingCode,
+    z.undefined(),
+    browser.copyPairingCode,
+    {
+      isTrusted,
+      logger,
+    },
+  );
+  ipcMain.handle(IpcChannel.SettingsCopyPairingCode, (event, payload: unknown) => {
+    if (!fromSettings(IpcChannel.SettingsCopyPairingCode, event)) return false;
+    const result = copyCode(senderUrl(event), payload);
+    return result.ok && result.value;
+  });
+  const setCapability = validated(
+    IpcChannel.SettingsSetCapability,
+    z.strictObject({ name: z.enum(BROWSER_CAPABILITIES), enabled: z.boolean() }),
+    ({ name, enabled }) => browser.setCapability(name, enabled),
+    { isTrusted, logger },
+  );
+  ipcMain.handle(IpcChannel.SettingsSetCapability, (event, payload: unknown) => {
+    if (!fromSettings(IpcChannel.SettingsSetCapability, event)) return undefined;
+    const result = setCapability(senderUrl(event), payload);
+    return result.ok ? result.value : browser.get();
   });
 }

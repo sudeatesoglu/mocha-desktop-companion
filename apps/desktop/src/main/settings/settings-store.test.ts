@@ -103,6 +103,56 @@ describe('createSettingsStore', () => {
       });
     });
 
+    it('reads until when Mocha is hushed, and drops anything but a time', async () => {
+      const hushed = memoryFiles(JSON.stringify({ hushedUntil: 1_800_000_000_000 }));
+      const odd = memoryFiles(JSON.stringify({ hushedUntil: 'forever' }));
+
+      await expect(createSettingsStore(PATH, hushed.files, logger).load()).resolves.toEqual({
+        hushedUntil: 1_800_000_000_000,
+      });
+      await expect(createSettingsStore(PATH, odd.files, logger).load()).resolves.toEqual({});
+    });
+
+    it('reads the browser companion, with unknown or broken parts off', async () => {
+      const { files } = memoryFiles(
+        JSON.stringify({
+          browser: {
+            allowed: true,
+            token: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            port: 47213,
+            capabilities: { kind: true, title: 'yes', hacked: true },
+          },
+        }),
+      );
+
+      await expect(createSettingsStore(PATH, files, logger).load()).resolves.toEqual({
+        browser: {
+          allowed: true,
+          token: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+          port: 47213,
+          capabilities: {
+            kind: true,
+            site: false,
+            title: false,
+            talk: false,
+            nudge: false,
+            browserActivity: false,
+            pageActivity: false,
+          },
+        },
+      });
+    });
+
+    it('drops a token that is not a pairing token', async () => {
+      const { files } = memoryFiles(
+        JSON.stringify({ browser: { allowed: true, token: 'short', capabilities: {} } }),
+      );
+
+      const loaded = await createSettingsStore(PATH, files, logger).load();
+      expect(loaded.browser?.token).toBeUndefined();
+      expect(loaded.browser?.allowed).toBe(true);
+    });
+
     it('drops a look that is not an object and keeps the rest', async () => {
       const { files } = memoryFiles(
         JSON.stringify({ look: 'fancy', overlayPosition: { x: 1, y: 2 } }),

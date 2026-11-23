@@ -3,15 +3,25 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   BARE_LOOK,
+  type BrowserCapability,
+  type BrowsingPose,
+  browsingPose,
   EMPTY_ROOM,
+  EXTENSION_ORIGIN,
+  FRESH_TALK,
   findsEventForBreakChange,
+  hushEnd,
   isQuietTime,
   isTired,
+  localDay,
   minuteOfDay,
+  NO_BROWSER_CAPABILITIES,
   needsActivity,
   needsEventsForBreakChange,
+  nextTalk,
   place,
   type RitualPose,
+  type Saying,
   validLook,
   validRoom,
   wear,
@@ -19,6 +29,7 @@ import {
 import {
   app,
   type BrowserWindow,
+  clipboard,
   Menu,
   nativeImage,
   powerMonitor,
@@ -27,6 +38,12 @@ import {
   systemPreferences,
   Tray,
 } from 'electron';
+import {
+  COMMENT_HEIGHT,
+  COMMENT_SHOW_MS,
+  COMMENT_WIDTH,
+  type CommentShow,
+} from '../shared/comment.ts';
 import { IpcChannel } from '../shared/ipc-channels.ts';
 import { OVERLAY_SIZE } from '../shared/overlay.ts';
 import { DEFAULT_PREFERENCES, type Preferences, toBreakConfig } from '../shared/preferences.ts';
@@ -39,6 +56,12 @@ import { createBreakController } from './activity/break-controller.ts';
 import { createChangeReporter } from './activity/change-reporter.ts';
 import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-recorder.ts';
 import { createTodayStats } from './activity/today-stats.ts';
+import { handleApiRequest } from './api/api-handler.ts';
+import { type ApiServer, startApiServer } from './api/api-server.ts';
+import { browserView } from './api/browser-view.ts';
+import { createBrowsingAwareness } from './api/browsing-awareness.ts';
+import { newPairingToken } from './api/pairing-token.ts';
+import { createRateLimiter } from './api/rate-limiter.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { createFindsRepository } from './db/finds-repository.ts';
@@ -61,8 +84,9 @@ import { followRitualPoses } from './ritual/ritual-poses.ts';
 import { createRitualTracker } from './ritual/ritual-tracker.ts';
 import { ritualTransition } from './ritual/ritual-transition.ts';
 import { loginItemView } from './settings/login-item.ts';
-import { createSettingsStore } from './settings/settings-store.ts';
+import { createSettingsStore, type Settings } from './settings/settings-store.ts';
 import { watchSpaceChanges } from './space/space-watcher.ts';
+import { keepQuiet } from './talk/keep-quiet.ts';
 import { trayIconBitmap } from './tray/tray-icon.ts';
 import { trayMenuTemplate } from './tray/tray-menu.ts';
 import { createBubbleWindow } from './windows/create-bubble-window.ts';
@@ -81,8 +105,8 @@ const rendererFile = join(import.meta.dirname, '../renderer/index.html');
 // Set by electron-vite in development only.
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL'];
 
-// The reminder, ritual, settings and Tower windows each have their own preload and page.
-type Page = 'reminder' | 'ritual' | 'settings' | 'tower';
+// The reminder, ritual, comment, settings and Tower windows each have their own preload and page.
+type Page = 'comment' | 'reminder' | 'ritual' | 'settings' | 'tower';
 const pagePreload = (page: Page) => join(import.meta.dirname, `../preload/${page}.cjs`);
 const pageFile = (page: Page) => join(import.meta.dirname, `../renderer/${page}.html`);
 const pageUrl = (page: Page) =>
@@ -100,6 +124,9 @@ const after = (ms: number, callback: () => void) => {
 };
 
 const workAreas = () => screen.getAllDisplays().map((display) => display.workArea);
+
+/** Where the local API listens unless that port is taken (ADR-0011). */
+const DEFAULT_API_PORT = 47213;
 
 // Kept at module level: a tray that is garbage-collected disappears.
 let tray: Tray | undefined;
@@ -285,6 +312,20 @@ if (!app.requestSingleInstanceLock()) {
       window.webContents.send(IpcChannel.OverlayTired, tired),
     );
     needs.onChange((state) => tiredReporter.report(isTired(state)));
+    // What the user does in the browser, if they let Mocha know (ADR-0012):
+    // only the latest context, in memory, gone after three quiet minutes.
+    const awareness = createBrowsingAwareness({
+      staleMs: 3 * 60_000,
+      now: Date.now,
+      schedule: (ms, run) => {
+        const timer = setTimeout(run, ms);
+        return () => clearTimeout(timer);
+      },
+    });
+    const browsingReporter = createChangeReporter<BrowsingPose | null>((pose) =>
+      window.webContents.send(IpcChannel.OverlayBrowsing, pose),
+    );
+    awareness.onChange((context) => browsingReporter.report(browsingPose(context)));
     /**
      * The overlay page said it listens: send it everything it shows, since
      * a page that loaded or reloaded knows nothing. Waiting for the page to
@@ -300,6 +341,8 @@ if (!app.requestSingleInstanceLock()) {
       ritualReporter.report(ritualTracker.poseAt(Date.now())?.pose ?? null);
       tiredReporter.reset();
       tiredReporter.report(isTired(needs.state));
+      browsingReporter.reset();
+      browsingReporter.report(browsingPose(awareness.current));
       sendLook();
       sendSounds();
       window.webContents.send(IpcChannel.OverlayPaused, pause.paused);
@@ -506,6 +549,74 @@ if (!app.requestSingleInstanceLock()) {
       if (soundsOn && !window.isDestroyed()) window.webContents.send(IpcChannel.OverlaySound, kind);
     }
 
+    // The browser companion (ADR-0011, ADR-0012). The local API listens
+    // only while the user allows the extension and it is paired; what
+    // Mocha knows lives in memory and is forgotten on pause, sleep or lock.
+    let browser: NonNullable<Settings['browser']> = saved.browser ?? {
+      allowed: false,
+      capabilities: NO_BROWSER_CAPABILITIES,
+    };
+    const apiLimiter = createRateLimiter(120, 60_000, Date.now);
+    let apiServer: ApiServer | undefined;
+    async function syncApi() {
+      if (!(browser.allowed && browser.token)) {
+        await apiServer?.close();
+        apiServer = undefined;
+        awareness.forget();
+        return;
+      }
+      if (apiServer) return;
+      apiServer = await startApiServer({
+        port: browser.port ?? DEFAULT_API_PORT,
+        logger: console,
+        // Read per request, so a new pairing code applies at once.
+        handle: (request) =>
+          handleApiRequest(request, {
+            token: browser.token ?? '',
+            origin: EXTENSION_ORIGIN,
+            allowRequest: () => apiLimiter.allow(),
+            capabilities: () => browser.capabilities,
+            report: (context) => awareness.report(context),
+          }),
+      });
+      if (apiServer.port !== browser.port) {
+        browser = { ...browser, port: apiServer.port };
+        void settings.update({ browser });
+      }
+    }
+    const startApi = () =>
+      syncApi().catch((error: unknown) => console.warn('[api] could not start', error));
+    void startApi();
+    app.on('will-quit', () => void apiServer?.close());
+    function setBrowser(next: typeof browser) {
+      browser = next;
+      void settings.update({ browser });
+    }
+    // What the Browser section of Settings may do; main keeps the rules.
+    const browserAccess = {
+      get: () => browserView(browser, apiServer?.port),
+      allow: async (allowed: boolean) => {
+        setBrowser({ ...browser, allowed, token: browser.token ?? newPairingToken() });
+        await startApi();
+        return browserAccess.get();
+      },
+      // The handler reads the token on every request: the old one fails at once.
+      newPairingCode: () => {
+        setBrowser({ ...browser, token: newPairingToken() });
+        return browserAccess.get();
+      },
+      copyPairingCode: () => {
+        const code = browserAccess.get().pairingCode;
+        if (code === null) return false;
+        clipboard.writeText(code);
+        return true;
+      },
+      setCapability: (name: BrowserCapability, enabled: boolean) => {
+        setBrowser({ ...browser, capabilities: { ...browser.capabilities, [name]: enabled } });
+        return browserAccess.get();
+      },
+    };
+
     // Settings: one window at a time, opened from the tray. Saved values
     // apply at once: the break rules take the new durations on the next tick.
     const settingsWindow = singleWindow(() => {
@@ -537,6 +648,7 @@ if (!app.requestSingleInstanceLock()) {
             return loginItemView(app.isPackaged, app.getLoginItemSettings());
           },
         },
+        browser: browserAccess,
         sounds: {
           get: () => soundsOn,
           set: (enabled) => {
@@ -614,13 +726,17 @@ if (!app.requestSingleInstanceLock()) {
       console,
     );
 
-    const markAway = () => activity.markAway();
+    const markAway = () => {
+      activity.markAway();
+      awareness.forget();
+    };
     powerMonitor.on('suspend', markAway);
     powerMonitor.on('lock-screen', markAway);
 
     const pause = createPauseController();
     pause.onChange((paused) => {
       window.webContents.send(IpcChannel.OverlayPaused, paused);
+      if (paused) awareness.forget();
       breaks.dispatch({ type: paused ? 'pause' : 'resume', now: Date.now() });
       if (paused) {
         stopCursorTracking?.();
@@ -631,6 +747,106 @@ if (!app.requestSingleInstanceLock()) {
         activity.start();
       }
     });
+
+    // Mocha talks about what the user does in the browser, if they let it
+    // (#176): the rules are in core; main only tells them when to keep quiet
+    // and shows what Mocha says in a bubble that fades on its own.
+    let talk = FRESH_TALK;
+    let hushedUntil = saved.hushedUntil;
+    let comment: BrowserWindow | undefined;
+    let commentShow: CommentShow | undefined;
+    let commentTimer: ReturnType<typeof setTimeout> | undefined;
+    const placeComment = () => {
+      const bounds = window.getBounds();
+      return reminderPosition(
+        bounds,
+        { width: COMMENT_WIDTH, height: COMMENT_HEIGHT },
+        screen.getDisplayMatching(bounds).workArea,
+      );
+    };
+    function closeComment() {
+      clearTimeout(commentTimer);
+      comment?.close();
+      comment = undefined;
+    }
+    const openComment = (saying: Saying) => {
+      const placed = placeComment();
+      commentShow = { text: saying.text, side: placed.side };
+      const opened = createBubbleWindow(
+        pagePreload('comment'),
+        placed,
+        { width: COMMENT_WIDTH, height: COMMENT_HEIGHT, title: 'Mocha: comment' },
+        process.platform,
+      );
+      // It only shows words: clicks go through to whatever is under it.
+      opened.setIgnoreMouseEvents(true);
+      comment = opened;
+      opened.webContents.once('did-finish-load', () =>
+        opened.webContents.send(IpcChannel.CommentShow, commentShow),
+      );
+      opened.on('closed', () => {
+        if (comment === opened) comment = undefined;
+      });
+      loadPage(opened, 'comment');
+      commentTimer = setTimeout(closeComment, COMMENT_SHOW_MS);
+      playSound('comment');
+    };
+    window.on('move', () => {
+      if (!comment || !commentShow) return;
+      const placed = placeComment();
+      comment.setPosition(placed.x, placed.y);
+      if (placed.side === commentShow.side) return;
+      commentShow = { ...commentShow, side: placed.side };
+      comment.webContents.send(IpcChannel.CommentShow, commentShow);
+    });
+    // Whenever the latest context changes, which the extension reports at
+    // least once a minute while the user browses.
+    awareness.onChange((context) => {
+      const now = Date.now();
+      const minute = minuteOfDay(now);
+      const next = nextTalk(talk, {
+        now,
+        minute,
+        day: localDay(now).start,
+        context,
+        may: { talk: browser.capabilities.talk, nudge: browser.capabilities.nudge },
+        quiet: keepQuiet({
+          now,
+          paused: pause.paused,
+          phase: breaks.state.phase,
+          ritual: ritual !== undefined,
+          bubble: comment !== undefined || reminder !== undefined,
+          quietHours: isQuietTime(preferences.quietHours, minute),
+          hushedUntil,
+        }),
+        random: Math.random,
+      });
+      talk = next.state;
+      if (next.say) openComment(next.say);
+    });
+    // A break, a focus session, a ritual or a pause comes first: the
+    // comment makes way at once.
+    breaks.onChange((next) => {
+      if (next.phase !== 'working') closeComment();
+    });
+    pause.onChange((paused) => {
+      if (paused) closeComment();
+    });
+    const setHush = (until: number | undefined) => {
+      hushedUntil = until;
+      void settings.update({ hushedUntil: until });
+      if (until !== undefined) closeComment();
+    };
+    /** Hush in the tray menu, while Mocha may talk or nudge at all. */
+    const hushMenu = () => {
+      const { allowed, capabilities } = browser;
+      if (!(allowed && (capabilities.talk || capabilities.nudge))) return undefined;
+      const until = hushedUntil;
+      if (until === undefined || Date.now() >= until) return { until: null };
+      return {
+        until: new Date(until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+    };
 
     app.setAboutPanelOptions({
       applicationName: 'Mocha',
@@ -655,9 +871,15 @@ if (!app.requestSingleInstanceLock()) {
               today: todayStats(Date.now()),
               breakLeftMs: leftIn('onBreak', Date.now()),
               focusLeftMs: leftIn('focusing', Date.now()),
+              hush: hushMenu(),
             },
             {
               togglePause: () => pause.toggle(),
+              hush: (length) => {
+                const now = Date.now();
+                setHush(hushEnd(now, minuteOfDay(now), length));
+              },
+              talkAgain: () => setHush(undefined),
               openSettings,
               openTower,
               startFocus,
@@ -681,6 +903,7 @@ if (!app.requestSingleInstanceLock()) {
     window.on('closed', () => {
       closeReminder();
       closeRitual();
+      closeComment();
       settingsWindow.close();
       towerWindow.close();
       activity.stop();

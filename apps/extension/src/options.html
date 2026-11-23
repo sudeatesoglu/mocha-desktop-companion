@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mocha</title>
+    <link rel="stylesheet" href="./options.css" />
+    <script type="module" src="./options.ts"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Mocha in your browser</h1>
+        <p class="lead" id="welcome" hidden>
+          Thanks for adding Mocha. Nothing is read until you turn it on in Mocha’s Settings.
+        </p>
+        <p class="lead">
+          Mocha keeps you company while you browse and talks about what you do, knowing only what
+          you allow.
+        </p>
+      </header>
+
+      <section aria-labelledby="how-title">
+        <h2 id="how-title">What Mocha may know</h2>
+        <dl class="facts">
+          <dt>What is read</dt>
+          <dd>
+            Only what you turn on in Mocha’s Settings, under Browser: the address and title of the
+            tab in front, whether a tab plays sound, how many tabs are open, and, if you allow it,
+            how often you type, scroll and click on a page. Never what you type or click on.
+          </dd>
+          <dt>What is sent</dt>
+          <dd>
+            Only to Mocha on this computer, and only what you allowed: the kind of site, its domain
+            (like github.com), a title with addresses and numbers taken out, and counts.
+          </dd>
+          <dt>What is never sent</dt>
+          <dd>
+            Private windows; pages on this computer or your own network; banking and payments,
+            health, government, mail and messaging, password managers and adult sites; sign-in,
+            sign-up, checkout, payment and account pages; the sites you leave out below; anything
+            while paused.
+            <details>
+              <summary>The sites that are never sent</summary>
+              <ul class="sensitive" id="sensitive"></ul>
+              <p class="hint">
+                Addresses that look like banks, government, health care, mail or sign-in pages are
+                held back too, even when they are not on these lists.
+              </p>
+            </details>
+          </dd>
+          <dt>What is kept</dt>
+          <dd>
+            Nothing about your browsing. Mocha keeps only the latest page in memory, to choose a
+            pose and a comment, and soon forgets it. This extension keeps only the pairing code,
+            the sites you leave out and whether it is paused.
+          </dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="pair-title">
+        <h2 id="pair-title">Pair with Mocha</h2>
+        <ol class="steps">
+          <li>
+            In Mocha, open Settings from the menu bar and turn on “Let the Mocha extension connect”.
+          </li>
+          <li>Copy the pairing code there and paste it here.</li>
+        </ol>
+        <form class="row" id="pair-form">
+          <label class="visually-hidden" for="pairing-code">Pairing code</label>
+          <input
+            id="pairing-code"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="47213-ABCD…"
+          />
+          <button type="submit">Pair</button>
+        </form>
+        <p class="status" id="connection" role="status" aria-live="polite"></p>
+        <button type="button" class="link" id="forget" hidden>Forget the pairing code</button>
+      </section>
+
+      <section aria-labelledby="allowed-title">
+        <h2 id="allowed-title">What you allowed</h2>
+        <p class="hint">Change these in Mocha’s Settings, under Browser.</p>
+        <div class="notice" id="tabs-notice" hidden>
+          <p>
+            Chrome needs your OK before the extension can see the tab in front. Chrome calls this
+            “Read your browsing history”; your history itself is never read.
+          </p>
+          <button type="button" id="allow-tabs">Allow</button>
+        </div>
+        <div class="notice" id="pages-notice" hidden>
+          <p>
+            Chrome needs your OK before the extension can count typing, scrolling and clicking on
+            pages. Chrome calls this “Read and change all your data on all websites”; the counting
+            script reads and changes nothing.
+          </p>
+          <button type="button" id="allow-pages">Allow</button>
+        </div>
+        <ul class="capabilities" id="capabilities"></ul>
+      </section>
+
+      <section aria-labelledby="chrome-title">
+        <h2 id="chrome-title">Chrome’s permissions</h2>
+        <dl class="facts">
+          <dt>When you add the extension</dt>
+          <dd>Nothing. It reaches only Mocha, on your own computer, and nothing else.</dd>
+          <dt>“Read your browsing history”</dt>
+          <dd>
+            Asked here once you allow Mocha to know anything about your browsing. It lets the
+            extension see the address and title of the tab in front. Your history itself is never
+            read.
+          </dd>
+          <dt>“Read and change all your data on all websites”</dt>
+          <dd>
+            Asked only if you allow “Notice how busy you are on a page”, and only for https pages.
+            A small script then counts typing, scrolling and clicking on each page, and sends the
+            counts every 30 seconds. It reads and changes nothing, does not count keys in password,
+            one-time code or card fields, and does not run at all on the sites that are never sent.
+          </dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="leave-out-title">
+        <h2 id="leave-out-title">Sites to leave out</h2>
+        <p class="hint">Nothing is ever sent about these sites, or the sites under them.</p>
+        <form class="row" id="exclusion-form">
+          <label class="visually-hidden" for="exclusion">Site to leave out</label>
+          <input id="exclusion" autocomplete="off" spellcheck="false" placeholder="reddit.com" />
+          <button type="submit">Leave out</button>
+        </form>
+        <p class="status" id="exclusion-status" role="status" aria-live="polite"></p>
+        <ul class="exclusions" id="exclusions"></ul>
+      </section>
+
+      <section aria-labelledby="pause-title">
+        <h2 id="pause-title">Pause</h2>
+        <label class="toggle">
+          <input id="paused" type="checkbox" aria-describedby="paused-hint" />
+          Pause Mocha in this browser
+        </label>
+        <p class="hint" id="paused-hint">Nothing is sent while paused.</p>
+      </section>
+    </main>
+  </body>
+</html>

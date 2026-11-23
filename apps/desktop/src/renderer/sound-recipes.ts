@@ -38,6 +38,11 @@ export const SOUNDS: Readonly<Record<SoundKind, readonly Tone[]>> = {
     { frequency: E5, at: 0.12, duration: 0.12, wave: 'triangle' },
     { frequency: G5, at: 0.24, duration: 0.2, wave: 'triangle' },
   ],
+  // A tiny two-note chirp, falling: a word from Mocha, not a call.
+  comment: [
+    { frequency: E6, at: 0, duration: 0.05, wave: 'triangle' },
+    { frequency: C6, at: 0.06, duration: 0.07, wave: 'triangle' },
+  ],
   // High twinkles, like the sparkle on the desktop.
   found: [
     { frequency: C6, at: 0, duration: 0.08, wave: 'sine' },

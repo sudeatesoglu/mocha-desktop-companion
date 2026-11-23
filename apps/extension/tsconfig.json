@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // The extension's pages and service worker: browser and extension APIs only.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    // Every file is a module, so top-level names never collide with globals.
+    "moduleDetection": "force",
+    "types": ["chrome"]
+  },
+  "include": ["src"]
+}

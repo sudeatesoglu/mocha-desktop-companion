@@ -296,6 +296,12 @@ window.mocha.onTiredChange((tired) => {
   if (animator.setTired(tired)) loop.invalidate();
 });
 
+// What the user does in the browser, if they let Mocha know: Mocha keeps
+// them company with a pose of its own, after focus and tiredness.
+window.mocha.onBrowsingChange((pose) => {
+  if (animator.setBrowsing(pose)) loop.invalidate();
+});
+
 document.addEventListener('visibilitychange', syncLoop);
 
 loop.start();

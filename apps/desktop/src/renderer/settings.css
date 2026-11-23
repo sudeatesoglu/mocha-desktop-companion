@@ -152,6 +152,51 @@ button:active {
   translate: 1px 1px;
 }
 
+.browser {
+  margin-top: 18px;
+}
+
+/* The code on a line of its own, whole, with its buttons below. */
+.pairing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0 24px;
+}
+
+.pairing code {
+  flex: 1 0 100%;
+  font-size: 12px;
+  word-break: break-all;
+  user-select: all;
+}
+
+.pairing button {
+  white-space: nowrap;
+}
+
+.pairing[hidden] {
+  display: none;
+}
+
+.subheading {
+  margin: 14px 0 6px;
+  font-weight: 600;
+}
+
+.capability {
+  margin-bottom: 6px;
+}
+
+.capability .hint {
+  margin: 0 0 0 24px;
+}
+
+.capability input:disabled + span {
+  opacity: 0.5;
+}
+
 #status {
   min-height: 1.4em;
   margin: 8px 0 0;
