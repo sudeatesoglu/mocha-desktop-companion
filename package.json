@@ -24,6 +24,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "docs:dev": "pnpm --filter @mocha/docs dev",
+    "docs:build": "pnpm --filter @mocha/docs build",
+    "docs:preview": "pnpm --filter @mocha/docs preview",
     "prepare": "node scripts/install-git-hooks.mjs"
   },
   "devDependencies": {
