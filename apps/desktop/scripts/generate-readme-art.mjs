@@ -285,6 +285,15 @@ const SCENES = {
     ],
   },
   tired: { scale: 3, durationMs: 11_250, start: (animator) => animator.setTired(true) },
+  // Keeping the user company in the browser: one whole loop of each.
+  readAlong: {
+    scale: 3,
+    durationMs: 4_200,
+    start: (animator) => animator.setBrowsing('readAlong'),
+  },
+  movie: { scale: 3, durationMs: 7_400, start: (animator) => animator.setBrowsing('watch') },
+  music: { scale: 3, durationMs: 2_400, start: (animator) => animator.setBrowsing('bob') },
+  shiny: { scale: 3, durationMs: 1_800, start: (animator) => animator.setBrowsing('shiny') },
   // Dressed up in things Mocha found: one idle breath, then a hop.
   dressed: {
     scale: 3,

@@ -78,6 +78,36 @@
       <br><b>Mind its energy</b><br>Long stretches make it sleepy.
     </td>
   </tr>
+  <tr>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/readAlong-dark.png">
+        <img src="docs/assets/readme/readAlong-light.png" width="144" alt="Mocha in round red glasses, its eye moving along a line">
+      </picture>
+      <br><b>Reads along</b><br>Glasses on for code and docs.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/movie-dark.png">
+        <img src="docs/assets/readme/movie-light.png" width="144" alt="Mocha watches the screen holding a striped box of popcorn">
+      </picture>
+      <br><b>Movie night</b><br>Popcorn for every video.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/music-dark.png">
+        <img src="docs/assets/readme/music-light.png" width="144" alt="Mocha bobs its head with its eyes closed as a note rises">
+      </picture>
+      <br><b>Music on</b><br>It bobs along to the beat.
+    </td>
+    <td align="center" width="25%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/shiny-dark.png">
+        <img src="docs/assets/readme/shiny-light.png" width="144" alt="Mocha with big shining eyes as twinkles blink around its hat">
+      </picture>
+      <br><b>Shiny things</b><br>Shopping? Its eyes light up.
+    </td>
+  </tr>
 </table>
 
 Drag Mocha anywhere and it remembers the spot. It stays out of your way: clicks pass through everywhere except Mocha itself.
@@ -176,6 +206,10 @@ pnpm dev
 
 Built with Electron, TypeScript and a small hand-written Canvas 2D engine. `pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build` runs every check, and `pnpm --filter @mocha/desktop generate:skin`, `generate:readme-art` and `generate:icon` redraw the placeholder skin, the README art and the app icon. Run them on Node 24: other versions compress the same pixels into different PNG bytes. In development, `MOCHA_DEV_WORK_MS=60000 pnpm dev` shortens the work stretch and `MOCHA_DEV_FOCUS_MS=60000` every focus session, so reminders and breaks can be tried without waiting. Development keeps its data in `~/Library/Application Support/Mocha Dev`, apart from the installed app's.
 
+The browser extension lives in `apps/extension`: `pnpm build` puts it in `apps/extension/dist`, which Chrome loads unpacked. `pnpm docs:dev` serves the documentation site from `docs/`.
+
+- [Documentation](https://sudeatesoglu.github.io/mocha-desktop-companion/): guides, the skin format and the local API
+- [Local API](docs/openapi.yaml): the OpenAPI 3.1 document the extension talks to, checked against the code by a test
 - [Skin format](docs/skins.md): how to draw your own Mocha
 - [Architecture decisions](docs/adr/README.md): why it is built this way
 
