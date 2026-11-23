@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - docs
 
 # Dependency lifecycle scripts (postinstall, etc.) are blocked by default
 # because they run arbitrary code on install. Every package that ships one
@@ -12,6 +13,12 @@ allowBuilds:
   # Pulled in by electron-builder for Windows installers. Its install
   # script only copies a Windows 7-Zip binary; not needed for macOS builds.
   electron-winstaller: false
+  # Pulled in by VitePress (docs only). Its install script checks the
+  # platform binary, which pnpm installs as an optional dependency anyway.
+  esbuild: false
+  # Pulled in by Scalar (docs only). Its install script switches between
+  # Vue 2 and 3; it defaults to Vue 3, which the docs site uses.
+  vue-demi: false
 
 auditConfig:
   ignoreGhsas:
