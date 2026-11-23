@@ -39,7 +39,8 @@ export interface Api {
   report(context: BrowsingContext): void;
 }
 
-const ROUTES: Readonly<Record<string, readonly string[]>> = {
+/** The API's routes and their methods, as documented in docs/openapi.yaml. */
+export const ROUTES: Readonly<Record<string, readonly string[]>> = {
   '/v1/health': ['GET'],
   '/v1/capabilities': ['GET'],
   '/v1/context': ['POST'],
