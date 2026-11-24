@@ -60,6 +60,60 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    version: 5,
+    // Mocha's memory (ADR-0013): conversations and their messages, kept
+    // for a while, their summaries, the facts Mocha remembers with a
+    // full-text index kept in step by triggers, and the weekly insight.
+    // Never anything about the user's browsing.
+    sql: `
+      CREATE TABLE conversations (
+        id INTEGER PRIMARY KEY,
+        started_at INTEGER NOT NULL,
+        last_message_at INTEGER NOT NULL CHECK (last_message_at >= started_at),
+        summary TEXT CHECK (summary IS NULL OR length(summary) BETWEEN 1 AND 600)
+      );
+      CREATE INDEX conversations_last_message_at ON conversations (last_message_at);
+      CREATE TABLE messages (
+        id INTEGER PRIMARY KEY,
+        conversation_id INTEGER NOT NULL REFERENCES conversations (id) ON DELETE CASCADE,
+        role TEXT NOT NULL CHECK (role IN ('user', 'mocha')),
+        text TEXT NOT NULL CHECK (length(text) BETWEEN 1 AND 4000),
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX messages_conversation ON messages (conversation_id, id);
+      CREATE INDEX messages_created_at ON messages (created_at);
+      CREATE TABLE memories (
+        id INTEGER PRIMARY KEY,
+        text TEXT NOT NULL UNIQUE CHECK (length(text) BETWEEN 3 AND 200),
+        pinned INTEGER NOT NULL DEFAULT 0 CHECK (pinned IN (0, 1)),
+        created_at INTEGER NOT NULL,
+        last_used_at INTEGER,
+        uses INTEGER NOT NULL DEFAULT 0 CHECK (uses >= 0)
+      );
+      CREATE VIRTUAL TABLE memories_fts USING fts5 (
+        text, content = 'memories', content_rowid = 'id',
+        tokenize = 'unicode61 remove_diacritics 2'
+      );
+      -- Deleted words leave the index itself, not just its lookups.
+      INSERT INTO memories_fts (memories_fts, rank) VALUES ('secure-delete', 1);
+      CREATE TRIGGER memories_inserted AFTER INSERT ON memories BEGIN
+        INSERT INTO memories_fts (rowid, text) VALUES (new.id, new.text);
+      END;
+      CREATE TRIGGER memories_deleted AFTER DELETE ON memories BEGIN
+        INSERT INTO memories_fts (memories_fts, rowid, text) VALUES ('delete', old.id, old.text);
+      END;
+      CREATE TRIGGER memories_edited AFTER UPDATE OF text ON memories BEGIN
+        INSERT INTO memories_fts (memories_fts, rowid, text) VALUES ('delete', old.id, old.text);
+        INSERT INTO memories_fts (rowid, text) VALUES (new.id, new.text);
+      END;
+      CREATE TABLE insights (
+        week_start INTEGER PRIMARY KEY,
+        text TEXT NOT NULL CHECK (length(text) BETWEEN 1 AND 1000),
+        created_at INTEGER NOT NULL
+      );
+    `,
+  },
 ];
 
 // `PRAGMA user_version` always returns exactly one row.
