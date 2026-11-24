@@ -1,4 +1,15 @@
 export { cleanAnswer } from './ai/answer.ts';
+export {
+  CONVERSATION_IDLE_MS,
+  cleanMemory,
+  MAX_MEMORIES,
+  MAX_MEMORY_CHARS,
+  MAX_SUMMARY_CHARS,
+  MESSAGE_RETENTION_DAYS,
+  memoryQuery,
+  parseSummary,
+  summaryPrompt,
+} from './ai/memory.ts';
 export { MOCHA_PERSONA } from './ai/persona.ts';
 export {
   CHARS_PER_TOKEN,
@@ -43,7 +54,7 @@ export { matchesDomain, registrableDomain } from './browsing/domains.ts';
 export { EXTENSION_ID, EXTENSION_ORIGIN, EXTENSION_PUBLIC_KEY } from './browsing/extension.ts';
 export { filterPage, type HoldReason, type PageVerdict } from './browsing/filter.ts';
 export { formatPairingCode, parsePairingCode } from './browsing/pairing.ts';
-export { MAX_TITLE_LENGTH, scrubTitle } from './browsing/scrub-title.ts';
+export { MAX_TITLE_LENGTH, scrubPrivate, scrubTitle } from './browsing/scrub-title.ts';
 export {
   isSensitivePath,
   SENSITIVE_DOMAINS,

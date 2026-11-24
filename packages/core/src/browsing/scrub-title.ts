@@ -13,16 +13,20 @@ const PRIVATE_PATTERNS: readonly RegExp[] = [
   /\d{5,}/g, // order numbers, IDs and other long digit runs
 ];
 
+/** `text` with addresses, emails, IBANs, tokens and long numbers taken out. */
+export function scrubPrivate(text: string): string {
+  let scrubbed = text;
+  for (const pattern of PRIVATE_PATTERNS) scrubbed = scrubbed.replace(pattern, ' ');
+  return scrubbed.replace(/\s+/g, ' ').trim();
+}
+
 /**
  * A page title with anything that could identify a person or an account
  * taken out, then shortened. Removing too much is fine: Mocha only needs
  * enough to make a comment.
  */
 export function scrubTitle(title: string): string {
-  let scrubbed = title;
-  for (const pattern of PRIVATE_PATTERNS) scrubbed = scrubbed.replace(pattern, ' ');
-  scrubbed = scrubbed
-    .replace(/\s+/g, ' ')
+  const scrubbed = scrubPrivate(title)
     // separators left dangling at the ends, like "| Inbox -"
     .replace(/^[\s|•·:–—-]+|[\s|•·:–—-]+$/g, '')
     .trim();
