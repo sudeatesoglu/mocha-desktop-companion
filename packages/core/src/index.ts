@@ -1,3 +1,19 @@
+export { cleanAnswer } from './ai/answer.ts';
+export { MOCHA_PERSONA } from './ai/persona.ts';
+export {
+  CHARS_PER_TOKEN,
+  type ChatTurn,
+  chatPrompt,
+  commentPrompt,
+  type DayNumbers,
+  dataBlock,
+  insightPrompt,
+  MAX_COMMENT_CHARS,
+  MAX_MESSAGE_CHARS,
+  type MochaFeelings,
+  type Prompt,
+  untrusted,
+} from './ai/prompt.ts';
 /**
  * Public API of @mocha/core.
  *
