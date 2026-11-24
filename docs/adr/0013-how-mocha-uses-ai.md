@@ -35,7 +35,21 @@ Never: anything the extension's filter holds back, page activity counts, other a
 
 **Untrusted on the way in, plain on the way out.** Page titles and the user's own text go into prompts as quoted data, separate from Mocha's instructions, shortened and scrubbed. Mocha's persona tells the model to treat them as data. Answers are shown as plain text, never HTML, and are cut to a fixed length. The model has no tools and cannot act. It cannot change a setting, open a page or call the API; it can only return words. If a model fails or is slow, the comment falls back to the fixed lines and the chat says so.
 
-**Kept, and deletable.** The chat is stored in `mocha.db` so Mocha can remember earlier talks. "Forget our chats" in the Tower and in Settings deletes all of it. A weekly insight is stored until the next one replaces it. Comments are never stored. Prompts and answers are never logged.
+**A memory in three layers**, in `mocha.db`, so Mocha can remember without sending everything every time:
+- **Conversations:** the messages themselves, kept for 90 days by default (the user can change it). Older messages are deleted; their conversation's summary stays.
+- **Summaries:** when a conversation ends, the model writes a few sentences about it.
+- **Memories:** lasting facts Mocha picks up by itself, such as "is learning Rust" or "likes short breaks". Mocha says so in the chat when it remembers something. The Tower lists them under "What Mocha remembers", where each can be edited or deleted. Mocha is told not to keep secrets, credentials, health or money matters, and every memory passes the same scrubber as page titles before it is saved.
+
+Every message is answered within a fixed budget: the persona, the numbers, pinned memories and the few most relevant to the new message, the latest summaries, then the conversation so far. Relevance comes from SQLite's built-in full-text search (FTS5, BM25), recency and use, not from embeddings. Embeddings may come later as an optional layer, through Ollama.
+
+The memory is robust by construction:
+- migrations in transactions and WAL, as before
+- foreign keys, so deleting a conversation deletes its messages
+- `CHECK` constraints on roles and lengths
+- triggers that keep the search index in step
+- a cap on the number of memories, dropping the least used first
+
+Browser data never enters the memory. "Forget everything" in the Tower and in Settings deletes the conversations, summaries and memories. With `secure_delete` on, the WAL emptied and the file vacuumed, nothing is left in the file. A weekly insight is kept until the next one replaces it. Comments are never stored. Prompts and answers are never logged.
 
 **The persona is shared.** One system prompt in `@mocha/core` describes Mocha for every feature: playful like its comments (#176), never hurtful, never guilt, short, honest that it is a raven in a computer and not a person or a doctor. It is unit-tested for what it must always say, and so is the code that builds each prompt from only the allowed data.
 
@@ -49,12 +63,16 @@ Never: anything the extension's filter holds back, page activity counts, other a
 - **A model bundled with the app:** no setup, but hundreds of megabytes to gigabytes in every download, and the app would have to manage model files and updates. Ollama already does this well.
 - **Letting the chat see the browser:** more to talk about, but it mixes the most sensitive data into the feature with the most free text. The user chose to keep the browser out of the chat.
 - **Not keeping the chat:** safer, but Mocha could not remember anything, which the user wanted. A one-step delete keeps the choice with them.
+- **Sending the whole history every time:** simple, but prompts would grow without end, slow down and cost more with Claude.
+- **Vector search now:** finds memories by meaning, but needs an embedding model and a native SQLite extension in the packaged, fused app. FTS5 is built in, deterministic and testable; embeddings can be added on top later.
+- **Memories only when the user asks, or only after the user confirms:** the safest, but the user chose a Mocha that remembers by itself, made visible and deletable.
 
 ## Consequences
 
 - The README's privacy promise gains an exact account of what each AI feature may send, and where.
 - Settings gets an AI section: off, on this computer, or Claude with a key, plus one switch per feature. The Tower gets a chat and a place for the weekly insight.
-- The database gets tables for the chat and the insight (a migration). Deleting them is one action.
+- The database gets tables for conversations, messages, memories, their search indexes and the insight (a migration). Deleting them is one action, and so is deleting one memory.
+- Summaries and memories are written by the same model the user chose, in the background after a conversation, under the same rules as any prompt.
 - A second network destination (`api.anthropic.com`) exists, used only from main and only when the user chose Claude. Security reviews cover it like the local API.
 - Answers vary. Tests cover what goes into prompts and how answers are handled, not what a model says.
 - Ollama's own behavior and Anthropic's data handling are outside Mocha's control; Settings and the docs say so and link to their policies.
