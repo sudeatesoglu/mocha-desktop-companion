@@ -15,6 +15,10 @@ export function openDatabase(
   try {
     db = new DatabaseSync(path);
     db.exec('PRAGMA journal_mode = WAL'); // a crash cannot corrupt committed data
+    // Deleting a conversation deletes its messages (ADR-0013).
+    db.exec('PRAGMA foreign_keys = ON');
+    // Deleted rows are overwritten, so "forget" leaves nothing in the file.
+    db.exec('PRAGMA secure_delete = ON');
     runMigrations(db, migrations);
     return db;
   } catch (error) {
