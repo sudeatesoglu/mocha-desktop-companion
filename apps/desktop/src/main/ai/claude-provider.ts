@@ -1,4 +1,5 @@
 import type { Prompt } from '@mocha/core';
+import type { ClaudeModel } from '../../shared/ai.ts';
 import {
   type AiProblem,
   type AiProvider,
@@ -12,10 +13,6 @@ import {
 
 /** Anthropic's API, used only with the user's own key (ADR-0013). */
 export const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-
-/** The models the user may pick; the first is the default, quick and cheap. */
-export const CLAUDE_MODELS = ['claude-haiku-5-5', 'claude-sonnet-5-5'] as const;
-export type ClaudeModel = (typeof CLAUDE_MODELS)[number];
 
 function problemFor(status: number): AiProblem {
   if (status === 401 || status === 403) return 'wrong key';
@@ -81,7 +78,8 @@ export function createClaudeProvider(fetchFn: Fetch, key: string, model: ClaudeM
           problem: fetchProblem(error) === 'timeout' ? 'timeout' : 'unavailable',
         };
       }
-      return { ok: true, text };
+      // An empty answer is no answer: Mocha never shows an empty bubble.
+      return text.trim() ? { ok: true, text } : { ok: false, problem: 'unavailable' };
     },
   };
 }

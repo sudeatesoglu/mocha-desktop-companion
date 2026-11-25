@@ -113,6 +113,60 @@
           your browsing is kept.
         </p>
       </fieldset>
+
+      <!-- AI (ADR-0013): off by default, applied at once, nothing sent before a feature is on. -->
+      <fieldset class="ai">
+        <legend>AI</legend>
+        <p class="hint">
+          Mocha can use a language model to chat, to sum up your week and to write its comments.
+          Nothing is sent anywhere until you turn one of them on.
+        </p>
+        <div class="choices" role="radiogroup" aria-label="Where the model runs">
+          <label class="toggle"><input type="radio" name="ai-provider" value="off" /> Off</label>
+          <label class="toggle"
+            ><input type="radio" name="ai-provider" value="local" /> On this computer, with
+            Ollama</label
+          >
+          <label class="toggle"
+            ><input type="radio" name="ai-provider" value="claude" /> Claude, with your own API
+            key</label
+          >
+        </div>
+
+        <div class="ai-local" id="ai-local" hidden>
+          <label class="field" for="ai-local-model">Model</label>
+          <select id="ai-local-model"></select>
+          <p class="hint" id="ai-local-hint"></p>
+          <p class="hint">Nothing leaves this computer.</p>
+        </div>
+
+        <div class="ai-claude" id="ai-claude" hidden>
+          <p class="hint">
+            What each feature below allows goes to Anthropic, under your own account and their
+            privacy policy.
+          </p>
+          <form class="key" id="ai-key-form">
+            <label class="visually-hidden" for="ai-key">Claude API key</label>
+            <input id="ai-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" />
+            <button type="submit">Save key</button>
+          </form>
+          <p class="hint" id="ai-key-hint"></p>
+          <button type="button" class="link" id="ai-forget-key" hidden>Remove key</button>
+          <label class="field" for="ai-claude-model">Model</label>
+          <select id="ai-claude-model">
+            <option value="claude-haiku-5-5">Claude Haiku (quick)</option>
+            <option value="claude-sonnet-5-5">Claude Sonnet (better answers)</option>
+          </select>
+        </div>
+
+        <fieldset id="ai-features" class="capabilities">
+          <legend class="subheading">What Mocha may use it for</legend>
+        </fieldset>
+        <div class="ai-try">
+          <button type="button" id="ai-try">Try it</button>
+          <p class="hint" id="ai-try-status" role="status" aria-live="polite"></p>
+        </div>
+      </fieldset>
     </main>
     <script type="module" src="./settings.ts"></script>
   </body>

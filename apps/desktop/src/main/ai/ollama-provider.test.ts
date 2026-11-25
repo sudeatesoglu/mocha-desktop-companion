@@ -62,6 +62,7 @@ describe('createOllamaProvider', () => {
         { role: 'user', content: 'hi' },
       ],
       stream: true,
+      think: false,
       options: { num_predict: 50 },
     });
   });
@@ -77,6 +78,11 @@ describe('createOllamaProvider', () => {
     ['it fails', async () => new Response('', { status: 500 }), 'unavailable'],
     ['it reports an error mid-way', async () => ndjson({ error: 'out of memory' }), 'unavailable'],
     ['it sends garbage', async () => new Response('not json\n'), 'unavailable'],
+    [
+      'it says nothing',
+      async () => ndjson({ message: { content: ' ' } }, { done: true }),
+      'unavailable',
+    ],
   ] as const)('says why when %s', async (_, fetch, problem) => {
     expect(await createOllamaProvider(fetch, 'm').answer(PROMPT)).toEqual({ ok: false, problem });
   });

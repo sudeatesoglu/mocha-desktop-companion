@@ -16,6 +16,11 @@ const bridge: SettingsBridge = {
   copyPairingCode: () => ipcRenderer.invoke(IpcChannel.SettingsCopyPairingCode),
   setCapability: (name, enabled) =>
     ipcRenderer.invoke(IpcChannel.SettingsSetCapability, { name, enabled }),
+  ai: () => ipcRenderer.invoke(IpcChannel.SettingsAi),
+  changeAi: (change) => ipcRenderer.invoke(IpcChannel.SettingsChangeAi, change),
+  saveClaudeKey: (key) => ipcRenderer.invoke(IpcChannel.SettingsSaveClaudeKey, key),
+  forgetClaudeKey: () => ipcRenderer.invoke(IpcChannel.SettingsForgetClaudeKey),
+  tryAi: () => ipcRenderer.invoke(IpcChannel.SettingsTryAi),
 };
 
 contextBridge.exposeInMainWorld('settings', bridge);

@@ -197,6 +197,62 @@ button:active {
   opacity: 0.5;
 }
 
+.ai {
+  margin-top: 18px;
+}
+
+.ai .choices {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.ai-local,
+.ai-claude {
+  margin: 0 0 8px 24px;
+}
+
+.ai-local[hidden],
+.ai-claude[hidden] {
+  display: none;
+}
+
+.ai select {
+  margin: 4px 0;
+  font: inherit;
+}
+
+.ai .key {
+  display: flex;
+  gap: 6px;
+}
+
+.ai .key input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+}
+
+.ai-try {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ai-try .hint {
+  margin: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 #status {
   min-height: 1.4em;
   margin: 8px 0 0;

@@ -80,6 +80,11 @@ describe('createClaudeProvider', () => {
       'unavailable',
     ],
     ['it sends garbage', async () => new Response('data: {oops\n'), 'unavailable'],
+    [
+      'it says nothing',
+      async () => sse({ type: 'message_start' }, { type: 'message_stop' }),
+      'unavailable',
+    ],
   ] as const)('says why when %s', async (_, fetch, problem) => {
     expect(await createClaudeProvider(fetch, KEY, 'claude-haiku-5-5').answer(PROMPT)).toEqual({
       ok: false,

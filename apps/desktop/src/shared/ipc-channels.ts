@@ -8,6 +8,7 @@ import type {
   RitualId,
   RitualPose,
 } from '@mocha/core';
+import type { AiChange, AiTry, AiView } from './ai.ts';
 import type { BrowserView } from './browser.ts';
 import type { CommentShow } from './comment.ts';
 import type { LoginItem } from './login-item.ts';
@@ -110,6 +111,13 @@ export const IpcChannel = {
   SettingsCopyPairingCode: 'settings:copy-pairing-code',
   /** Settings → main (invoke): turn one capability on or off; resolves to the new state. */
   SettingsSetCapability: 'settings:set-capability',
+  /** Settings → main (invoke): the AI section; the Claude key is never sent back. */
+  SettingsAi: 'settings:ai',
+  SettingsChangeAi: 'settings:change-ai',
+  /** Settings → main (invoke): one way only; main encrypts it with the keychain. */
+  SettingsSaveClaudeKey: 'settings:save-claude-key',
+  SettingsForgetClaudeKey: 'settings:forget-claude-key',
+  SettingsTryAi: 'settings:try-ai',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -192,6 +200,14 @@ export interface SettingsBridge {
   /** Resolves to false when there is no code to copy. */
   copyPairingCode(): Promise<boolean>;
   setCapability(name: BrowserCapability, enabled: boolean): Promise<BrowserView>;
+  /** The AI section (ADR-0013). */
+  ai(): Promise<AiView>;
+  changeAi(change: AiChange): Promise<AiView>;
+  /** Hands the key to main, which keeps it encrypted; it never comes back. */
+  saveClaudeKey(key: string): Promise<AiView>;
+  forgetClaudeKey(): Promise<AiView>;
+  /** Asks the chosen model for a hello. */
+  tryAi(): Promise<AiTry>;
 }
 
 /** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */

@@ -1,5 +1,6 @@
 import { ITEMS, type ItemId, NO_BROWSER_CAPABILITIES } from '@mocha/core';
 import { z } from 'zod';
+import { AI_PROVIDERS, CLAUDE_MODELS, NO_AI_FEATURES } from '../../shared/ai.ts';
 import { preferencesSchema } from '../../shared/preferences.ts';
 
 const MAX_COORDINATE = 100_000; // far beyond any real desktop
@@ -8,6 +9,21 @@ const itemIdSchema = z.enum(ITEMS.map(({ id }) => id) as [ItemId, ...ItemId[]]);
 
 // A capability the file does not say is on is off (ADR-0012).
 const capability = z.boolean().catch(false);
+
+const aiSchema = z.object({
+  provider: z.enum(AI_PROVIDERS).catch('off'),
+  localModel: z.string().min(1).max(200).optional().catch(undefined),
+  claudeModel: z.enum(CLAUDE_MODELS).catch(CLAUDE_MODELS[0]),
+  /** Encrypted by the keychain (safeStorage), as base64; never the key itself. */
+  claudeKey: z.string().min(1).max(4000).optional().catch(undefined),
+  features: z
+    .object({
+      chat: z.boolean().catch(false),
+      insights: z.boolean().catch(false),
+      comments: z.boolean().catch(false),
+    })
+    .catch(NO_AI_FEATURES),
+});
 
 /** The browser companion: whether the extension may connect, its pairing, and what Mocha may do. */
 const browserSchema = z.object({
@@ -60,6 +76,8 @@ const settingsSchema = z.object({
     .catch(undefined),
   /** The browser companion (ADR-0011, ADR-0012); everything off unless turned on. */
   browser: browserSchema.optional().catch(undefined),
+  /** AI (ADR-0013): off unless turned on; the Claude key only encrypted. */
+  ai: aiSchema.optional().catch(undefined),
   /** Whether Mocha makes sounds; off unless the user turned them on. */
   sounds: z.boolean().optional().catch(undefined),
   /** Until when Mocha keeps its comments and nudges to itself, from Hush. */
