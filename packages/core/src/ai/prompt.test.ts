@@ -10,7 +10,12 @@ import {
   untrusted,
 } from './prompt.ts';
 
-const TODAY = { day: 'today', activeMinutes: 210, breaks: 4, longestStretchMinutes: 55 };
+const TODAY = {
+  day: 'today',
+  minutesWorked: 210,
+  breaksTaken: 4,
+  longestWorkWithoutBreakMinutes: 55,
+};
 const dataOf = (system: string) =>
   JSON.parse(system.slice(system.indexOf('\n', system.indexOf('DATA (')) + 1));
 

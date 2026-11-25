@@ -14,13 +14,17 @@ export interface Prompt {
   readonly maxTokens: number;
 }
 
-/** One day's numbers, the only facts about the user's work a model sees. */
+/**
+ * One day's numbers, the only facts about the user's work a model sees.
+ * The names say plainly what each number is: small models misread terse
+ * ones (a "longest stretch" was once taken for the longest break).
+ */
 export interface DayNumbers {
   /** A label like "Mon" or "today". */
   readonly day: string;
-  readonly activeMinutes: number;
-  readonly breaks: number;
-  readonly longestStretchMinutes: number;
+  readonly minutesWorked: number;
+  readonly breaksTaken: number;
+  readonly longestWorkWithoutBreakMinutes: number;
   readonly focusSessions?: number;
   readonly rituals?: number;
 }

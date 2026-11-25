@@ -57,6 +57,25 @@ describe('cleanMemory', () => {
     expect(cleanMemory('Likes classic debtors-prison novels')).toBeUndefined();
   });
 
+  it.each([
+    ['You are learning Rust', 'Is learning Rust'],
+    ["You're into pixel art", 'Is into pixel art'],
+    ['You have a cat named Pepper', 'Has a cat named Pepper'],
+    ['The user is learning Go', 'Is learning Go'],
+    ['You like tea', 'Like tea'],
+  ])('writes %j about the user: %j', (fact, expected) => {
+    expect(cleanMemory(fact)).toBe(expected);
+  });
+
+  it.each([
+    'You have already taken two breaks today',
+    'Your longest work stretch was 140 minutes',
+    'Worked 5 hours this week',
+    'Bugün çok çalıştı',
+  ])('does not keep Mocha’s own numbers or passing moments: %j', (fact) => {
+    expect(cleanMemory(fact)).toBeUndefined();
+  });
+
   it('caps a long fact', () => {
     expect(cleanMemory('a'.repeat(500))).toHaveLength(MAX_MEMORY_CHARS);
   });
