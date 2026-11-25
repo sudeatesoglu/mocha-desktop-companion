@@ -41,8 +41,42 @@
         <span id="finds-text"></span>
         <span aria-hidden="true">›</span>
       </button>
+      <!-- Opens the chat (ADR-0013): it says how to turn it on when it is off. -->
+      <button type="button" id="talk" class="finds" aria-controls="chat">
+        <span>Talk to Mocha</span>
+        <span aria-hidden="true">›</span>
+      </button>
       <p id="status" role="status" aria-live="polite"></p>
     </main>
+    <section id="chat" aria-labelledby="chat-title" hidden>
+      <div class="collection-head">
+        <button type="button" id="chat-back">‹ Back</button>
+        <h2 id="chat-title">Talk</h2>
+        <button type="button" id="chat-memories" class="small">What Mocha remembers</button>
+      </div>
+      <p id="chat-learned" class="learned" hidden></p>
+      <ol id="chat-log" class="chat-log"></ol>
+      <p id="chat-status" class="note" role="status" aria-live="polite"></p>
+      <form id="chat-form" class="chat-form">
+        <label class="visually-hidden" for="chat-input">Message to Mocha</label>
+        <input id="chat-input" autocomplete="off" maxlength="2000" placeholder="Say something to Mocha…" />
+        <button type="submit" class="primary">Send</button>
+      </form>
+    </section>
+    <section id="memories" aria-labelledby="memories-title" hidden>
+      <div class="collection-head">
+        <button type="button" id="memories-back">‹ Back</button>
+        <h2 id="memories-title">What Mocha remembers</h2>
+      </div>
+      <p class="note">
+        Mocha keeps these from your chats. Change or forget any of them; pinned ones always come
+        along when you talk.
+      </p>
+      <ul id="memory-list" class="items memory-list"></ul>
+      <p id="memories-empty" class="note" hidden>Nothing yet.</p>
+      <p id="memories-status" class="note" role="status" aria-live="polite"></p>
+      <button type="button" id="forget-everything" class="danger">Forget everything</button>
+    </section>
     <section id="collection" aria-labelledby="collection-title" hidden>
       <div class="collection-head">
         <button type="button" id="collection-back">‹ Back</button>

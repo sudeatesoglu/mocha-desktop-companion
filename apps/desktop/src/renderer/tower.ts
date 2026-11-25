@@ -12,6 +12,7 @@ import {
   type Room,
   type TimeOfDay,
 } from '@mocha/core';
+import { CHAT_PROBLEM_TEXTS, type ChatEntry, type MemoryView } from '../shared/chat.ts';
 import { FOCUS_MINUTES, type TowerAction, type TowerView } from '../shared/tower.ts';
 import { drawAccessories } from './accessories.ts';
 import { createBrowserScheduler } from './browser-scheduler.ts';
@@ -208,11 +209,14 @@ function showList<S extends AccessorySlot | DecorSlot>(
   noteLine.textContent = note;
 }
 
-/** Swaps the care controls for the Collection view and back, moving focus along. */
-function showCollection(open: boolean): void {
-  main.hidden = open;
-  collection.hidden = !open;
-  (open ? collectionBack : findsButton).focus();
+const chatSection = element('chat', HTMLElement);
+const memoriesSection = element('memories', HTMLElement);
+const VIEWS = { main, collection, chat: chatSection, memories: memoriesSection };
+
+/** Shows one view in place of the others, and moves focus into it. */
+function showView(name: keyof typeof VIEWS, focus: HTMLElement): void {
+  for (const [view, section] of Object.entries(VIEWS)) section.hidden = view !== name;
+  focus.focus();
 }
 
 function act(action: TowerAction): void {
@@ -233,8 +237,163 @@ for (const button of lengthButtons) {
   if (minutes) button.addEventListener('click', () => window.tower.focus(minutes));
 }
 focusEnd.addEventListener('click', () => window.tower.focus(null));
-findsButton.addEventListener('click', () => showCollection(true));
-collectionBack.addEventListener('click', () => showCollection(false));
+findsButton.addEventListener('click', () => showView('collection', collectionBack));
+collectionBack.addEventListener('click', () => showView('main', findsButton));
+
+// The chat (ADR-0013). Everything shown is plain text: Mocha's answers come
+// from a model and are never trusted as HTML.
+const talkButton = element('talk', HTMLButtonElement);
+const chatBack = element('chat-back', HTMLButtonElement);
+const chatLog = element('chat-log', HTMLOListElement);
+const chatLearned = element('chat-learned', HTMLElement);
+const chatStatus = element('chat-status', HTMLElement);
+const chatForm = element('chat-form', HTMLFormElement);
+const chatInput = element('chat-input', HTMLInputElement);
+const chatSend = chatForm.querySelector('button') as HTMLButtonElement;
+const memoriesButton = element('chat-memories', HTMLButtonElement);
+const memoriesBack = element('memories-back', HTMLButtonElement);
+const memoryList = element('memory-list', HTMLUListElement);
+const memoriesEmpty = element('memories-empty', HTMLElement);
+const forgetAll = element('forget-everything', HTMLButtonElement);
+const memoriesStatus = element('memories-status', HTMLElement);
+
+function bubble(from: ChatEntry['from'], text: string): HTMLLIElement {
+  const item = document.createElement('li');
+  item.className = from;
+  item.textContent = text;
+  chatLog.append(item);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return item;
+}
+
+function setChatAvailable(available: boolean): void {
+  chatInput.disabled = !available;
+  chatSend.disabled = !available;
+  chatStatus.textContent = available ? '' : CHAT_PROBLEM_TEXTS.off;
+}
+
+async function openChat(): Promise<void> {
+  const view = await window.tower.chat();
+  chatLog.replaceChildren();
+  for (const { from, text } of view.entries) bubble(from, text);
+  chatLearned.hidden = view.learned.length === 0;
+  chatLearned.textContent = `Mocha remembered: ${view.learned.join('; ')}`;
+  setChatAvailable(view.available);
+  showView('chat', view.available ? chatInput : chatBack);
+}
+
+chatForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const message = chatInput.value.trim();
+  if (!message) return;
+  chatInput.value = '';
+  bubble('user', message);
+  const answer = bubble('mocha', '…');
+  let written = '';
+  chatInput.disabled = true;
+  chatSend.disabled = true;
+  chatStatus.textContent = '';
+  const reply = await window.tower.sendChat(message, (piece) => {
+    written += piece;
+    answer.textContent = written;
+    chatLog.scrollTop = chatLog.scrollHeight;
+  });
+  if (reply.ok) {
+    // The kept answer is the cleaned one: show that, not the raw pieces.
+    answer.textContent = reply.text;
+    setChatAvailable(true);
+  } else {
+    answer.remove();
+    setChatAvailable(reply.problem !== 'off');
+    chatStatus.textContent = CHAT_PROBLEM_TEXTS[reply.problem];
+  }
+  chatInput.focus();
+});
+
+function showMemories(memories: MemoryView[]): void {
+  memoriesStatus.textContent = '';
+  memoriesEmpty.hidden = memories.length > 0;
+  forgetAll.hidden = memories.length === 0;
+  memoryList.replaceChildren(
+    ...memories.map((memory) => {
+      const item = document.createElement('li');
+      const text = document.createElement('span');
+      text.className = 'title';
+      text.textContent = memory.pinned ? `📌 ${memory.text}` : memory.text;
+      const pin = document.createElement('button');
+      pin.type = 'button';
+      pin.textContent = memory.pinned ? 'Unpin' : 'Pin';
+      pin.addEventListener('click', async () => {
+        showMemories(await window.tower.pinMemory(memory.id, !memory.pinned));
+      });
+      const change = document.createElement('button');
+      change.type = 'button';
+      change.textContent = 'Edit';
+      change.addEventListener('click', () => {
+        const field = document.createElement('input');
+        field.value = memory.text;
+        field.maxLength = 200;
+        field.setAttribute('aria-label', 'Memory');
+        item.replaceChildren(field);
+        field.focus();
+        let saved = false;
+        const save = async () => {
+          if (saved) return;
+          saved = true;
+          const text = field.value.trim();
+          const kept =
+            text !== '' && text !== memory.text && (await window.tower.editMemory(memory.id, text));
+          showMemories(await window.tower.memories());
+          if (text !== '' && text !== memory.text && !kept) {
+            memoriesStatus.textContent = 'That can’t be kept as a memory.';
+          }
+        };
+        field.addEventListener('keydown', (key) => {
+          if (key.key === 'Enter') void save();
+          if (key.key === 'Escape') {
+            saved = true;
+            void window.tower.memories().then(showMemories);
+          }
+        });
+        field.addEventListener('blur', () => void save());
+      });
+      const forget = document.createElement('button');
+      forget.type = 'button';
+      forget.textContent = 'Forget';
+      forget.setAttribute('aria-label', `Forget: ${memory.text}`);
+      forget.addEventListener('click', async () => {
+        showMemories(await window.tower.forgetMemory(memory.id));
+      });
+      item.append(text, pin, change, forget);
+      return item;
+    }),
+  );
+}
+
+// Forgetting everything asks once more first.
+let confirmForget = false;
+forgetAll.addEventListener('click', async () => {
+  if (!confirmForget) {
+    confirmForget = true;
+    forgetAll.textContent = 'Really forget everything? Click again';
+    return;
+  }
+  confirmForget = false;
+  forgetAll.textContent = 'Forget everything';
+  await window.tower.forgetEverything();
+  chatLog.replaceChildren();
+  showMemories([]);
+});
+
+talkButton.addEventListener('click', () => void openChat());
+chatBack.addEventListener('click', () => showView('main', talkButton));
+memoriesButton.addEventListener('click', async () => {
+  confirmForget = false;
+  forgetAll.textContent = 'Forget everything';
+  showMemories(await window.tower.memories());
+  showView('memories', memoriesBack);
+});
+memoriesBack.addEventListener('click', () => void openChat());
 window.tower.onNeeds(show);
 window.tower.ready(); // listening now: ask main for the needs
 

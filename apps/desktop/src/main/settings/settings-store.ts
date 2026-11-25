@@ -82,6 +82,8 @@ const settingsSchema = z.object({
   sounds: z.boolean().optional().catch(undefined),
   /** Until when Mocha keeps its comments and nudges to itself, from Hush. */
   hushedUntil: z.int().nonnegative().optional().catch(undefined),
+  /** When the chat was last opened, so Mocha says what it remembered since. */
+  memoriesSeenAt: z.int().nonnegative().optional().catch(undefined),
   /** What stands in Mocha's room, checked the same way. */
   room: z
     .object({

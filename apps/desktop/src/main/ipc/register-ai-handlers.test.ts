@@ -31,6 +31,7 @@ describe('registerAiHandlers', () => {
     saveKey: vi.fn(async () => ({ ...VIEW, hasClaudeKey: true })),
     forgetKey: vi.fn(async () => VIEW),
     tryIt: vi.fn(async () => ({ ok: true as const, text: 'Caw!' })),
+    forgetEverything: vi.fn(),
   };
   const logger = { warn: vi.fn() };
   const invoke = (
@@ -83,6 +84,13 @@ describe('registerAiHandlers', () => {
     const tooLong = `${KEY}${'x'.repeat(300)}`;
     expect(await invoke(IpcChannel.SettingsSaveClaudeKey, tooLong)).toBe(VIEW);
     expect(JSON.stringify(logger.warn.mock.calls)).not.toContain(KEY);
+  });
+
+  it('forgets everything Mocha remembers, with no data', async () => {
+    await invoke(IpcChannel.SettingsForgetEverything);
+    await invoke(IpcChannel.SettingsForgetEverything, 'all');
+
+    expect(ai.forgetEverything).toHaveBeenCalledOnce();
   });
 
   it('forgets the key', async () => {

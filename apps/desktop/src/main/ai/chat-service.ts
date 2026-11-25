@@ -2,6 +2,7 @@ import {
   type ChatTurn,
   chatPrompt,
   cleanAnswer,
+  type DailyStats,
   type DayNumbers,
   MAX_MESSAGE_CHARS,
   MESSAGE_RETENTION_DAYS,
@@ -112,3 +113,13 @@ export function createChatService(deps: ChatDeps) {
 }
 
 export type ChatService = ReturnType<typeof createChatService>;
+
+/** A day's stats as the model sees them, in whole minutes. */
+export function toDayNumbers(day: string, stats: DailyStats): DayNumbers {
+  return {
+    day,
+    minutesWorked: Math.round(stats.activeMs / 60_000),
+    breaksTaken: stats.breaks,
+    longestWorkWithoutBreakMinutes: Math.round(stats.longestStretchMs / 60_000),
+  };
+}
