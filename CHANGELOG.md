@@ -4,6 +4,14 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Added
+
+- An AI section in Settings, off by default: run a language model on this computer with Ollama, or use Claude with your own API key, pick the model, choose what Mocha may use it for, and try it. Nothing is sent until you turn a feature on ([ADR-0013](docs/adr/0013-how-mocha-uses-ai.md), [#214](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/214), [#215](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/215))
+
+### Security
+
+- The Claude key goes one way, from Settings to Mocha, and is kept only encrypted by the macOS keychain; without the keychain it is not kept at all. Mocha talks to Ollama on 127.0.0.1 and to Anthropic only, from the app itself, never from a window ([#214](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/214), [#215](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/215))
+
 ## [0.6.0] - 2026-11-24
 
 "Shiny things": Mocha keeps you company in the browser too, and talks about what you do there, knowing only what you allow.

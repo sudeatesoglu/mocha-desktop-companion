@@ -32,7 +32,9 @@ import {
   clipboard,
   Menu,
   nativeImage,
+  net,
   powerMonitor,
+  safeStorage,
   screen,
   session,
   systemPreferences,
@@ -56,6 +58,16 @@ import { createBreakController } from './activity/break-controller.ts';
 import { createChangeReporter } from './activity/change-reporter.ts';
 import { createSessionRecorder, SESSION_HEARTBEAT_MS } from './activity/session-recorder.ts';
 import { createTodayStats } from './activity/today-stats.ts';
+import {
+  type AiSettings,
+  aiView,
+  applyAiChange,
+  DEFAULT_AI,
+  providerFor,
+  tryAi,
+} from './ai/ai-settings.ts';
+import { createKeyStore } from './ai/key-store.ts';
+import { ollamaModels } from './ai/ollama-provider.ts';
 import { handleApiRequest } from './api/api-handler.ts';
 import { type ApiServer, startApiServer } from './api/api-server.ts';
 import { browserView } from './api/browser-view.ts';
@@ -68,6 +80,7 @@ import { createFindsRepository } from './db/finds-repository.ts';
 import { createNeedsRepository } from './db/needs-repository.ts';
 import { openDatabase } from './db/open-database.ts';
 import { createSessionRepository } from './db/session-repository.ts';
+import { type AiAccess, registerAiHandlers } from './ipc/register-ai-handlers.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
@@ -660,6 +673,44 @@ if (!app.requestSingleInstanceLock()) {
           },
         },
       },
+      [pageUrl('settings')],
+      console,
+    );
+
+    // AI (ADR-0013): off until the user picks where it runs. Main talks to
+    // Ollama on 127.0.0.1 or to Anthropic with the user's own key, which is
+    // kept only encrypted by the keychain and never sent to a window.
+    let ai: AiSettings = saved.ai ?? DEFAULT_AI;
+    const keys = createKeyStore(safeStorage);
+    const aiFetch = (url: string, init: RequestInit) => net.fetch(url, init);
+    const setAi = (next: AiSettings) => {
+      ai = next;
+      void settings.update({ ai });
+    };
+    const canStoreKey = () => safeStorage.isEncryptionAvailable();
+    const aiAccess: AiAccess = {
+      view: async () => aiView(ai, await ollamaModels(aiFetch), canStoreKey()),
+      async change(change) {
+        const models = await ollamaModels(aiFetch);
+        setAi(applyAiChange(ai, change, models));
+        return aiView(ai, models, canStoreKey());
+      },
+      async saveKey(key) {
+        const sealed = keys.seal(key);
+        if (sealed) setAi({ ...ai, claudeKey: sealed });
+        return aiAccess.view();
+      },
+      async forgetKey() {
+        const { claudeKey: _, ...rest } = ai;
+        setAi(rest);
+        return aiAccess.view();
+      },
+      tryIt: () =>
+        tryAi(providerFor(ai, { fetch: aiFetch, claudeKey: () => keys.open(ai.claudeKey) })),
+    };
+    registerAiHandlers(
+      () => settingsWindow.current?.webContents,
+      aiAccess,
       [pageUrl('settings')],
       console,
     );

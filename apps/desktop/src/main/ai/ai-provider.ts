@@ -1,17 +1,7 @@
 import type { Prompt } from '@mocha/core';
+import type { AiProblem } from '../../shared/ai.ts';
 
-/** Why a model could not answer, in terms the user can act on. */
-export type AiProblem =
-  // Ollama is not running, or nothing answers at its address.
-  | 'not running'
-  // The chosen model is not installed, or does not exist.
-  | 'no model'
-  // Claude refused the key.
-  | 'wrong key'
-  // Too many requests, or the service is overloaded: try again later.
-  | 'busy'
-  | 'timeout'
-  | 'unavailable';
+export type { AiProblem };
 
 export type AiResult = { ok: true; text: string } | { ok: false; problem: AiProblem };
 

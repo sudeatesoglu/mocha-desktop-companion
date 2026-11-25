@@ -48,6 +48,9 @@ export function createOllamaProvider(fetchFn: Fetch, model: string): AiProvider 
             model,
             messages: messagesOf(prompt),
             stream: true,
+            // Thinking models would spend the whole limit thinking and say
+            // nothing; Mocha needs only the answer. Others ignore it.
+            think: false,
             options: { num_predict: prompt.maxTokens },
           }),
           signal: withTimeout(options.signal, ANSWER_TIMEOUT_MS),
@@ -75,7 +78,8 @@ export function createOllamaProvider(fetchFn: Fetch, model: string): AiProvider 
           problem: fetchProblem(error) === 'timeout' ? 'timeout' : 'unavailable',
         };
       }
-      return { ok: true, text };
+      // An empty answer is no answer: Mocha never shows an empty bubble.
+      return text.trim() ? { ok: true, text } : { ok: false, problem: 'unavailable' };
     },
   };
 }

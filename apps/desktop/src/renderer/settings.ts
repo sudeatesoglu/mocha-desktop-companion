@@ -1,4 +1,16 @@
 import { type BrowserCapability, CAPABILITY_TEXTS } from '@mocha/core';
+import {
+  AI_FEATURE_TEXTS,
+  AI_PROBLEM_TEXTS,
+  AI_PROVIDERS,
+  type AiFeature,
+  type AiProviderChoice,
+  type AiView,
+  CLAUDE_MODELS,
+  type ClaudeModel,
+  claudeKeyHint,
+  localModelHint,
+} from '../shared/ai.ts';
 import type { BrowserView } from '../shared/browser.ts';
 import { type LoginItem, loginItemHint } from '../shared/login-item.ts';
 import {
@@ -193,3 +205,126 @@ element('new-code', HTMLButtonElement).addEventListener('click', async () => {
   pairingStatus.textContent = 'New code made. The old one no longer works.';
 });
 window.settings.browser().then(showBrowser);
+
+// AI (ADR-0013). Like the browser section, every change applies at once and
+// the page shows what main answers. The key goes to main and never back.
+const providerInputs = [
+  ...document.querySelectorAll<HTMLInputElement>('input[name="ai-provider"]'),
+];
+const localSection = element('ai-local', HTMLElement);
+const localModel = element('ai-local-model', HTMLSelectElement);
+const localHint = element('ai-local-hint', HTMLElement);
+const claudeSection = element('ai-claude', HTMLElement);
+const keyInput = element('ai-key', HTMLInputElement);
+const keyHint = element('ai-key-hint', HTMLElement);
+const forgetKey = element('ai-forget-key', HTMLButtonElement);
+const claudeModel = element('ai-claude-model', HTMLSelectElement);
+const tryButton = element('ai-try', HTMLButtonElement);
+const tryStatus = element('ai-try-status', HTMLElement);
+const featureBoxes = new Map<AiFeature, HTMLInputElement>();
+
+const features = element('ai-features', HTMLElement);
+for (const { name, label, hint } of AI_FEATURE_TEXTS) {
+  const row = document.createElement('div');
+  row.className = 'capability';
+  const toggle = document.createElement('label');
+  toggle.className = 'toggle';
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.id = `ai-feature-${name}`;
+  box.setAttribute('aria-describedby', `ai-feature-${name}-hint`);
+  const text = document.createElement('span');
+  text.textContent = label;
+  toggle.append(box, text);
+  const help = document.createElement('p');
+  help.className = 'hint';
+  help.id = `ai-feature-${name}-hint`;
+  help.textContent = hint;
+  row.append(toggle, help);
+  features.append(row);
+  featureBoxes.set(name, box);
+  box.addEventListener('change', async () => {
+    showAi(
+      await window.settings.changeAi({ change: 'feature', feature: name, enabled: box.checked }),
+    );
+  });
+}
+
+function showAi(view: AiView): void {
+  for (const input of providerInputs) input.checked = input.value === view.provider;
+  localSection.hidden = view.provider !== 'local';
+  claudeSection.hidden = view.provider !== 'claude';
+  const models = view.localModels ?? [];
+  localModel.replaceChildren(
+    ...models.map((model) => {
+      const option = document.createElement('option');
+      option.value = model;
+      option.textContent = model;
+      return option;
+    }),
+  );
+  if (view.localModel && !models.includes(view.localModel)) {
+    const missing = document.createElement('option');
+    missing.value = view.localModel;
+    missing.textContent = `${view.localModel} (not installed)`;
+    localModel.prepend(missing);
+  }
+  localModel.value = view.localModel ?? '';
+  localModel.disabled = models.length === 0;
+  localHint.textContent = localModelHint(view.localModels);
+  keyHint.textContent = claudeKeyHint(view);
+  forgetKey.hidden = !view.hasClaudeKey;
+  keyInput.disabled = !view.canStoreKey;
+  claudeModel.value = view.claudeModel;
+  for (const [name, box] of featureBoxes) {
+    box.checked = view.features[name];
+    // Features mean nothing while AI is off.
+    box.disabled = view.provider === 'off';
+  }
+  tryButton.disabled = view.provider === 'off';
+}
+
+for (const input of providerInputs) {
+  input.addEventListener('change', async () => {
+    if (!input.checked || !(AI_PROVIDERS as readonly string[]).includes(input.value)) return;
+    tryStatus.textContent = '';
+    showAi(
+      await window.settings.changeAi({
+        change: 'provider',
+        provider: input.value as AiProviderChoice,
+      }),
+    );
+  });
+}
+localModel.addEventListener('change', async () => {
+  showAi(await window.settings.changeAi({ change: 'localModel', model: localModel.value }));
+});
+claudeModel.addEventListener('change', async () => {
+  if (!(CLAUDE_MODELS as readonly string[]).includes(claudeModel.value)) return;
+  showAi(
+    await window.settings.changeAi({
+      change: 'claudeModel',
+      model: claudeModel.value as ClaudeModel,
+    }),
+  );
+});
+element('ai-key-form', HTMLFormElement).addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const key = keyInput.value.trim();
+  keyInput.value = '';
+  if (!key) return;
+  const view = await window.settings.saveClaudeKey(key);
+  showAi(view);
+  if (!view.hasClaudeKey) keyHint.textContent = 'That doesn’t look like a Claude API key.';
+});
+forgetKey.addEventListener('click', async () => {
+  showAi(await window.settings.forgetClaudeKey());
+});
+tryButton.addEventListener('click', async () => {
+  tryButton.disabled = true;
+  tryStatus.textContent = 'Asking Mocha…';
+  const result = await window.settings.tryAi();
+  tryStatus.textContent = result.ok ? `Mocha: “${result.text}”` : AI_PROBLEM_TEXTS[result.problem];
+  tryButton.disabled = false;
+});
+window.settings.ai().then(showAi);
