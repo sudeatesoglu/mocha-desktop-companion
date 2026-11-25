@@ -26,4 +26,11 @@ describe('cleanAnswer', () => {
     );
     expect(cleanAnswer('Supercalifragilistic', { maxChars: 10 })).toBe('Supercali…');
   });
+
+  it('keeps only the first emoji, whole', () => {
+    expect(cleanAnswer('Busy day! 🚀 Take a break? 💤 Rust 🦀🧠', { maxChars: 100 })).toBe(
+      'Busy day! 🚀 Take a break? Rust',
+    );
+    expect(cleanAnswer('Coding 👩‍💻 again ❤️', { maxChars: 100 })).toBe('Coding 👩‍💻 again');
+  });
 });
