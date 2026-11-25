@@ -8,10 +8,21 @@ To notice when you step away, Mocha reads only how long it has been since your l
 
 It writes two files to `~/Library/Application Support/Mocha/`:
 
-- `settings.json`: where you placed Mocha, your break settings, quiet hours, whether sounds are on, what Mocha wears and what stands in its room, the browser extension's pairing code, what you let Mocha know, and until when it is hushed.
+- `settings.json`: where you placed Mocha, your break settings, quiet hours, whether sounds are on, what Mocha wears and what stands in its room, the browser extension's pairing code, what you let Mocha know, and until when it is hushed, and your AI choices, with a Claude key only in encrypted form.
 - `mocha.db`: when your work stretches and breaks started and ended, Mocha's mood and energy, and what Mocha found, with nothing about what you do in them.
 
-Deleting them resets Mocha.
+If you chat with Mocha, `mocha.db` also keeps the chat for 90 days, a short summary of each conversation and what Mocha remembers about you. You can see, change and forget each memory in the Tower, and **Forget everything** (in the Tower or in Settings) leaves nothing of them in the file.
+
+Deleting the files resets Mocha.
+
+## AI
+
+AI is off until you turn it on in **Settings → AI**, and each use of it has its own switch.
+
+- **On this computer, with Ollama:** the model runs on your Mac and nothing leaves it.
+- **Claude, with your own API key:** what each feature you turn on allows goes to Anthropic, under your own account and their privacy policy. Mocha keeps your key only encrypted by the macOS keychain and never shows it again.
+
+The chat's model sees your messages, today's numbers, Mocha's mood and energy, and what Mocha remembers. It never sees your browsing. Mocha keeps no logs of what is asked or answered.
 
 ## In the browser
 

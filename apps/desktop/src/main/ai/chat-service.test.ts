@@ -5,7 +5,7 @@ import type { AiProblem } from '../../shared/ai.ts';
 import { createMemoryRepository, type MemoryRepository } from '../db/memory-repository.ts';
 import { MIGRATIONS, runMigrations } from '../db/migrations.ts';
 import type { AiProvider, AiResult } from './ai-provider.ts';
-import { createChatService } from './chat-service.ts';
+import { createChatService, toDayNumbers } from './chat-service.ts';
 
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
@@ -153,6 +153,23 @@ describe('createChatService', () => {
       expect(await s.chat.tidy()).toEqual([]);
       expect(vi.mocked(s.provider.answer).mock.calls.length).toBe(asked);
       expect(s.db.prepare('SELECT count(*) AS n FROM messages').get()?.['n']).toBe(0);
+    });
+  });
+});
+
+describe('toDayNumbers', () => {
+  it('gives the day in whole minutes', () => {
+    expect(
+      toDayNumbers('today', {
+        activeMs: 312.4 * MINUTE,
+        breaks: 2,
+        longestStretchMs: 139.6 * MINUTE,
+      }),
+    ).toEqual({
+      day: 'today',
+      minutesWorked: 312,
+      breaksTaken: 2,
+      longestWorkWithoutBreakMinutes: 140,
     });
   });
 });

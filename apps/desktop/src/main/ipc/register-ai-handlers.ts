@@ -19,6 +19,8 @@ export interface AiAccess {
   saveKey(key: string): Promise<AiView>;
   forgetKey(): Promise<AiView>;
   tryIt(): Promise<AiTry>;
+  /** Deletes the chat, summaries, memories and insight (ADR-0013). */
+  forgetEverything(): void;
 }
 
 const changeSchema = z.discriminatedUnion('change', [
@@ -82,6 +84,12 @@ export function registerAiHandlers(
     IpcChannel.SettingsTryAi,
     z.undefined(),
     () => ai.tryIt(),
+    async () => undefined,
+  );
+  handle(
+    IpcChannel.SettingsForgetEverything,
+    z.undefined(),
+    async () => ai.forgetEverything(),
     async () => undefined,
   );
 }

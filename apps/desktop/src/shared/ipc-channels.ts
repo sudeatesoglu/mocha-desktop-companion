@@ -10,6 +10,7 @@ import type {
 } from '@mocha/core';
 import type { AiChange, AiTry, AiView } from './ai.ts';
 import type { BrowserView } from './browser.ts';
+import type { ChatReply, ChatView, MemoryView } from './chat.ts';
 import type { CommentShow } from './comment.ts';
 import type { LoginItem } from './login-item.ts';
 import type { Preferences } from './preferences.ts';
@@ -118,6 +119,18 @@ export const IpcChannel = {
   SettingsSaveClaudeKey: 'settings:save-claude-key',
   SettingsForgetClaudeKey: 'settings:forget-claude-key',
   SettingsTryAi: 'settings:try-ai',
+  /** Settings → main (invoke, no data): deletes the chat, summaries, memories and insight. */
+  SettingsForgetEverything: 'settings:forget-everything',
+  /** Tower → main (invoke): the chat, sending a message, and what Mocha remembers. */
+  TowerChat: 'tower:chat',
+  TowerChatSend: 'tower:chat-send',
+  /** Main → Tower: a piece of Mocha's answer as it arrives. */
+  TowerChatText: 'tower:chat-text',
+  TowerMemories: 'tower:memories',
+  TowerEditMemory: 'tower:edit-memory',
+  TowerPinMemory: 'tower:pin-memory',
+  TowerForgetMemory: 'tower:forget-memory',
+  TowerForgetEverything: 'tower:forget-everything',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -208,6 +221,8 @@ export interface SettingsBridge {
   forgetClaudeKey(): Promise<AiView>;
   /** Asks the chosen model for a hello. */
   tryAi(): Promise<AiTry>;
+  /** Deletes the chat, summaries, memories and insight (ADR-0013). */
+  forgetEverything(): Promise<void>;
 }
 
 /** The API the Tower window's own preload exposes as `window.tower`. Nothing else. */
@@ -224,6 +239,16 @@ export interface TowerBridge {
   wear(slot: AccessorySlot, id: ItemId | null): void;
   /** Puts a found decor item in `slot` of the room, or clears the slot (null). */
   place(slot: DecorSlot, id: ItemId | null): void;
+  /** The chat (ADR-0013). */
+  chat(): Promise<ChatView>;
+  /** Sends a message; `onText` gets Mocha's answer piece by piece. */
+  sendChat(message: string, onText: (piece: string) => void): Promise<ChatReply>;
+  memories(): Promise<MemoryView[]>;
+  /** False when the new text may not be kept; the list is unchanged then. */
+  editMemory(id: number, text: string): Promise<boolean>;
+  pinMemory(id: number, pinned: boolean): Promise<MemoryView[]>;
+  forgetMemory(id: number): Promise<MemoryView[]>;
+  forgetEverything(): Promise<void>;
 }
 
 /** The API the ritual bubble's own preload exposes as `window.ritual`. Nothing else. */

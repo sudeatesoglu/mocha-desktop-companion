@@ -15,6 +15,22 @@ const bridge: TowerBridge = {
   focus: (minutes) => ipcRenderer.send(IpcChannel.TowerFocus, minutes),
   wear: (slot, id) => ipcRenderer.send(IpcChannel.TowerWear, { slot, id }),
   place: (slot, id) => ipcRenderer.send(IpcChannel.TowerPlace, { slot, id }),
+  chat: () => ipcRenderer.invoke(IpcChannel.TowerChat),
+  sendChat: async (message, onText) => {
+    // Pieces arrive while the answer is being written; only this answer's.
+    const listener = (_event: unknown, piece: string) => onText(piece);
+    ipcRenderer.on(IpcChannel.TowerChatText, listener);
+    try {
+      return await ipcRenderer.invoke(IpcChannel.TowerChatSend, message);
+    } finally {
+      ipcRenderer.removeListener(IpcChannel.TowerChatText, listener);
+    }
+  },
+  memories: () => ipcRenderer.invoke(IpcChannel.TowerMemories),
+  editMemory: (id, text) => ipcRenderer.invoke(IpcChannel.TowerEditMemory, { id, text }),
+  pinMemory: (id, pinned) => ipcRenderer.invoke(IpcChannel.TowerPinMemory, { id, pinned }),
+  forgetMemory: (id) => ipcRenderer.invoke(IpcChannel.TowerForgetMemory, id),
+  forgetEverything: () => ipcRenderer.invoke(IpcChannel.TowerForgetEverything),
 };
 
 contextBridge.exposeInMainWorld('tower', bridge);

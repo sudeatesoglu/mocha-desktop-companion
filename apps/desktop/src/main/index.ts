@@ -6,6 +6,7 @@ import {
   type BrowserCapability,
   type BrowsingPose,
   browsingPose,
+  cleanMemory,
   EMPTY_ROOM,
   EXTENSION_ORIGIN,
   FRESH_TALK,
@@ -66,6 +67,7 @@ import {
   providerFor,
   tryAi,
 } from './ai/ai-settings.ts';
+import { createChatService, toDayNumbers } from './ai/chat-service.ts';
 import { createKeyStore } from './ai/key-store.ts';
 import { ollamaModels } from './ai/ollama-provider.ts';
 import { handleApiRequest } from './api/api-handler.ts';
@@ -77,10 +79,12 @@ import { createRateLimiter } from './api/rate-limiter.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
 import { startCursorTracker } from './cursor/cursor-tracker.ts';
 import { createFindsRepository } from './db/finds-repository.ts';
+import { createMemoryRepository } from './db/memory-repository.ts';
 import { createNeedsRepository } from './db/needs-repository.ts';
 import { openDatabase } from './db/open-database.ts';
 import { createSessionRepository } from './db/session-repository.ts';
 import { type AiAccess, registerAiHandlers } from './ipc/register-ai-handlers.ts';
+import { type ChatAccess, registerChatHandlers } from './ipc/register-chat-handlers.ts';
 import { registerIpcHandlers } from './ipc/register-ipc-handlers.ts';
 import { registerOverlayHandlers } from './ipc/register-overlay-handlers.ts';
 import { registerReminderHandlers } from './ipc/register-reminder-handlers.ts';
@@ -707,7 +711,44 @@ if (!app.requestSingleInstanceLock()) {
       },
       tryIt: () =>
         tryAi(providerFor(ai, { fetch: aiFetch, claudeKey: () => keys.open(ai.claudeKey) })),
+      forgetEverything: () => memory?.forgetEverything(),
     };
+    // Mocha's memory and chat (ADR-0013), when the database opened.
+    const memory = database ? createMemoryRepository(database) : undefined;
+    const chatOn = () => ai.provider !== 'off' && ai.features.chat;
+    const chatService = memory
+      ? createChatService({
+          memory,
+          enabled: chatOn,
+          provider: () =>
+            providerFor(ai, { fetch: aiFetch, claudeKey: () => keys.open(ai.claudeKey) }),
+          context: () => {
+            const today = todayStats(Date.now());
+            return {
+              ...(today && { today: toDayNumbers('today', today) }),
+              feelings: {
+                mood: Math.round(needs.state.mood),
+                energy: Math.round(needs.state.energy),
+              },
+            };
+          },
+          now: Date.now,
+        })
+      : undefined;
+    // Ended chats are summed up in the background, one round at a time.
+    let tidying = false;
+    const tidy = () => {
+      if (!chatService || tidying) return;
+      tidying = true;
+      chatService
+        .tidy()
+        .catch((error: unknown) => console.warn('[chat] could not tidy up', error))
+        .finally(() => {
+          tidying = false;
+        });
+    };
+    const stopTidying = every(5 * 60_000, tidy);
+    app.on('will-quit', stopTidying);
     registerAiHandlers(
       () => settingsWindow.current?.webContents,
       aiAccess,
@@ -773,6 +814,55 @@ if (!app.requestSingleInstanceLock()) {
           sendTowerView(false);
         },
       },
+      [pageUrl('tower')],
+      console,
+    );
+    // The Tower's chat: what Mocha learned since the chat was last opened is
+    // shown there (ADR-0013).
+    let memoriesSeenAt = saved.memoriesSeenAt ?? Date.now();
+    const memoryViews = () =>
+      memory?.memories().map(({ id, text, pinned }) => ({ id, text, pinned })) ?? [];
+    const chatAccess: ChatAccess = {
+      view() {
+        const learned =
+          memory
+            ?.memories()
+            .filter(({ createdAt }) => createdAt > memoriesSeenAt)
+            .map(({ text }) => text) ?? [];
+        memoriesSeenAt = Date.now();
+        void settings.update({ memoriesSeenAt });
+        return {
+          available: chatService !== undefined && chatOn(),
+          entries:
+            chatService?.history().map(({ role, content }) => ({
+              from: role === 'user' ? ('user' as const) : ('mocha' as const),
+              text: content,
+            })) ?? [],
+          learned,
+        };
+      },
+      send: (message, onText) =>
+        chatService
+          ? chatService.send(message, onText)
+          : Promise.resolve({ ok: false, problem: 'off' }),
+      memories: memoryViews,
+      edit(id, text) {
+        const clean = cleanMemory(text);
+        return clean !== undefined && (memory?.editMemory(id, clean) ?? false);
+      },
+      pin(id, pinned) {
+        memory?.pinMemory(id, pinned);
+        return memoryViews();
+      },
+      forget(id) {
+        memory?.forgetMemory(id);
+        return memoryViews();
+      },
+      forgetEverything: () => memory?.forgetEverything(),
+    };
+    registerChatHandlers(
+      () => towerWindow.current?.webContents,
+      chatAccess,
       [pageUrl('tower')],
       console,
     );

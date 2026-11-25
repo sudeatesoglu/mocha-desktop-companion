@@ -226,6 +226,94 @@ button.finds {
   padding: 4px 10px;
 }
 
+/* The chat (ADR-0013): Mocha's words on the left, the user's on the right. */
+#chat,
+#memories {
+  padding: 8px 12px 10px;
+}
+
+.collection-head .small {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.learned {
+  margin: 0 0 6px;
+  padding: 4px 8px;
+  border: 1px dashed var(--accent);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 150px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  user-select: text;
+}
+
+.chat-log li {
+  max-width: 85%;
+  padding: 4px 8px;
+  border: 2px solid var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-log .mocha {
+  align-self: flex-start;
+}
+
+.chat-log .user {
+  align-self: flex-end;
+  background: var(--track);
+}
+
+.chat-form {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 2px solid var(--ink);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.memory-list li {
+  align-items: center;
+}
+
+.memory-list input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+}
+
+button.danger {
+  margin-top: 8px;
+  border-color: var(--mood);
+  color: var(--mood);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .note {
   margin: 10px 0 0;
   color: var(--muted);

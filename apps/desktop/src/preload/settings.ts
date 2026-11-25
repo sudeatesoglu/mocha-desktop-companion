@@ -21,6 +21,7 @@ const bridge: SettingsBridge = {
   saveClaudeKey: (key) => ipcRenderer.invoke(IpcChannel.SettingsSaveClaudeKey, key),
   forgetClaudeKey: () => ipcRenderer.invoke(IpcChannel.SettingsForgetClaudeKey),
   tryAi: () => ipcRenderer.invoke(IpcChannel.SettingsTryAi),
+  forgetEverything: () => ipcRenderer.invoke(IpcChannel.SettingsForgetEverything),
 };
 
 contextBridge.exposeInMainWorld('settings', bridge);

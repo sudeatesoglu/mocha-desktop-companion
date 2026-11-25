@@ -328,3 +328,20 @@ tryButton.addEventListener('click', async () => {
   tryButton.disabled = false;
 });
 window.settings.ai().then(showAi);
+
+// Forgetting everything Mocha remembers asks once more first.
+const forgetEverything = element('ai-forget-everything', HTMLButtonElement);
+const forgetStatus = element('ai-forget-status', HTMLElement);
+let confirmForget = false;
+forgetEverything.addEventListener('click', async () => {
+  if (!confirmForget) {
+    confirmForget = true;
+    forgetEverything.textContent = 'Really forget everything?';
+    forgetStatus.textContent = 'Chats, summaries and memories go for good. Click again.';
+    return;
+  }
+  confirmForget = false;
+  forgetEverything.textContent = 'Forget everything';
+  await window.settings.forgetEverything();
+  forgetStatus.textContent = 'Mocha has forgotten everything.';
+});

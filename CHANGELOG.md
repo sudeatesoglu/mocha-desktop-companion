@@ -6,6 +6,7 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ### Added
 
+- Talk to Mocha in the Tower, if you turn on **Chat with Mocha**: it answers in character as it writes, with today's numbers and what it remembers about you. It sums up each conversation once it ends and remembers lasting things you tell it, such as what you are learning, and tells you so in the chat. **What Mocha remembers** in the Tower lets you edit, pin and forget each memory, and **Forget everything** (in the Tower or in Settings) leaves nothing of them behind. Chats are kept 90 days, their summaries longer ([#209](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/209), [#210](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/210), [#211](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/211), [#212](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/212), [#216](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/216), [#217](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/217))
 - An AI section in Settings, off by default: run a language model on this computer with Ollama, or use Claude with your own API key, pick the model, choose what Mocha may use it for, and try it. Nothing is sent until you turn a feature on ([ADR-0013](docs/adr/0013-how-mocha-uses-ai.md), [#214](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/214), [#215](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/215))
 
 ### Security
