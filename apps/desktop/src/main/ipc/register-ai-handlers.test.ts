@@ -21,7 +21,7 @@ const VIEW: AiView = {
   claudeModel: 'claude-haiku-5-5',
   hasClaudeKey: false,
   canStoreKey: true,
-  features: { chat: false, insights: false, comments: false },
+  features: { chat: false, chatBrowsing: false, insights: false, comments: false },
 };
 
 describe('registerAiHandlers', () => {

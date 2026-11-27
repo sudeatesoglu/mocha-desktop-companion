@@ -1,11 +1,17 @@
 import { DatabaseSync } from 'node:sqlite';
-import { CONVERSATION_IDLE_MS, MESSAGE_RETENTION_DAYS, type Prompt } from '@mocha/core';
+import {
+  CONVERSATION_IDLE_MS,
+  MESSAGE_RETENTION_DAYS,
+  NO_BROWSER_CAPABILITIES,
+  type Prompt,
+  type RecentPage,
+} from '@mocha/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AiProblem } from '../../shared/ai.ts';
 import { createMemoryRepository, type MemoryRepository } from '../db/memory-repository.ts';
 import { MIGRATIONS, runMigrations } from '../db/migrations.ts';
 import type { AiProvider, AiResult } from './ai-provider.ts';
-import { createChatService, toDayNumbers } from './chat-service.ts';
+import { createChatService, recentPages, toDayNumbers } from './chat-service.ts';
 
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
@@ -25,6 +31,7 @@ function setup() {
     aiOff: false,
   };
   const prompts: Prompt[] = [];
+  const holder: { browsing?: RecentPage[] | undefined } = {};
   const provider: AiProvider = {
     answer: vi.fn(async (prompt: Prompt, options?: { onText?: (piece: string) => void }) => {
       prompts.push(prompt);
@@ -38,6 +45,7 @@ function setup() {
     enabled: () => world.enabled,
     provider: () => (world.aiOff ? undefined : (world.problem ?? provider)),
     context: () => ({
+      ...(holder.browsing && { browsing: holder.browsing }),
       today: {
         day: 'today',
         minutesWorked: 200,
@@ -48,7 +56,20 @@ function setup() {
     }),
     now: () => world.now,
   });
-  return { db, memory, world, prompts, provider, chat };
+  return {
+    db,
+    memory,
+    world,
+    prompts,
+    provider,
+    chat,
+    get browsing() {
+      return holder.browsing;
+    },
+    set browsing(pages: RecentPage[] | undefined) {
+      holder.browsing = pages;
+    },
+  };
 }
 
 describe('createChatService', () => {
@@ -73,6 +94,18 @@ describe('createChatService', () => {
     expect(data.memories[0]).toBe('Is learning Rust');
     expect(data.earlierChats).toEqual(['We talked about cats.']);
     expect(s.prompts[0]?.turns.at(-1)).toEqual({ role: 'user', content: 'How is my Rust going?' });
+  });
+
+  it('passes the recent pages only when the context has them', async () => {
+    s.browsing = [{ minutesAgo: 2, kind: 'video', site: 'youtube.com' }];
+    await s.chat.send('What was I watching?');
+    s.browsing = undefined;
+    await s.chat.send('And now?');
+
+    expect(dataOf(s.prompts[0] as Prompt).recentBrowsing).toEqual([
+      { minutesAgo: 2, kind: 'video', site: 'youtube.com' },
+    ]);
+    expect(dataOf(s.prompts[1] as Prompt)).not.toHaveProperty('recentBrowsing');
   });
 
   it('keeps the conversation and sends it with the next message', async () => {
@@ -171,5 +204,33 @@ describe('toDayNumbers', () => {
       breaksTaken: 2,
       longestWorkWithoutBreakMinutes: 140,
     });
+  });
+});
+
+describe('recentPages', () => {
+  const visits = [
+    { until: 10 * MINUTE, kind: 'video' as const, site: 'youtube.com', title: 'Ravens' },
+    { until: 4 * MINUTE, kind: 'code' as const, site: 'github.com' },
+  ];
+
+  it('gives each page with only what the user allows now, in minutes ago', () => {
+    const kindAndTitle = { ...NO_BROWSER_CAPABILITIES, kind: true, title: true };
+
+    expect(recentPages(visits, kindAndTitle, 10 * MINUTE)).toEqual([
+      { minutesAgo: 0, kind: 'video', title: 'Ravens' },
+      { minutesAgo: 6, kind: 'code' },
+    ]);
+  });
+
+  it('passes the site when that is allowed', () => {
+    expect(recentPages(visits, { ...NO_BROWSER_CAPABILITIES, site: true }, 10 * MINUTE)).toEqual([
+      { minutesAgo: 0, site: 'youtube.com' },
+      { minutesAgo: 6, site: 'github.com' },
+    ]);
+  });
+
+  it('drops pages with nothing left to tell', () => {
+    expect(recentPages(visits, NO_BROWSER_CAPABILITIES, 10 * MINUTE)).toEqual([]);
+    expect(recentPages([{ until: 0 }], { ...NO_BROWSER_CAPABILITIES, kind: true }, 0)).toEqual([]);
   });
 });

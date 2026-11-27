@@ -29,6 +29,15 @@ export interface DayNumbers {
   readonly rituals?: number;
 }
 
+/** A page the user was on lately, as the chat may see it (ADR-0013). */
+export interface RecentPage {
+  /** 0 for the page in front. */
+  readonly minutesAgo: number;
+  readonly kind?: BrowsingContext['kind'];
+  readonly site?: string;
+  readonly title?: string;
+}
+
 /** Mocha's own state, 0 to 100. */
 export interface MochaFeelings {
   readonly mood: number;
@@ -79,6 +88,8 @@ export function chatPrompt(input: {
   feelings?: MochaFeelings | undefined;
   memories?: readonly string[] | undefined;
   summaries?: readonly string[] | undefined;
+  /** Pages of the last half hour, newest first, with only the allowed details. */
+  browsing?: readonly RecentPage[] | undefined;
   budgetTokens: number;
   maxTokens: number;
 }): Prompt {
@@ -109,6 +120,20 @@ export function chatPrompt(input: {
   };
   fitting('memories', input.memories, 200);
   fitting('earlierChats', input.summaries, 600);
+  const pages: RecentPage[] = [];
+  for (const page of input.browsing ?? []) {
+    const quoted = {
+      minutesAgo: page.minutesAgo,
+      ...(page.kind && { kind: page.kind }),
+      ...(page.site && { site: untrusted(page.site, 253) }),
+      ...(page.title && { title: untrusted(page.title, 80) }),
+    };
+    const cost = chars(JSON.stringify(quoted)) + 1;
+    if (cost > room) break;
+    pages.push(quoted);
+    room -= cost;
+  }
+  if (pages.length > 0) data['recentBrowsing'] = pages;
 
   const history: ChatTurn[] = [];
   for (const turn of [...input.history].reverse()) {

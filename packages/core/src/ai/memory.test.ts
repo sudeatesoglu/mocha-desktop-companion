@@ -76,6 +76,16 @@ describe('cleanMemory', () => {
     expect(cleanMemory(fact)).toBeUndefined();
   });
 
+  it.each([
+    'Watches videos on youtube.com',
+    'Reads reddit.com a lot',
+    'Spends time on GitHub',
+    'Was browsing anime websites',
+    'Keeps many tabs open',
+  ])('never keeps what the user browses: %j', (fact) => {
+    expect(cleanMemory(fact)).toBeUndefined();
+  });
+
   it('caps a long fact', () => {
     expect(cleanMemory('a'.repeat(500))).toHaveLength(MAX_MEMORY_CHARS);
   });

@@ -67,7 +67,7 @@ import {
   providerFor,
   tryAi,
 } from './ai/ai-settings.ts';
-import { createChatService, toDayNumbers } from './ai/chat-service.ts';
+import { createChatService, recentPages, toDayNumbers } from './ai/chat-service.ts';
 import { writeComment } from './ai/comment-writer.ts';
 import { createKeyStore } from './ai/key-store.ts';
 import { ollamaModels } from './ai/ollama-provider.ts';
@@ -727,6 +727,9 @@ if (!app.requestSingleInstanceLock()) {
             const today = todayStats(Date.now());
             return {
               ...(today && { today: toDayNumbers('today', today) }),
+              ...(ai.features.chatBrowsing && {
+                browsing: recentPages(awareness.recent(), browser.capabilities, Date.now()),
+              }),
               feelings: {
                 mood: Math.round(needs.state.mood),
                 energy: Math.round(needs.state.energy),

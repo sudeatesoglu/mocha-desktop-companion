@@ -42,6 +42,11 @@ const SENSITIVE =
 const PASSING =
   /(?<![\p{L}\p{N}])(today|tonight|yesterday|this (morning|afternoon|evening|week)|right now|minutes?|hours?|breaks?|stretch(es)?|active time|bugün|dakika|saat|mola)/iu;
 
+// What the user browses never becomes a memory, even when the chat talked
+// about it (ADR-0013): no domains, no "website" or "page" facts.
+const SITE =
+  /[a-z0-9-]+\.(com|net|org|io|dev|ai|app|tv|co|me|gg|so|edu|gov|tr)(?![\p{L}\p{N}])|(?<![\p{L}\p{N}])(websites?|web pages?|browsing|browser|tabs?|youtube|github)/iu;
+
 // Second person, as some models write facts: "You are learning Rust".
 const SECOND_PERSON: readonly (readonly [RegExp, string])[] = [
   [/^you are\s+/i, 'is '],
@@ -63,7 +68,9 @@ export function cleanMemory(text: string): string | undefined {
   scrubbed = scrubbed.charAt(0).toUpperCase() + scrubbed.slice(1);
   // "İ" lowercases to "i" and a combining dot, which no pattern expects.
   const folded = scrubbed.toLowerCase().replace(/\u0307/g, '');
-  if (scrubbed.length < 3 || SENSITIVE.test(folded) || PASSING.test(folded)) return undefined;
+  if (scrubbed.length < 3 || SENSITIVE.test(folded) || PASSING.test(folded) || SITE.test(folded)) {
+    return undefined;
+  }
   return untrusted(scrubbed, MAX_MEMORY_CHARS);
 }
 
@@ -82,7 +89,7 @@ export function summaryPrompt(turns: readonly ChatTurn[]): Prompt {
       {
         role: 'user',
         content:
-          'Sum up the conversation in DATA in at most three sentences, as Mocha. Then list up to three lasting facts the user said about themselves: interests, goals, preferences, what they are learning or working on. Write each as a short phrase about the user, like "Is learning Rust" or "Likes tea in the afternoon". Only what the user really said, never guesses. Never numbers, times or anything about today, never secrets, passwords, health, money or other people. An empty list is fine. Reply with JSON only: {"summary": "...", "remember": ["..."]}',
+          'Sum up the conversation in DATA in at most three sentences, as Mocha. Then list up to three lasting facts the user said about themselves: interests, goals, preferences, what they are learning or working on. Write each as a short phrase about the user, like "Is learning Rust" or "Likes tea in the afternoon". Only what the user really said, never guesses. Never numbers, times or anything about today, never websites, pages or what they browsed, never secrets, passwords, health, money or other people. An empty list is fine. Reply with JSON only: {"summary": "...", "remember": ["..."]}',
       },
     ],
     maxTokens: 300,
