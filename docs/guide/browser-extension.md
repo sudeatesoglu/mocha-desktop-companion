@@ -29,6 +29,7 @@ If it says Mocha isn't answering, check that Mocha is running and the extension 
 | Read page titles | After addresses, emails and numbers are taken out | "Read your browsing history" |
 | Notice what is going on in the browser | Whether a tab plays sound, how many are open, how often you switch and how long you stay | "Read your browsing history" |
 | Notice how busy you are on a page | Typing, scrolling and clicking as counts every 30 seconds; never which key, what text or what you click, and never in password fields | "Read and change all your data on all websites", https only |
+| Read what pages are about | A page's visible text, once, without forms, fields, buttons, editable or hidden parts, scrubbed and at most 20,000 characters; never on chat sites. Mocha's reader model keeps only a one-sentence gist, in memory | "Read and change all your data on all websites", https only |
 | Talk about what you do | A short, playful comment when you stay a few seconds on another site, at most every twenty seconds | nothing more |
 | Nudge you | A gentle word after half an hour on social media, or once after midnight | nothing more |
 
@@ -38,4 +39,4 @@ Mocha keeps quiet during focus sessions, breaks, rituals and quiet hours. **Hush
 
 Private windows; pages on your computer or your network; banking and payments, health, government, mail and messaging, password managers and adult sites; sign-in, sign-up, checkout, payment and account pages; the sites you leave out on the extension's page; anything while it is paused. The full lists are on the extension's page.
 
-How the extension reaches Mocha is described in the [local API](../api) and in [ADR-0011](../adr/0011-local-api-for-the-browser-extension); what Mocha may know, in [ADR-0012](../adr/0012-what-mocha-may-know-about-browsing).
+How the extension reaches Mocha is described in the [local API](../api) and in [ADR-0011](../adr/0011-local-api-for-the-browser-extension); what Mocha may know, in [ADR-0012](../adr/0012-what-mocha-may-know-about-browsing); how it reads pages, in ADR-0014 (proposed).

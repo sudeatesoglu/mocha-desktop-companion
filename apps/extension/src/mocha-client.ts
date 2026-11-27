@@ -3,6 +3,7 @@ import {
   type BrowserCapabilities,
   type BrowsingContext,
   NO_BROWSER_CAPABILITIES,
+  type PageText,
 } from '@mocha/core';
 import { z } from 'zod';
 import type { Pairing } from './settings.ts';
@@ -36,7 +37,7 @@ export function createMochaClient(fetchFn: Fetch) {
     pairing: Pairing | undefined,
     method: 'GET' | 'POST',
     path: string,
-    body?: BrowsingContext,
+    body?: BrowsingContext | PageText,
   ): Promise<{ connection: Connection; json?: unknown }> {
     if (!pairing) return { connection: 'not paired' };
     let response: Response;
@@ -87,6 +88,11 @@ export function createMochaClient(fetchFn: Fetch) {
     /** Tells Mocha about the active tab; `{}` makes it forget at once. */
     async report(pairing: Pairing | undefined, context: BrowsingContext): Promise<Connection> {
       return (await call(pairing, 'POST', '/v1/context', context)).connection;
+    },
+
+    /** Hands Mocha the visible text of the page in front (ADR-0014). */
+    async read(pairing: Pairing | undefined, page: PageText): Promise<Connection> {
+      return (await call(pairing, 'POST', '/v1/page', page)).connection;
     },
   };
 }
