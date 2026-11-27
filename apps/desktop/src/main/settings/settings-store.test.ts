@@ -138,6 +138,7 @@ describe('createSettingsStore', () => {
             nudge: false,
             browserActivity: false,
             pageActivity: false,
+            pageContent: false,
           },
         },
       });

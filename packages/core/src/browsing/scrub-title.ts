@@ -21,6 +21,23 @@ export function scrubPrivate(text: string): string {
 }
 
 /**
+ * A page's visible text with what could identify a person or an account
+ * taken out, spaces tidied and cut at a word near `max` (ADR-0014).
+ */
+export function scrubPageText(text: string, max: number): string {
+  let scrubbed = text;
+  for (const pattern of PRIVATE_PATTERNS) scrubbed = scrubbed.replace(pattern, ' ');
+  scrubbed = scrubbed
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/ ?\n[\s]*/g, '\n')
+    .trim();
+  if (scrubbed.length <= max) return scrubbed;
+  const cut = scrubbed.slice(0, max);
+  const space = cut.search(/\s\S*$/);
+  return (space > max / 2 ? cut.slice(0, space) : cut).trimEnd();
+}
+
+/**
  * A page title with anything that could identify a person or an account
  * taken out, then shortened. Removing too much is fine: Mocha only needs
  * enough to make a comment.

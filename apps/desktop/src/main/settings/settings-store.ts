@@ -46,6 +46,7 @@ const browserSchema = z.object({
       nudge: capability,
       browserActivity: capability,
       pageActivity: capability,
+      pageContent: capability,
     })
     .catch(NO_BROWSER_CAPABILITIES),
 });

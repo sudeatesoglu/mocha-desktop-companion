@@ -597,6 +597,8 @@ if (!app.requestSingleInstanceLock()) {
             allowRequest: () => apiLimiter.allow(),
             capabilities: () => browser.capabilities,
             report: (context) => awareness.report(context),
+            // The reader layer comes next (#222); until then the text is dropped.
+            read: () => {},
           }),
       });
       if (apiServer.port !== browser.port) {

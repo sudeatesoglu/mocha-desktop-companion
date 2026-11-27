@@ -7,6 +7,7 @@ import {
   browsingContextSchema,
   EXTENSION_ORIGIN,
   NO_BROWSER_CAPABILITIES,
+  pageTextSchema,
 } from '@mocha/core';
 import { Validator } from '@seriousme/openapi-schema-validator';
 import { describe, expect, it } from 'vitest';
@@ -62,6 +63,12 @@ describe('docs/openapi.yaml', () => {
     expect(shape(spec.components.schemas.BrowsingContext)).toEqual(fromCode);
   });
 
+  it('describes a page’s text exactly as the API checks it', () => {
+    const { $schema: _, ...fromCode } = z.toJSONSchema(pageTextSchema);
+
+    expect(shape(spec.components.schemas.PageText)).toEqual(fromCode);
+  });
+
   it('lists every capability, each a required boolean', () => {
     const capabilities = spec.components.schemas.BrowserCapabilities;
 
@@ -106,6 +113,7 @@ describe('docs/openapi.yaml', () => {
         allowRequest: () => true,
         capabilities: () => NO_BROWSER_CAPABILITIES,
         report: () => {},
+        read: () => {},
       },
     );
     const example =
@@ -120,6 +128,10 @@ describe('docs/openapi.yaml', () => {
 
     for (const { value } of Object.values(examples as Record<string, { value: unknown }>)) {
       expect(browsingContextSchema.safeParse(value).success).toBe(true);
+    }
+    const pages = spec.paths['/v1/page'].post.requestBody.content['application/json'].examples;
+    for (const { value } of Object.values(pages as Record<string, { value: unknown }>)) {
+      expect(pageTextSchema.safeParse(value).success).toBe(true);
     }
   });
 });

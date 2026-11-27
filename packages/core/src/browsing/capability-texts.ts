@@ -32,6 +32,11 @@ export const CAPABILITY_TEXTS: readonly {
     hint: 'Typing, scrolling and clicking, as counts. Never what you type or click on. Chrome will ask for access to all sites.',
   },
   {
+    name: 'pageContent',
+    label: 'Read what pages are about',
+    hint: 'The visible text of a page, once, so Mocha’s reader model can tell what it is about. Never forms, what you type, or sensitive sites. Kept only in memory. Chrome will ask for access to all sites.',
+  },
+  {
     name: 'talk',
     label: 'Talk about what you do',
     hint: 'Short, playful comments in a bubble next to Mocha. Hush it from the menu bar.',

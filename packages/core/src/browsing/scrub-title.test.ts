@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_TITLE_LENGTH, scrubTitle } from './scrub-title.ts';
+import { MAX_TITLE_LENGTH, scrubPageText, scrubTitle } from './scrub-title.ts';
 
 describe('scrubTitle', () => {
   it('keeps an ordinary title', () => {
@@ -37,5 +37,27 @@ describe('scrubTitle', () => {
 
   it('can leave nothing at all', () => {
     expect(scrubTitle('  me@example.com  ')).toBe('');
+  });
+});
+
+describe('scrubPageText', () => {
+  it('takes out what could identify someone, as in titles', () => {
+    const text =
+      'Order 4821 9930 1123 7744 for me@example.com, see https://shop.example/track?id=1';
+
+    expect(scrubPageText(text, 1_000)).toBe('Order for see');
+  });
+
+  it('tidies spaces but keeps the lines', () => {
+    expect(scrubPageText('  Lifetimes \t in Rust \n\n\n  Generics  \n', 1_000)).toBe(
+      'Lifetimes in Rust\nGenerics',
+    );
+  });
+
+  it('cuts a long text at a word', () => {
+    const cut = scrubPageText('raven '.repeat(10), 20);
+
+    expect(cut).toBe('raven raven raven');
+    expect(scrubPageText('x'.repeat(30), 20)).toBe('x'.repeat(20));
   });
 });
