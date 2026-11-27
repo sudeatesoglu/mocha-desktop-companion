@@ -27,6 +27,7 @@ export function aiView(ai: AiSettings, localModels: string[] | null, canStoreKey
     provider: ai.provider,
     localModels,
     localModel: ai.localModel ?? null,
+    readerModel: ai.readerModel ?? null,
     claudeModel: ai.claudeModel,
     hasClaudeKey: ai.claudeKey !== undefined,
     canStoreKey,
@@ -45,6 +46,13 @@ export function applyAiChange(
       return { ...ai, provider: change.provider };
     case 'localModel':
       return localModels?.includes(change.model) ? { ...ai, localModel: change.model } : ai;
+    case 'readerModel': {
+      if (change.model === null) {
+        const { readerModel: _, ...rest } = ai;
+        return rest;
+      }
+      return localModels?.includes(change.model) ? { ...ai, readerModel: change.model } : ai;
+    }
     case 'claudeModel':
       return { ...ai, claudeModel: change.model };
     case 'feature':
@@ -68,6 +76,19 @@ export function providerFor(
     return key ? createClaudeProvider(fetch, key, ai.claudeModel) : 'wrong key';
   }
   return undefined;
+}
+
+/**
+ * The model that reads pages (ADR-0014): the chosen local reader model, or
+ * Mocha's own model, Claude included, when there is none. Nothing while AI
+ * is off.
+ */
+export function readerFor(
+  ai: AiSettings,
+  deps: { fetch: Fetch; claudeKey: () => string | undefined },
+): AiProvider | AiProblem | undefined {
+  if (ai.provider === 'off') return undefined;
+  return ai.readerModel ? createOllamaProvider(deps.fetch, ai.readerModel) : providerFor(ai, deps);
 }
 
 /** "Try it": a hello, so the user sees the model answer as Mocha. */

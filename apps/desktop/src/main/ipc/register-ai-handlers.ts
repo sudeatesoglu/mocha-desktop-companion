@@ -26,6 +26,10 @@ export interface AiAccess {
 const changeSchema = z.discriminatedUnion('change', [
   z.strictObject({ change: z.literal('provider'), provider: z.enum(AI_PROVIDERS) }),
   z.strictObject({ change: z.literal('localModel'), model: z.string().min(1).max(200) }),
+  z.strictObject({
+    change: z.literal('readerModel'),
+    model: z.string().min(1).max(200).nullable(),
+  }),
   z.strictObject({ change: z.literal('claudeModel'), model: z.enum(CLAUDE_MODELS) }),
   z.strictObject({
     change: z.literal('feature'),

@@ -13,6 +13,8 @@ const capability = z.boolean().catch(false);
 const aiSchema = z.object({
   provider: z.enum(AI_PROVIDERS).catch('off'),
   localModel: z.string().min(1).max(200).optional().catch(undefined),
+  /** A local model that reads pages (ADR-0014); Mocha's own model when unset. */
+  readerModel: z.string().min(1).max(200).optional().catch(undefined),
   claudeModel: z.enum(CLAUDE_MODELS).catch(CLAUDE_MODELS[0]),
   /** Encrypted by the keychain (safeStorage), as base64; never the key itself. */
   claudeKey: z.string().min(1).max(4000).optional().catch(undefined),

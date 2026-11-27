@@ -1,4 +1,10 @@
-import { type BrowsingContext, cleanAnswer, commentPrompt, MAX_COMMENT_CHARS } from '@mocha/core';
+import {
+  type BrowsingContext,
+  cleanAnswer,
+  commentPrompt,
+  MAX_COMMENT_CHARS,
+  type PageGist,
+} from '@mocha/core';
 import type { AiProblem } from '../../shared/ai.ts';
 import type { AiProvider } from './ai-provider.ts';
 
@@ -7,18 +13,19 @@ export const COMMENT_WRITE_MS = 10_000;
 
 /**
  * A comment written by the model for the page in front, from only the
- * browser details the user allows (ADR-0012, ADR-0013), or `fallback`, the
- * fixed line Mocha would have said, when there is no model, it fails, it
- * is slow or it says nothing.
+ * browser details the user allows (ADR-0012, ADR-0013) and the reader's
+ * gist of the page, if any (ADR-0014), or `fallback`, the fixed line Mocha
+ * would have said, when there is no model, it fails, it is slow or it says
+ * nothing.
  */
 export async function writeComment(
   provider: AiProvider | AiProblem | undefined,
   context: BrowsingContext,
   fallback: string,
-  timeoutMs = COMMENT_WRITE_MS,
+  { about, timeoutMs = COMMENT_WRITE_MS }: { about?: PageGist; timeoutMs?: number } = {},
 ): Promise<string> {
   if (provider === undefined || typeof provider === 'string') return fallback;
-  const result = await provider.answer(commentPrompt(context), {
+  const result = await provider.answer(commentPrompt(context, about), {
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!result.ok) return fallback;

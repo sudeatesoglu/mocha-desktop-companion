@@ -39,3 +39,18 @@ export function cleanAnswer(
   const space = cut.lastIndexOf(' ');
   return `${(space > maxChars / 2 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
+
+/**
+ * The outermost JSON object in a model's answer, or undefined. Models wrap
+ * JSON in prose or code fences now and then.
+ */
+export function outermostJson(answer: string): unknown {
+  const start = answer.indexOf('{');
+  const end = answer.lastIndexOf('}');
+  if (start === -1 || end < start) return undefined;
+  try {
+    return JSON.parse(answer.slice(start, end + 1));
+  } catch {
+    return undefined;
+  }
+}

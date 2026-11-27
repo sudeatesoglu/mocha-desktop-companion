@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AiProvider } from './ai-provider.ts';
-import { aiView, applyAiChange, DEFAULT_AI, providerFor, tryAi } from './ai-settings.ts';
+import { aiView, applyAiChange, DEFAULT_AI, providerFor, readerFor, tryAi } from './ai-settings.ts';
 
 const KEY = 'sk-ant-api03-0123456789abcdefghijKLMN';
 const MODELS = ['llama3.2:latest', 'mistral:7b'];
@@ -13,6 +13,7 @@ describe('aiView', () => {
       provider: 'off',
       localModels: MODELS,
       localModel: null,
+      readerModel: null,
       claudeModel: 'claude-haiku-5-5',
       hasClaudeKey: true,
       canStoreKey: true,
@@ -50,6 +51,58 @@ describe('applyAiChange', () => {
     expect(applyAiChange(DEFAULT_AI, { change: 'localModel', model: 'mistral:7b' }, null)).toBe(
       DEFAULT_AI,
     );
+  });
+});
+
+describe('applyAiChange: the reader model', () => {
+  it('takes a local model Ollama has, and goes back to Mocha’s own', () => {
+    const reading = applyAiChange(
+      DEFAULT_AI,
+      { change: 'readerModel', model: 'mistral:7b' },
+      MODELS,
+    );
+
+    expect(reading.readerModel).toBe('mistral:7b');
+    expect(aiView(reading, MODELS, true).readerModel).toBe('mistral:7b');
+    expect(applyAiChange(reading, { change: 'readerModel', model: null }, MODELS)).toEqual(
+      DEFAULT_AI,
+    );
+    expect(applyAiChange(DEFAULT_AI, { change: 'readerModel', model: 'evil:1b' }, MODELS)).toBe(
+      DEFAULT_AI,
+    );
+    expect(applyAiChange(DEFAULT_AI, { change: 'readerModel', model: 'mistral:7b' }, null)).toBe(
+      DEFAULT_AI,
+    );
+  });
+});
+
+describe('readerFor', () => {
+  const deps = (key?: string) => ({
+    fetch: vi.fn(async () => new Response('{"message":{"content":"ok"},"done":true}')),
+    claudeKey: () => key,
+  });
+
+  it('is nothing while AI is off, even with a reader model', () => {
+    expect(readerFor({ ...DEFAULT_AI, readerModel: 'mistral:7b' }, deps(KEY))).toBeUndefined();
+  });
+
+  it('reads with the reader model on this computer, even beside Claude', async () => {
+    const { fetch, claudeKey } = deps(KEY);
+    const reader = readerFor(
+      { ...DEFAULT_AI, provider: 'claude', readerModel: 'mistral:7b' },
+      { fetch, claudeKey },
+    );
+    if (reader === undefined || typeof reader === 'string') throw new Error('no reader');
+    await reader.answer({ system: 's', turns: [{ role: 'user', content: 'hi' }], maxTokens: 5 });
+
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toMatch(/^http:\/\/127\.0\.0\.1:11434\//);
+    expect(JSON.parse(init.body as string).model).toBe('mistral:7b');
+  });
+
+  it('reads with Mocha’s own model when there is no reader model', () => {
+    expect(readerFor({ ...DEFAULT_AI, provider: 'claude' }, deps(KEY))).toHaveProperty('answer');
+    expect(readerFor({ ...DEFAULT_AI, provider: 'local' }, deps())).toBe('no model');
   });
 });
 
