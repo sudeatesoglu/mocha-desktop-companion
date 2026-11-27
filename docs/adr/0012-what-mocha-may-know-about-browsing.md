@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-19
+- **Amended by:** [ADR-0013](0013-how-mocha-uses-ai.md) (proposed): with the user's separate switch, main also keeps the last half hour of browsing in memory for the chat
 
 ## Context
 
