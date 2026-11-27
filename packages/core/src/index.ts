@@ -23,6 +23,7 @@ export {
   MAX_MESSAGE_CHARS,
   type MochaFeelings,
   type Prompt,
+  type RecentPage,
   untrusted,
 } from './ai/prompt.ts';
 /**

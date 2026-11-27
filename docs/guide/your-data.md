@@ -22,7 +22,7 @@ AI is off until you turn it on in **Settings → AI**, and each use of it has it
 - **On this computer, with Ollama:** the model runs on your Mac and nothing leaves it.
 - **Claude, with your own API key:** what each feature you turn on allows goes to Anthropic, under your own account and their privacy policy. Mocha keeps your key only encrypted by the macOS keychain and never shows it again.
 
-The chat's model sees your messages, today's numbers, Mocha's mood and energy, and what Mocha remembers. It never sees your browsing. Mocha keeps no logs of what is asked or answered.
+The chat's model sees your messages, today's numbers, Mocha's mood and energy, and what Mocha remembers. It sees your browsing only if you turn on **Let the chat see what you browse**: then Mocha keeps the last half hour of the browser details you allow, in memory only, never on disk, and forgets it when you pause, the Mac sleeps or Mocha quits. What you and Mocha say in the chat is kept like any chat; what Mocha remembers about you never includes sites or pages. Mocha keeps no logs of what is asked or answered.
 
 ## In the browser
 

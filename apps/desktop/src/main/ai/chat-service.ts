@@ -1,4 +1,6 @@
 import {
+  allowedContext,
+  type BrowserCapabilities,
   type ChatTurn,
   chatPrompt,
   cleanAnswer,
@@ -9,6 +11,8 @@ import {
   type MochaFeelings,
   memoryQuery,
   parseSummary,
+  type RecentPage,
+  type SiteKind,
   summaryPrompt,
   untrusted,
 } from '@mocha/core';
@@ -36,8 +40,11 @@ export interface ChatDeps {
   enabled(): boolean;
   /** The model to ask, why there is none, or undefined while AI is off. */
   provider(): AiProvider | AiProblem | undefined;
-  /** What Mocha may know besides the chat (ADR-0013): numbers only. */
-  context(): { today?: DayNumbers; feelings?: MochaFeelings };
+  /**
+   * What Mocha may know besides the chat (ADR-0013): numbers, and the last
+   * half hour of browsing only when the user allows it.
+   */
+  context(): { today?: DayNumbers; feelings?: MochaFeelings; browsing?: RecentPage[] };
   now(): number;
 }
 
@@ -122,4 +129,36 @@ export function toDayNumbers(day: string, stats: DailyStats): DayNumbers {
     breaksTaken: stats.breaks,
     longestWorkWithoutBreakMinutes: Math.round(stats.longestStretchMs / 60_000),
   };
+}
+
+/**
+ * The last half hour as the chat may see it: each page with only what the
+ * user allows now (a switch turned off since counts at once), newest
+ * first, in whole minutes ago.
+ */
+export function recentPages(
+  visits: readonly {
+    until: number;
+    kind?: SiteKind | undefined;
+    site?: string | undefined;
+    title?: string | undefined;
+  }[],
+  capabilities: BrowserCapabilities,
+  now: number,
+): RecentPage[] {
+  return visits.flatMap(({ until, kind, site, title }) => {
+    const allowed = allowedContext(
+      { ...(kind && { kind }), ...(site && { site }), ...(title && { title }) },
+      capabilities,
+    );
+    if (!(allowed.kind || allowed.site || allowed.title)) return [];
+    return [
+      {
+        minutesAgo: Math.round((now - until) / 60_000),
+        ...(allowed.kind && { kind: allowed.kind }),
+        ...(allowed.site && { site: allowed.site }),
+        ...(allowed.title && { title: allowed.title }),
+      },
+    ];
+  });
 }

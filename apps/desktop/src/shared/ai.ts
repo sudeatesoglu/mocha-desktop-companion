@@ -7,10 +7,15 @@ export const CLAUDE_MODELS = ['claude-haiku-5-5', 'claude-sonnet-5-5'] as const;
 export type ClaudeModel = (typeof CLAUDE_MODELS)[number];
 
 /** What a model may be used for, each off until the user turns it on. */
-export const AI_FEATURES = ['chat', 'insights', 'comments'] as const;
+export const AI_FEATURES = ['chat', 'chatBrowsing', 'insights', 'comments'] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 export type AiFeatures = Readonly<Record<AiFeature, boolean>>;
-export const NO_AI_FEATURES: AiFeatures = { chat: false, insights: false, comments: false };
+export const NO_AI_FEATURES: AiFeatures = {
+  chat: false,
+  chatBrowsing: false,
+  insights: false,
+  comments: false,
+};
 
 /** Why a model could not answer, in terms the user can act on. */
 export type AiProblem =
@@ -59,6 +64,11 @@ export const AI_FEATURE_TEXTS: readonly { name: AiFeature; label: string; hint: 
     name: 'chat',
     label: 'Chat with Mocha',
     hint: 'In the Tower. The model sees your messages, today’s and this week’s numbers, and what Mocha remembers.',
+  },
+  {
+    name: 'chatBrowsing',
+    label: 'Let the chat see what you browse',
+    hint: 'So you can ask Mocha about it. The model sees the last half hour of the browser details you allow, kept only in memory; what you and Mocha say about it is kept like any chat.',
   },
   {
     name: 'insights',

@@ -16,7 +16,7 @@ describe('aiView', () => {
       claudeModel: 'claude-haiku-5-5',
       hasClaudeKey: true,
       canStoreKey: true,
-      features: { chat: false, insights: false, comments: false },
+      features: { chat: false, chatBrowsing: false, insights: false, comments: false },
     });
     expect(JSON.stringify(view)).not.toContain('c2VhbGVk');
   });
@@ -35,7 +35,7 @@ describe('applyAiChange', () => {
     expect(
       applyAiChange(DEFAULT_AI, { change: 'feature', feature: 'chat', enabled: true }, null)
         .features,
-    ).toEqual({ chat: true, insights: false, comments: false });
+    ).toEqual({ chat: true, chatBrowsing: false, insights: false, comments: false });
   });
 
   it('takes a local model only if Ollama has it', () => {

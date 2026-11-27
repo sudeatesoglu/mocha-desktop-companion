@@ -67,7 +67,7 @@ import {
   providerFor,
   tryAi,
 } from './ai/ai-settings.ts';
-import { createChatService, toDayNumbers } from './ai/chat-service.ts';
+import { createChatService, recentPages, toDayNumbers } from './ai/chat-service.ts';
 import { writeComment } from './ai/comment-writer.ts';
 import { createKeyStore } from './ai/key-store.ts';
 import { ollamaModels } from './ai/ollama-provider.ts';
@@ -331,7 +331,8 @@ if (!app.requestSingleInstanceLock()) {
     );
     needs.onChange((state) => tiredReporter.report(isTired(state)));
     // What the user does in the browser, if they let Mocha know (ADR-0012):
-    // only the latest context, in memory, gone after three quiet minutes.
+    // the latest context, in memory, gone after three quiet minutes, and the
+    // last half hour while the chat may see it (ADR-0013).
     const awareness = createBrowsingAwareness({
       staleMs: 3 * 60_000,
       now: Date.now,
@@ -688,8 +689,13 @@ if (!app.requestSingleInstanceLock()) {
     let ai: AiSettings = saved.ai ?? DEFAULT_AI;
     const keys = createKeyStore(safeStorage);
     const aiFetch = (url: string, init: RequestInit) => net.fetch(url, init);
+    // Main keeps the last half hour only while the chat may see it.
+    const chatSeesBrowsing = ({ provider, features }: AiSettings) =>
+      provider !== 'off' && features.chat && features.chatBrowsing;
+    awareness.keepRecent(chatSeesBrowsing(ai));
     const setAi = (next: AiSettings) => {
       ai = next;
+      awareness.keepRecent(chatSeesBrowsing(ai));
       void settings.update({ ai });
     };
     const canStoreKey = () => safeStorage.isEncryptionAvailable();
@@ -727,6 +733,9 @@ if (!app.requestSingleInstanceLock()) {
             const today = todayStats(Date.now());
             return {
               ...(today && { today: toDayNumbers('today', today) }),
+              ...(chatSeesBrowsing(ai) && {
+                browsing: recentPages(awareness.recent(), browser.capabilities, Date.now()),
+              }),
               feelings: {
                 mood: Math.round(needs.state.mood),
                 energy: Math.round(needs.state.energy),

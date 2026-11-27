@@ -19,6 +19,7 @@ const aiSchema = z.object({
   features: z
     .object({
       chat: z.boolean().catch(false),
+      chatBrowsing: z.boolean().catch(false),
       insights: z.boolean().catch(false),
       comments: z.boolean().catch(false),
     })
