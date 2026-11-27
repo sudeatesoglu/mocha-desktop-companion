@@ -2,7 +2,9 @@ import type { BrowsingContext } from './context.ts';
 import { COMMENT_LINES, NUDGE_LINES, pickLine } from './talk-lines.ts';
 
 /** Mocha comments at most this often, and only on a new site. */
-export const COMMENT_GAP_MS = 2 * 60_000;
+export const COMMENT_GAP_MS = 20_000;
+/** Mocha comments once the user has stayed this long on a new site. */
+export const SETTLE_MS = 5_000;
 /** A gentle nudge after this long on social media without a break. */
 export const SOCIAL_STRETCH_MS = 30 * 60_000;
 /** Late at night: from midnight to five in the morning. */
@@ -13,9 +15,10 @@ export const RECENT_LINES = 6;
 /** What Mocha remembers to talk well: in memory only, nothing about pages. */
 export interface TalkState {
   readonly lastSaidAt: number | null;
-  /** The kind of site Mocha last commented on. */
   /** The site Mocha last commented on, or its kind when Mocha may not know the site. */
   readonly lastPlace: string | null;
+  /** The site (or kind) the user is on, and since when. */
+  readonly arrived: { readonly place: string; readonly at: number } | null;
   /** The lines said lately, newest last. */
   readonly recent: readonly string[];
   /** When the current stretch on social media began. */
@@ -28,6 +31,7 @@ export interface TalkState {
 export const FRESH_TALK: TalkState = {
   lastSaidAt: null,
   lastPlace: null,
+  arrived: null,
   recent: [],
   socialSince: null,
   socialNudged: false,
@@ -61,19 +65,25 @@ export interface Saying {
 /**
  * Whether Mocha says something now, and what. Nudges come first; a
  * comment needs a new site (or kind of site, when Mocha may not know the
- * site) and two minutes since Mocha last spoke.
+ * site) where the user has stayed a few seconds, and twenty seconds since
+ * Mocha last spoke. When a comment waits only for time, `retryAt` says
+ * when to ask again, since the browser may report nothing new by then.
  */
 export function nextTalk(
   state: TalkState,
   moment: TalkMoment,
-): { state: TalkState; say: Saying | null } {
+): { state: TalkState; say: Saying | null; retryAt?: number } {
   const { now, context } = moment;
+  const place = context?.kind ? (context.site ?? context.kind) : null;
+  const arrived =
+    place === null ? null : state.arrived?.place === place ? state.arrived : { place, at: now };
   // A stretch on social media goes on, or ends, whether Mocha may speak.
   const socialSince = context?.kind === 'social' ? (state.socialSince ?? now) : null;
   const tracked: TalkState = {
     ...state,
     socialSince,
     socialNudged: socialSince !== null && state.socialNudged,
+    arrived,
   };
   if (moment.quiet || !context) return { state: tracked, say: null };
 
@@ -101,10 +111,13 @@ export function nextTalk(
   }
 
   const { kind } = context;
-  const due = state.lastSaidAt === null || now - state.lastSaidAt >= COMMENT_GAP_MS;
-  if (moment.may.talk && kind && due) {
-    const place = context.site ?? kind;
-    if (place !== state.lastPlace) return say('comment', COMMENT_LINES[kind], { lastPlace: place });
+  if (moment.may.talk && kind && arrived && arrived.place !== state.lastPlace) {
+    const ready = Math.max(
+      arrived.at + SETTLE_MS,
+      state.lastSaidAt === null ? 0 : state.lastSaidAt + COMMENT_GAP_MS,
+    );
+    if (now >= ready) return say('comment', COMMENT_LINES[kind], { lastPlace: arrived.place });
+    return { state: tracked, say: null, retryAt: ready };
   }
   return { state: tracked, say: null };
 }

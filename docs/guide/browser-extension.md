@@ -29,7 +29,7 @@ If it says Mocha isn't answering, check that Mocha is running and the extension 
 | Read page titles | After addresses, emails and numbers are taken out | "Read your browsing history" |
 | Notice what is going on in the browser | Whether a tab plays sound, how many are open, how often you switch and how long you stay | "Read your browsing history" |
 | Notice how busy you are on a page | Typing, scrolling and clicking as counts every 30 seconds; never which key, what text or what you click, and never in password fields | "Read and change all your data on all websites", https only |
-| Talk about what you do | A short, playful comment when you go to another site, at most every two minutes | nothing more |
+| Talk about what you do | A short, playful comment when you stay a few seconds on another site, at most every twenty seconds | nothing more |
 | Nudge you | A gentle word after half an hour on social media, or once after midnight | nothing more |
 
 Mocha keeps quiet during focus sessions, breaks, rituals and quiet hours. **Hush Mocha** in the menu bar silences it for an hour or until tomorrow morning.

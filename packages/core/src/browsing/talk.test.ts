@@ -7,6 +7,7 @@ import {
   LATE_NIGHT_END_MINUTE,
   nextTalk,
   RECENT_LINES,
+  SETTLE_MS,
   SOCIAL_STRETCH_MS,
   type TalkMoment,
   type TalkState,
@@ -41,62 +42,90 @@ function play(moments: TalkMoment[], start: TalkState = FRESH_TALK) {
   return { state, said };
 }
 
-describe('nextTalk: comments', () => {
-  it('comments on a kind of site with a line for it', () => {
-    const { say } = nextTalk(FRESH_TALK, moment({ kind: 'video' }));
+/** The user comes to a site at `over.now` and stays a few seconds. */
+function settle(context: BrowsingContext, over: Partial<TalkMoment> = {}, start = FRESH_TALK) {
+  const now = over.now ?? 0;
+  const arrived = nextTalk(start, moment(context, { ...over, now })).state;
+  return nextTalk(arrived, moment(context, { ...over, now: now + SETTLE_MS }));
+}
 
-    expect(say).toEqual({ kind: 'comment', text: COMMENT_LINES.video[0] });
+describe('nextTalk: comments', () => {
+  it('comments on a site once the user has stayed a few seconds', () => {
+    const first = nextTalk(FRESH_TALK, moment({ kind: 'video' }));
+
+    expect(SETTLE_MS).toBe(5_000);
+    expect(first).toMatchObject({ say: null, retryAt: SETTLE_MS });
+    expect(nextTalk(first.state, moment({ kind: 'video' }, { now: SETTLE_MS - 1 })).say).toBeNull();
+    expect(settle({ kind: 'video' }).say).toEqual({
+      kind: 'comment',
+      text: COMMENT_LINES.video[0],
+    });
   });
 
   it('comments on sites of any kind, but not without a kind', () => {
-    expect(nextTalk(FRESH_TALK, moment({ kind: 'other' })).say?.text).toBe(COMMENT_LINES.other[0]);
-    expect(nextTalk(FRESH_TALK, moment({ site: 'example.org' })).say).toBeNull();
-    expect(nextTalk(FRESH_TALK, moment(undefined)).say).toBeNull();
+    expect(settle({ kind: 'other' }).say?.text).toBe(COMMENT_LINES.other[0]);
+    expect(settle({ site: 'example.org' })).toEqual({ state: expect.anything(), say: null });
+    expect(nextTalk(FRESH_TALK, moment(undefined))).toEqual({ state: FRESH_TALK, say: null });
   });
 
-  it('waits two minutes between comments, and needs a new site', () => {
+  it('says nothing while the user hops from tab to tab', () => {
     const { said } = play([
       moment({ kind: 'code', site: 'github.com' }, { now: 0 }),
-      moment({ kind: 'code', site: 'gitlab.com' }, { now: COMMENT_GAP_MS - 1 }),
-      moment({ kind: 'code', site: 'gitlab.com' }, { now: COMMENT_GAP_MS }),
-      moment({ kind: 'code', site: 'gitlab.com' }, { now: 3 * COMMENT_GAP_MS }),
-      moment({ kind: 'video', site: 'youtube.com' }, { now: 4 * COMMENT_GAP_MS }),
+      moment({ kind: 'video', site: 'youtube.com' }, { now: 2_000 }),
+      moment({ kind: 'music', site: 'spotify.com' }, { now: 4_000 }),
+      moment({ kind: 'music', site: 'spotify.com' }, { now: 4_000 + SETTLE_MS }),
     ]);
 
-    expect(COMMENT_GAP_MS).toBe(2 * 60_000);
-    expect(said.map((text) => text !== null)).toEqual([true, false, true, false, true]);
+    expect(said).toEqual([null, null, null, COMMENT_LINES.music[0]]);
+  });
+
+  it('comments on every new site, twenty seconds apart at most', () => {
+    const github = { kind: 'code', site: 'github.com' } as const;
+    const gitlab = { kind: 'code', site: 'gitlab.com' } as const;
+    const said = settle(github);
+    const arrived = nextTalk(said.state, moment(gitlab, { now: 6_000 }));
+
+    expect(COMMENT_GAP_MS).toBe(20_000);
+    expect(arrived.retryAt).toBe(SETTLE_MS + COMMENT_GAP_MS);
+    const { said: later } = play(
+      [
+        moment(gitlab, { now: SETTLE_MS + COMMENT_GAP_MS - 1 }),
+        moment(gitlab, { now: SETTLE_MS + COMMENT_GAP_MS }),
+        moment(gitlab, { now: MINUTE }),
+      ],
+      arrived.state,
+    );
+    expect(later.map((text) => text !== null)).toEqual([false, true, false]);
   });
 
   it('goes by the kind of site when Mocha may not know the site', () => {
-    const { said } = play([
-      moment({ kind: 'code' }, { now: 0 }),
-      moment({ kind: 'code' }, { now: COMMENT_GAP_MS }),
-      moment({ kind: 'video' }, { now: 2 * COMMENT_GAP_MS }),
-    ]);
+    const code = settle({ kind: 'code' });
+    const sameKind = settle({ kind: 'code' }, { now: MINUTE }, code.state);
+    const video = settle({ kind: 'video' }, { now: 2 * MINUTE }, sameKind.state);
 
-    expect(said.map((text) => text !== null)).toEqual([true, false, true]);
+    expect([code.say, sameKind.say, video.say].map((say) => say !== null)).toEqual([
+      true,
+      false,
+      true,
+    ]);
   });
 
   it('uses the site and the title only when Mocha may know them', () => {
     const titled = { kind: 'video', title: 'Raven facts' } as const;
     const texts = new Set(
-      [0, 0.3, 0.6, 0.99].map(
-        (r) => nextTalk(FRESH_TALK, moment(titled, { random: () => r })).say?.text,
-      ),
+      [0, 0.3, 0.6, 0.99].map((r) => settle(titled, { random: () => r }).say?.text),
     );
 
     expect([...texts].some((text) => text?.includes('Raven facts'))).toBe(true);
     for (const r of [0, 0.5, 0.99]) {
-      expect(
-        nextTalk(FRESH_TALK, moment({ kind: 'video' }, { random: () => r })).say?.text,
-      ).not.toMatch(/[{}“]/);
+      expect(settle({ kind: 'video' }, { random: () => r }).say?.text).not.toMatch(/[{}“]/);
     }
   });
 
   it('does not comment unless the user lets Mocha talk', () => {
-    const quietMocha = moment({ kind: 'code' }, { may: { talk: false, nudge: false } });
+    const quietMocha = settle({ kind: 'code' }, { may: { talk: false, nudge: false } });
 
-    expect(nextTalk(FRESH_TALK, quietMocha).say).toBeNull();
+    expect(quietMocha).toEqual({ state: expect.anything(), say: null });
   });
 
   it('keeps quiet when told to, and comments once it may', () => {
@@ -106,16 +135,17 @@ describe('nextTalk: comments', () => {
     ]);
 
     expect(said).toEqual([null, COMMENT_LINES.code[0]]);
+    expect(nextTalk(FRESH_TALK, moment({ kind: 'code' }, { quiet: true }))).not.toHaveProperty(
+      'retryAt',
+    );
   });
 
   it('does not repeat a line it said lately', () => {
-    const { said } = play([
-      moment({ kind: 'code' }, { now: 0 }),
-      moment({ kind: 'video' }, { now: COMMENT_GAP_MS }),
-      moment({ kind: 'code' }, { now: 2 * COMMENT_GAP_MS }),
-    ]);
+    const first = settle({ kind: 'code' });
+    const second = settle({ kind: 'video' }, { now: MINUTE }, first.state);
+    const third = settle({ kind: 'code' }, { now: 2 * MINUTE }, second.state);
 
-    expect(said[2]).not.toBe(said[0]);
+    expect(third.say?.text).not.toBe(first.say?.text);
   });
 });
 
@@ -178,13 +208,12 @@ describe('nextTalk: nudges', () => {
     expect(said).toEqual([null, null]);
   });
 
-  it('marks a nudge as said, so a comment waits ten minutes after it', () => {
-    const { said } = play([
-      moment({ kind: 'code' }, { now: 0, minute: 30 }),
-      moment({ kind: 'video' }, { now: MINUTE, minute: 31 }),
-    ]);
+  it('marks a nudge as said, so a comment waits after it', () => {
+    const nudged = nextTalk(FRESH_TALK, moment({ kind: 'code' }, { now: 0, minute: 30 }));
+    const video = settle({ kind: 'video' }, { now: 1_000, minute: 30 }, nudged.state);
 
-    expect(said).toEqual([NUDGE_LINES.lateNight[0], null]);
+    expect(nudged.say?.text).toBe(NUDGE_LINES.lateNight[0]);
+    expect(video).toMatchObject({ say: null, retryAt: COMMENT_GAP_MS });
   });
 });
 
@@ -214,7 +243,7 @@ describe('nextTalk: recent lines', () => {
       'docs',
     ] as const;
     kinds.forEach((kind, i) => {
-      state = nextTalk(state, moment({ kind }, { now: i * COMMENT_GAP_MS })).state;
+      state = settle({ kind }, { now: i * MINUTE }, state).state;
     });
 
     expect(state.recent).toHaveLength(RECENT_LINES);

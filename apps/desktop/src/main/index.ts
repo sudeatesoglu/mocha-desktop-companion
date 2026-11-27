@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import {
   BARE_LOOK,
   type BrowserCapability,
+  type BrowsingContext,
   type BrowsingPose,
   browsingPose,
   cleanMemory,
@@ -939,7 +940,11 @@ if (!app.requestSingleInstanceLock()) {
         if (comment === opened) comment = undefined;
       });
       loadPage(opened, 'comment');
-      commentTimer = setTimeout(closeComment, COMMENT_SHOW_MS);
+      commentTimer = setTimeout(() => {
+        closeComment();
+        // The user may have gone to another site while it showed.
+        considerTalking(awareness.current);
+      }, COMMENT_SHOW_MS);
       playSound('comment');
     };
     window.on('move', () => {
@@ -950,9 +955,13 @@ if (!app.requestSingleInstanceLock()) {
       commentShow = { ...commentShow, side: placed.side };
       comment.webContents.send(IpcChannel.CommentShow, commentShow);
     });
+    const placeOf = (context: BrowsingContext | undefined) => context?.site ?? context?.kind;
+    let talkRetry: ReturnType<typeof setTimeout> | undefined;
     // Whenever the latest context changes, which the extension reports at
-    // least once a minute while the user browses.
-    awareness.onChange((context) => {
+    // least once a minute while the user browses, and when a comment that
+    // waits only for time is due.
+    function considerTalking(context: BrowsingContext | undefined) {
+      clearTimeout(talkRetry);
       const now = Date.now();
       const minute = minuteOfDay(now);
       const next = nextTalk(talk, {
@@ -973,6 +982,9 @@ if (!app.requestSingleInstanceLock()) {
         random: Math.random,
       });
       talk = next.state;
+      if (next.retryAt !== undefined) {
+        talkRetry = setTimeout(() => considerTalking(awareness.current), next.retryAt - now);
+      }
       const saying = next.say;
       if (!saying) return;
       // With "Let AI write Mocha's comments", the model writes the line from
@@ -986,12 +998,15 @@ if (!app.requestSingleInstanceLock()) {
         claudeKey: () => keys.open(ai.claudeKey),
       });
       void writeComment(provider, context, saying.text).then((text) => {
-        // A break, a pause or another bubble may have come while it wrote.
+        // A break, a pause or another bubble may have come while it wrote,
+        // or the user may have left the site.
         if (comment || reminder || ritual || pause.paused || breaks.state.phase !== 'working')
           return;
+        if (placeOf(awareness.current) !== placeOf(context)) return;
         openComment({ ...saying, text });
       });
-    });
+    }
+    awareness.onChange(considerTalking);
     // A break, a focus session, a ritual or a pause comes first: the
     // comment makes way at once.
     breaks.onChange((next) => {

@@ -6,7 +6,7 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ### Changed
 
-- Mocha comments more often: whenever you go to another site, at most every two minutes, instead of only on a new kind of site every ten minutes, and on sites of any kind ([#218](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/218))
+- Mocha comments more often: on every site you stay on for a few seconds, at most every twenty seconds, instead of only on a new kind of site every ten minutes, and on sites of any kind ([#218](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/218), [#221](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/221))
 
 ### Added
 
