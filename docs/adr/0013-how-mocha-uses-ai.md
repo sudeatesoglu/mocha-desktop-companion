@@ -1,7 +1,7 @@
 # ADR-0013: Let Mocha use a language model only as the user allows, local first
 
-- **Status:** Proposed
-- **Date:** 2026-11-25, revised 2026-11-27
+- **Status:** Accepted
+- **Date:** 2026-11-25, revised 2026-11-27, accepted 2026-11-28
 - **Amends:** [ADR-0012](0012-what-mocha-may-know-about-browsing.md): main may keep the last half hour of browsing in memory for the chat
 
 ## Context
