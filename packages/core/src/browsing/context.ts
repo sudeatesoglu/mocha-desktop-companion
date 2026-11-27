@@ -27,6 +27,7 @@ export const BROWSER_CAPABILITIES = [
   'nudge', // gentle nudges
   'browserActivity', // sound, tabs, switching, time on a page
   'pageActivity', // typing, scrolling and clicking, as counts
+  'pageContent', // what pages are about, from their visible text (ADR-0014)
 ] as const;
 export type BrowserCapability = (typeof BROWSER_CAPABILITIES)[number];
 export type BrowserCapabilities = Readonly<Record<BrowserCapability, boolean>>;
@@ -40,6 +41,7 @@ export const NO_BROWSER_CAPABILITIES: BrowserCapabilities = Object.freeze({
   nudge: false,
   browserActivity: false,
   pageActivity: false,
+  pageContent: false,
 });
 
 const count = (max: number) => z.int().min(0).max(max);
@@ -76,6 +78,15 @@ export const browsingContextSchema = z.strictObject({
     .optional(),
 });
 export type BrowsingContext = z.infer<typeof browsingContextSchema>;
+
+/** The most of a page's visible text the extension sends (ADR-0014). */
+export const MAX_PAGE_TEXT = 20_000;
+
+/** A page's visible text, sent once per page while the user allows it. */
+export const pageTextSchema = z.strictObject({
+  text: z.string().min(1).max(MAX_PAGE_TEXT),
+});
+export type PageText = z.infer<typeof pageTextSchema>;
 
 /**
  * `context` with only what the user allows, and the title scrubbed again.

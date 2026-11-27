@@ -47,7 +47,10 @@ export {
   type BrowserCapability,
   type BrowsingContext,
   browsingContextSchema,
+  MAX_PAGE_TEXT,
   NO_BROWSER_CAPABILITIES,
+  type PageText,
+  pageTextSchema,
   SITE_KINDS,
   type SiteKind,
 } from './browsing/context.ts';
@@ -55,7 +58,12 @@ export { matchesDomain, registrableDomain } from './browsing/domains.ts';
 export { EXTENSION_ID, EXTENSION_ORIGIN, EXTENSION_PUBLIC_KEY } from './browsing/extension.ts';
 export { filterPage, type HoldReason, type PageVerdict } from './browsing/filter.ts';
 export { formatPairingCode, parsePairingCode } from './browsing/pairing.ts';
-export { MAX_TITLE_LENGTH, scrubPrivate, scrubTitle } from './browsing/scrub-title.ts';
+export {
+  MAX_TITLE_LENGTH,
+  scrubPageText,
+  scrubPrivate,
+  scrubTitle,
+} from './browsing/scrub-title.ts';
 export {
   isSensitivePath,
   SENSITIVE_DOMAINS,

@@ -4,6 +4,9 @@ import {
   type BrowserCapabilities,
   type BrowsingContext,
   browsingContextSchema,
+  MAX_PAGE_TEXT,
+  pageTextSchema,
+  scrubPageText,
 } from '@mocha/core';
 
 /** A request, as the server reads it. */
@@ -37,6 +40,8 @@ export interface Api {
   capabilities(): BrowserCapabilities;
   /** A context that passed every check, with only what the user allows. */
   report(context: BrowsingContext): void;
+  /** A page's visible text, scrubbed again, while the user allows it (ADR-0014). */
+  read(text: string): void;
 }
 
 /** The API's routes and their methods, as documented in docs/openapi.yaml. */
@@ -44,6 +49,7 @@ export const ROUTES: Readonly<Record<string, readonly string[]>> = {
   '/v1/health': ['GET'],
   '/v1/capabilities': ['GET'],
   '/v1/context': ['POST'],
+  '/v1/page': ['POST'],
 };
 
 const BASE_HEADERS = {
@@ -98,6 +104,10 @@ export function handleApiRequest(request: ApiRequest, api: Api): ApiResponse {
   }
   // The token keeps out other local software, which can fake any header.
   if (!carriesToken(request.headers['authorization'], api.token)) return refuse(401, 'token', cors);
+  // A page's text is not even parsed unless the user lets Mocha read pages.
+  if (request.path === '/v1/page' && !api.capabilities().pageContent) {
+    return refuse(403, 'capability', cors);
+  }
 
   const json = (body: unknown) =>
     respond(
@@ -116,6 +126,13 @@ export function handleApiRequest(request: ApiRequest, api: Api): ApiResponse {
     payload = JSON.parse(request.body);
   } catch {
     return refuse(400, 'json', cors);
+  }
+  if (request.path === '/v1/page') {
+    const page = pageTextSchema.safeParse(payload);
+    if (!page.success) return refuse(400, 'schema', cors);
+    const text = scrubPageText(page.data.text, MAX_PAGE_TEXT);
+    if (text) api.read(text);
+    return respond(204, cors);
   }
   const parsed = browsingContextSchema.safeParse(payload);
   if (!parsed.success) return refuse(400, 'schema', cors);

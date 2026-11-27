@@ -2,7 +2,13 @@ import { request as httpRequest } from 'node:http';
 import { createServer } from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ApiRequest } from './api-handler.ts';
-import { type ApiServer, MAX_BODY_BYTES, startApiServer } from './api-server.ts';
+import {
+  type ApiServer,
+  MAX_BODY_BYTES,
+  MAX_PAGE_BODY_BYTES,
+  maxBodyFor,
+  startApiServer,
+} from './api-server.ts';
 
 /** Sends a raw request and resolves to the status and body. */
 function send(
@@ -125,6 +131,26 @@ describe('startApiServer', () => {
     expect(response.status).toBe(413);
     expect(logger.warn).toHaveBeenCalledWith('[api] refused 413: body too large');
     expect(handle).not.toHaveBeenCalled();
+  });
+
+  it('lets only a page through with a larger body, within its own limit', async () => {
+    const handle = vi.fn((_request: ApiRequest) => ({ status: 204, headers: {}, body: '' }));
+    server = await startApiServer({ port: 0, handle, logger });
+    const page = 'x'.repeat(MAX_BODY_BYTES * 4);
+
+    expect(maxBodyFor('/v1/context')).toBe(MAX_BODY_BYTES);
+    expect(maxBodyFor('/v1/page')).toBe(MAX_PAGE_BODY_BYTES);
+    expect((await send(server.port, { method: 'POST', path: '/v1/page', body: page })).status).toBe(
+      204,
+    );
+    expect(handle.mock.calls[0]?.[0]).toMatchObject({ path: '/v1/page', body: page });
+    const tooBig = await send(server.port, {
+      method: 'POST',
+      path: '/v1/page',
+      body: 'x'.repeat(MAX_PAGE_BODY_BYTES + 1),
+    }).catch(() => ({ status: 413, body: '' }));
+    expect(tooBig.status).toBe(413);
+    expect(handle).toHaveBeenCalledTimes(1);
   });
 
   it('joins a header sent more than once', async () => {

@@ -1,4 +1,9 @@
-import { type BrowsingContext, NO_BROWSER_CAPABILITIES } from '@mocha/core';
+import {
+  type BrowserCapabilities,
+  type BrowsingContext,
+  MAX_PAGE_TEXT,
+  NO_BROWSER_CAPABILITIES,
+} from '@mocha/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Api, type ApiRequest, handleApiRequest } from './api-handler.ts';
 
@@ -8,17 +13,22 @@ const TOKEN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 describe('handleApiRequest', () => {
   const report = vi.fn<(context: BrowsingContext) => void>();
+  const read = vi.fn<(text: string) => void>();
   const allowRequest = vi.fn<() => boolean>();
+  let capabilities: BrowserCapabilities;
   const api: Api = {
     token: TOKEN,
     origin: ORIGIN,
     allowRequest,
-    capabilities: () => ({ ...NO_BROWSER_CAPABILITIES, kind: true, title: true }),
+    capabilities: () => capabilities,
     report,
+    read,
   };
 
   beforeEach(() => {
+    capabilities = { ...NO_BROWSER_CAPABILITIES, kind: true, title: true };
     report.mockReset();
+    read.mockReset();
     allowRequest.mockReset().mockReturnValue(true);
   });
 
@@ -51,6 +61,47 @@ describe('handleApiRequest', () => {
     expect(response.status).toBe(204);
     expect(response.headers['Access-Control-Allow-Origin']).toBe(ORIGIN);
     expect(report).toHaveBeenCalledWith({ kind: 'code', title: 'Pull requests' });
+  });
+
+  describe('a page’s text', () => {
+    const page = (body: unknown) =>
+      request({ path: '/v1/page', body: typeof body === 'string' ? body : JSON.stringify(body) });
+
+    it('passes it on, scrubbed again, when the user lets Mocha read pages', () => {
+      capabilities = { ...capabilities, pageContent: true };
+
+      expect(page({ text: 'Lifetimes  in Rust.\nWrite to me@example.com' }).status).toBe(204);
+      expect(read).toHaveBeenCalledWith('Lifetimes in Rust.\nWrite to');
+      expect(report).not.toHaveBeenCalled();
+    });
+
+    it('refuses it unread unless the user lets Mocha read pages', () => {
+      const response = page({ text: 'secret' });
+      const unparsed = page('not even JSON');
+
+      expect(response).toMatchObject({ status: 403, refused: 'capability' });
+      expect(unparsed).toMatchObject({ status: 403, refused: 'capability' });
+      expect(read).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['empty', { text: '' }],
+      ['too long', { text: 'x'.repeat(MAX_PAGE_TEXT + 1) }],
+      ['with more fields', { text: 'hi', url: 'https://example.com' }],
+      ['not text', { text: 42 }],
+    ])('refuses a body that is %s', (_, body) => {
+      capabilities = { ...capabilities, pageContent: true };
+
+      expect(page(body)).toMatchObject({ status: 400, refused: 'schema' });
+      expect(read).not.toHaveBeenCalled();
+    });
+
+    it('passes nothing on when nothing is left after scrubbing', () => {
+      capabilities = { ...capabilities, pageContent: true };
+
+      expect(page({ text: '1234567890' }).status).toBe(204);
+      expect(read).not.toHaveBeenCalled();
+    });
   });
 
   it('answers health and the capabilities as JSON', () => {
