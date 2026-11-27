@@ -29,6 +29,11 @@ export interface DayNumbers {
   readonly rituals?: number;
 }
 
+function whenText(minutesAgo: number): string {
+  if (minutesAgo <= 0) return 'now';
+  return minutesAgo === 1 ? '1 minute ago' : `${minutesAgo} minutes ago`;
+}
+
 /** A page the user was on lately, as the chat may see it (ADR-0013). */
 export interface RecentPage {
   /** 0 for the page in front. */
@@ -120,10 +125,11 @@ export function chatPrompt(input: {
   };
   fitting('memories', input.memories, 200);
   fitting('earlierChats', input.summaries, 600);
-  const pages: RecentPage[] = [];
+  const pages: object[] = [];
   for (const page of input.browsing ?? []) {
     const quoted = {
-      minutesAgo: page.minutesAgo,
+      // Words, not a number: small models read "1 minute ago" better.
+      when: whenText(page.minutesAgo),
       ...(page.kind && { kind: page.kind }),
       ...(page.site && { site: untrusted(page.site, 253) }),
       ...(page.title && { title: untrusted(page.title, 80) }),
@@ -133,7 +139,7 @@ export function chatPrompt(input: {
     pages.push(quoted);
     room -= cost;
   }
-  if (pages.length > 0) data['recentBrowsing'] = pages;
+  if (pages.length > 0) data['pagesLately'] = pages;
 
   const history: ChatTurn[] = [];
   for (const turn of [...input.history].reverse()) {

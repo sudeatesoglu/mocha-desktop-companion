@@ -4,6 +4,7 @@ import {
   MAX_MEMORY_CHARS,
   MAX_SUMMARY_CHARS,
   memoryQuery,
+  NEUTRAL_SUMMARY,
   parseSummary,
   summaryPrompt,
 } from './memory.ts';
@@ -74,6 +75,19 @@ describe('cleanMemory', () => {
     'Bugün çok çalıştı',
   ])('does not keep Mocha’s own numbers or passing moments: %j', (fact) => {
     expect(cleanMemory(fact)).toBeUndefined();
+  });
+
+  it('drops what the user browsed from the summary', () => {
+    const answer = (summary: string) =>
+      parseSummary(JSON.stringify({ summary, remember: [] }))?.summary;
+
+    expect(answer('Soda asked what they watched on youtube.com. We talked about Rust! Fun.')).toBe(
+      'We talked about Rust! Fun.',
+    );
+    expect(answer('Soda asked about the websites they had open.')).toBe(NEUTRAL_SUMMARY);
+    expect(summaryPrompt([{ role: 'user', content: 'hi' }]).turns[0]?.content).toContain(
+      'leaving out websites, pages and what the user browsed',
+    );
   });
 
   it.each([

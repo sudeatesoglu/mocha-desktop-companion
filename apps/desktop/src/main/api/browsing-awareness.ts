@@ -27,6 +27,8 @@ export function createBrowsingAwareness(options: {
 }) {
   let latest: { context: BrowsingContext; at: number } | undefined;
   let recent: Visit[] = [];
+  // Only while the user lets the chat see their browsing.
+  let keepRecent = false;
   let cancelStale = () => {};
   const listeners = new Set<(context: BrowsingContext | undefined) => void>();
   const notify = () => {
@@ -48,7 +50,7 @@ export function createBrowsingAwareness(options: {
 
   function remember(context: BrowsingContext, now: number): void {
     const { kind, site, title } = context;
-    if (kind || site || title) {
+    if (keepRecent && (kind || site || title)) {
       const last = recent.at(-1);
       if (last && last.kind === kind && last.site === site && last.title === title) {
         last.until = now;
@@ -82,6 +84,11 @@ export function createBrowsingAwareness(options: {
       notify();
     },
     forget,
+    /** Keeps the last half hour from now on, or forgets it and stops. */
+    keepRecent(on: boolean): void {
+      keepRecent = on;
+      if (!on) recent = [];
+    },
     /** The pages of the last half hour, newest first. */
     recent(): readonly Visit[] {
       const now = options.now();

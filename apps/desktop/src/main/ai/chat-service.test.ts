@@ -102,10 +102,10 @@ describe('createChatService', () => {
     s.browsing = undefined;
     await s.chat.send('And now?');
 
-    expect(dataOf(s.prompts[0] as Prompt).recentBrowsing).toEqual([
-      { minutesAgo: 2, kind: 'video', site: 'youtube.com' },
+    expect(dataOf(s.prompts[0] as Prompt).pagesLately).toEqual([
+      { when: '2 minutes ago', kind: 'video', site: 'youtube.com' },
     ]);
-    expect(dataOf(s.prompts[1] as Prompt)).not.toHaveProperty('recentBrowsing');
+    expect(dataOf(s.prompts[1] as Prompt)).not.toHaveProperty('pagesLately');
   });
 
   it('keeps the conversation and sends it with the next message', async () => {

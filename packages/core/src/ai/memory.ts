@@ -89,12 +89,15 @@ export function summaryPrompt(turns: readonly ChatTurn[]): Prompt {
       {
         role: 'user',
         content:
-          'Sum up the conversation in DATA in at most three sentences, as Mocha. Then list up to three lasting facts the user said about themselves: interests, goals, preferences, what they are learning or working on. Write each as a short phrase about the user, like "Is learning Rust" or "Likes tea in the afternoon". Only what the user really said, never guesses. Never numbers, times or anything about today, never websites, pages or what they browsed, never secrets, passwords, health, money or other people. An empty list is fine. Reply with JSON only: {"summary": "...", "remember": ["..."]}',
+          'Sum up the conversation in DATA in at most three sentences, as Mocha, leaving out websites, pages and what the user browsed. Then list up to three lasting facts the user said about themselves: interests, goals, preferences, what they are learning or working on. Write each as a short phrase about the user, like "Is learning Rust" or "Likes tea in the afternoon". Only what the user really said, never guesses. Never numbers, times or anything about today, never websites, pages or what they browsed, never secrets, passwords, health, money or other people. An empty list is fine. Reply with JSON only: {"summary": "...", "remember": ["..."]}',
       },
     ],
     maxTokens: 300,
   };
 }
+
+/** A summary whose every sentence was about browsing. */
+export const NEUTRAL_SUMMARY = 'Talked with Mocha.';
 
 const summarySchema = z.object({
   summary: z.string(),
@@ -118,8 +121,12 @@ export function parseSummary(answer: string): { summary: string; remember: strin
   }
   const parsed = summarySchema.safeParse(json);
   if (!parsed.success) return undefined;
-  const summary = cleanAnswer(parsed.data.summary, { maxChars: MAX_SUMMARY_CHARS });
-  if (!summary) return undefined;
+  const cleaned = cleanAnswer(parsed.data.summary, { maxChars: MAX_SUMMARY_CHARS });
+  if (!cleaned) return undefined;
+  // Summaries outlive the messages, so they never keep what the user
+  // browsed (ADR-0013): sentences naming a site or browsing are dropped.
+  const kept = cleaned.split(/(?<=[.!?])\s+/).filter((sentence) => !SITE.test(sentence));
+  const summary = kept.length > 0 ? kept.join(' ') : NEUTRAL_SUMMARY;
   const remember = [
     ...new Set(parsed.data.remember.flatMap((fact) => cleanMemory(fact) ?? [])),
   ].slice(0, 3);

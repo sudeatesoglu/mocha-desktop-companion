@@ -97,6 +97,7 @@ describe('createBrowsingAwareness', () => {
       const at = (ms: number) => {
         now = ms;
       };
+      awareness.keepRecent(true);
       return { awareness, timers, at };
     }
 
@@ -113,6 +114,16 @@ describe('createBrowsingAwareness', () => {
         { since: 2 * MINUTE, until: 2 * MINUTE, kind: 'video', site: 'youtube.com' },
         { since: 0, until: MINUTE, kind: 'code', site: 'github.com', title: 'PR' },
       ]);
+    });
+
+    it('keeps nothing unless the chat may see the browsing, and forgets when that stops', () => {
+      const { awareness } = setup();
+      awareness.report({ kind: 'code' });
+      awareness.keepRecent(false);
+      awareness.report({ kind: 'video' });
+
+      expect(awareness.recent()).toEqual([]);
+      expect(awareness.current).toEqual({ kind: 'video' });
     });
 
     it('keeps only the browsing details, never activity', () => {
