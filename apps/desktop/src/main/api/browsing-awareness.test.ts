@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createBrowsingAwareness, MAX_RECENT, RECENT_MS } from './browsing-awareness.ts';
+import { createBrowsingAwareness, MAX_RECENT, RECENT_MS, samePage } from './browsing-awareness.ts';
 
 describe('createBrowsingAwareness', () => {
   it('knows only the latest context', () => {
@@ -159,5 +159,75 @@ describe('createBrowsingAwareness', () => {
       awareness.forget();
       expect(awareness.recent()).toEqual([]);
     });
+  });
+
+  describe('what the page is about', () => {
+    const GIST = { topic: 'Rust lifetimes', gist: 'A chapter on lifetimes.' };
+    const PAGE = { kind: 'docs', site: 'doc.rust-lang.org', title: 'Lifetimes' } as const;
+
+    function setup() {
+      let now = 0;
+      const awareness = createBrowsingAwareness({
+        staleMs: 3 * 60_000,
+        now: () => now,
+        schedule: () => () => {},
+      });
+      awareness.keepRecent(true);
+      return {
+        awareness,
+        at: (ms: number) => {
+          now = ms;
+        },
+      };
+    }
+
+    it('keeps the gist with the page while the user stays, and in the half hour', () => {
+      const { awareness } = setup();
+      awareness.report(PAGE);
+      awareness.describe({ ...PAGE }, GIST);
+      awareness.report({ ...PAGE });
+
+      expect(awareness.about).toEqual(GIST);
+      expect(awareness.recent()[0]?.about).toBe(GIST.gist);
+      awareness.report({ kind: 'video', site: 'youtube.com' });
+      expect(awareness.about).toBeUndefined();
+      expect(awareness.recent()[1]?.about).toBe(GIST.gist);
+    });
+
+    it('drops a gist for a page the user already left', () => {
+      const { awareness } = setup();
+      awareness.report(PAGE);
+      awareness.report({ kind: 'video' });
+      awareness.describe(PAGE, GIST);
+
+      expect(awareness.about).toBeUndefined();
+      expect(awareness.recent().every((visit) => visit.about === undefined)).toBe(true);
+    });
+
+    it('keeps the gist out of the half hour when the visit is not the page', () => {
+      const { awareness } = setup();
+      awareness.keepRecent(false);
+      awareness.report(PAGE);
+      awareness.describe(PAGE, GIST);
+
+      expect(awareness.about).toEqual(GIST);
+      expect(awareness.recent()).toEqual([]);
+    });
+
+    it('knows nothing before a page, and lets an old gist go', () => {
+      const { awareness, at } = setup();
+      awareness.describe(PAGE, GIST);
+      expect(awareness.about).toBeUndefined();
+
+      awareness.report(PAGE);
+      awareness.describe(PAGE, GIST);
+      at(3 * 60_000);
+      expect(awareness.about).toBeUndefined();
+    });
+  });
+
+  it('tells pages apart by what Mocha may know of them', () => {
+    expect(samePage({ kind: 'code', site: 'a.com' }, { kind: 'code', site: 'a.com' })).toBe(true);
+    expect(samePage({ kind: 'code', title: 'A' }, { kind: 'code', title: 'B' })).toBe(false);
   });
 });

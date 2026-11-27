@@ -1,4 +1,4 @@
-export { cleanAnswer } from './ai/answer.ts';
+export { cleanAnswer, outermostJson } from './ai/answer.ts';
 export {
   CONVERSATION_IDLE_MS,
   cleanMemory,
@@ -26,6 +26,20 @@ export {
   type RecentPage,
   untrusted,
 } from './ai/prompt.ts';
+export {
+  chunkPage,
+  cleanNote,
+  gistPrompt,
+  MAX_GIST_CHARS,
+  MAX_READ_CHUNKS,
+  MAX_TOPIC_CHARS,
+  notePrompt,
+  type PageGist,
+  type PageLabel,
+  parseGist,
+  READ_CHUNK_CHARS,
+  readPagePrompt,
+} from './ai/reader.ts';
 /**
  * Public API of @mocha/core.
  *

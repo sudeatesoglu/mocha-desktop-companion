@@ -208,11 +208,13 @@ button:active {
 }
 
 .ai-local,
+.ai-reader,
 .ai-claude {
   margin: 0 0 8px 24px;
 }
 
 .ai-local[hidden],
+.ai-reader[hidden],
 .ai-claude[hidden] {
   display: none;
 }

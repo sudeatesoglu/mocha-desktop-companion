@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { scrubPrivate } from '../browsing/scrub-title.ts';
-import { cleanAnswer } from './answer.ts';
+import { cleanAnswer, outermostJson } from './answer.ts';
 import { MOCHA_PERSONA } from './persona.ts';
 import { type ChatTurn, dataBlock, type Prompt, untrusted } from './prompt.ts';
 
@@ -110,16 +110,7 @@ const summarySchema = z.object({
  * code fences now and then, so the outermost object is taken.
  */
 export function parseSummary(answer: string): { summary: string; remember: string[] } | undefined {
-  const start = answer.indexOf('{');
-  const end = answer.lastIndexOf('}');
-  if (start === -1 || end < start) return undefined;
-  let json: unknown;
-  try {
-    json = JSON.parse(answer.slice(start, end + 1));
-  } catch {
-    return undefined;
-  }
-  const parsed = summarySchema.safeParse(json);
+  const parsed = summarySchema.safeParse(outermostJson(answer));
   if (!parsed.success) return undefined;
   const cleaned = cleanAnswer(parsed.data.summary, { maxChars: MAX_SUMMARY_CHARS });
   if (!cleaned) return undefined;

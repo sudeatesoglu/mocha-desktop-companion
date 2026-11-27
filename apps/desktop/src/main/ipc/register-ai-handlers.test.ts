@@ -18,6 +18,7 @@ const VIEW: AiView = {
   provider: 'off',
   localModels: null,
   localModel: null,
+  readerModel: null,
   claudeModel: 'claude-haiku-5-5',
   hasClaudeKey: false,
   canStoreKey: true,
@@ -55,6 +56,8 @@ describe('registerAiHandlers', () => {
   it.each([
     { change: 'provider', provider: 'local' },
     { change: 'localModel', model: 'mistral:7b' },
+    { change: 'readerModel', model: 'qwen3.5:4b' },
+    { change: 'readerModel', model: null },
     { change: 'claudeModel', model: 'claude-sonnet-5-5' },
     { change: 'feature', feature: 'comments', enabled: true },
   ])('applies the change %j', async (change) => {
@@ -69,6 +72,8 @@ describe('registerAiHandlers', () => {
     { change: 'feature', feature: 'everything', enabled: true },
     { change: 'feature', feature: 'chat', enabled: true, extra: 1 },
     { change: 'localModel', model: '' },
+    { change: 'readerModel' },
+    { change: 'readerModel', model: 'x'.repeat(201) },
     'provider',
   ])('refuses %j and answers with the unchanged view', async (change) => {
     expect(await invoke(IpcChannel.SettingsChangeAi, change)).toBe(VIEW);

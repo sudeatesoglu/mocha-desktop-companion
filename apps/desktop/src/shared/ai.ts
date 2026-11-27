@@ -32,6 +32,8 @@ export interface AiView {
   /** Ollama's installed models, or null when Ollama does not answer. */
   localModels: string[] | null;
   localModel: string | null;
+  /** The local model that reads pages, or null for Mocha's own model (ADR-0014). */
+  readerModel: string | null;
   claudeModel: ClaudeModel;
   hasClaudeKey: boolean;
   /** Whether the keychain can encrypt a key on this computer. */
@@ -43,6 +45,7 @@ export interface AiView {
 export type AiChange =
   | { change: 'provider'; provider: AiProviderChoice }
   | { change: 'localModel'; model: string }
+  | { change: 'readerModel'; model: string | null }
   | { change: 'claudeModel'; model: ClaudeModel }
   | { change: 'feature'; feature: AiFeature; enabled: boolean };
 
@@ -81,6 +84,15 @@ export const AI_FEATURE_TEXTS: readonly { name: AiFeature; label: string; hint: 
     hint: 'Instead of its fixed lines. The model sees only the browser details you allow under Browser.',
   },
 ];
+
+/** What the reader model does, and where page text goes (ADR-0014). */
+export function readerHint(view: Pick<AiView, 'provider' | 'readerModel'>): string {
+  const what =
+    'Reads the pages you allow under Browser and keeps a one-sentence gist, in memory only.';
+  if (view.readerModel) return `${what} Page text stays on this computer.`;
+  if (view.provider === 'claude') return `${what} With Claude, page text goes to Anthropic.`;
+  return what;
+}
 
 /** What to do when Ollama has no model to offer, or nothing when it has. */
 export function localModelHint(models: string[] | null): string {

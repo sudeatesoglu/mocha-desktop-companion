@@ -41,6 +41,8 @@ export interface RecentPage {
   readonly kind?: BrowsingContext['kind'];
   readonly site?: string;
   readonly title?: string;
+  /** What the page is about, from the reader (ADR-0014). */
+  readonly about?: string;
 }
 
 /** Mocha's own state, 0 to 100. */
@@ -133,6 +135,7 @@ export function chatPrompt(input: {
       ...(page.kind && { kind: page.kind }),
       ...(page.site && { site: untrusted(page.site, 253) }),
       ...(page.title && { title: untrusted(page.title, 80) }),
+      ...(page.about && { about: untrusted(page.about, 240) }),
     };
     const cost = chars(JSON.stringify(quoted)) + 1;
     if (cost > room) break;
@@ -179,17 +182,22 @@ export const MAX_COMMENT_CHARS = 90;
  * A comment's prompt: only the browser fields the user allows (ADR-0012),
  * already filtered by main, quoted as data. Nothing else about the user.
  */
-export function commentPrompt(context: BrowsingContext): Prompt {
+export function commentPrompt(
+  context: BrowsingContext,
+  about?: { topic: string; gist: string },
+): Prompt {
   const allowed: Record<string, string> = {};
   if (context.kind) allowed['kind'] = context.kind;
   if (context.site) allowed['site'] = untrusted(context.site, 253);
   if (context.title) allowed['title'] = untrusted(context.title, 80);
+  // The reader's gist, never the page itself (ADR-0014).
+  const page = about && { topic: untrusted(about.topic, 60), about: untrusted(about.gist, 240) };
   return {
-    system: `${MOCHA_PERSONA}\n\n${dataBlock({ browsing: allowed })}`,
+    system: `${MOCHA_PERSONA}\n\n${dataBlock({ browsing: allowed, ...(page && { pageIsAbout: page }) })}`,
     turns: [
       {
         role: 'user',
-        content: `Say one short, playful thing about what I am doing in the browser, from DATA. One sentence, at most ${MAX_COMMENT_CHARS} characters.`,
+        content: `Say one short, playful thing about what I am doing in the browser, from DATA${page ? ', about what the page is about' : ''}. One sentence, at most ${MAX_COMMENT_CHARS} characters.`,
       },
     ],
     maxTokens: 60,
