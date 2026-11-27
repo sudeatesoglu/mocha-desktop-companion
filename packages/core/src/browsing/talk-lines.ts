@@ -5,7 +5,7 @@ import type { BrowsingContext, SiteKind } from './context.ts';
  * (#176). `{site}` and `{title}` are filled in only when the user lets
  * Mocha know them; a line that needs one is skipped otherwise.
  */
-export const COMMENT_LINES: Readonly<Record<Exclude<SiteKind, 'other'>, readonly string[]>> = {
+export const COMMENT_LINES: Readonly<Record<SiteKind, readonly string[]>> = {
   code: [
     'Another bug? I’d eat it.',
     'Code! I’ll pretend I understand it.',
@@ -40,6 +40,12 @@ export const COMMENT_LINES: Readonly<Record<Exclude<SiteKind, 'other'>, readonly
     '{site}? Say hi from me.',
   ],
   chat: ['Asking the other bird for help?', 'Tell it Mocha says hi.'],
+  other: [
+    'Ooh, somewhere new. Smells like adventure.',
+    'Where are we now? I’ll just perch here.',
+    '{site}? Never been. Lead the way.',
+    '“{title}”? Tell me more.',
+  ],
   shopping: [
     'Your wallet just shivered.',
     'Shiny things! Just looking, right?',

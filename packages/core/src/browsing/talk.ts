@@ -1,8 +1,8 @@
-import type { BrowsingContext, SiteKind } from './context.ts';
+import type { BrowsingContext } from './context.ts';
 import { COMMENT_LINES, NUDGE_LINES, pickLine } from './talk-lines.ts';
 
-/** Mocha comments at most this often, and only on a new kind of site. */
-export const COMMENT_GAP_MS = 10 * 60_000;
+/** Mocha comments at most this often, and only on a new site. */
+export const COMMENT_GAP_MS = 2 * 60_000;
 /** A gentle nudge after this long on social media without a break. */
 export const SOCIAL_STRETCH_MS = 30 * 60_000;
 /** Late at night: from midnight to five in the morning. */
@@ -14,7 +14,8 @@ export const RECENT_LINES = 6;
 export interface TalkState {
   readonly lastSaidAt: number | null;
   /** The kind of site Mocha last commented on. */
-  readonly lastKind: SiteKind | null;
+  /** The site Mocha last commented on, or its kind when Mocha may not know the site. */
+  readonly lastPlace: string | null;
   /** The lines said lately, newest last. */
   readonly recent: readonly string[];
   /** When the current stretch on social media began. */
@@ -26,7 +27,7 @@ export interface TalkState {
 
 export const FRESH_TALK: TalkState = {
   lastSaidAt: null,
-  lastKind: null,
+  lastPlace: null,
   recent: [],
   socialSince: null,
   socialNudged: false,
@@ -59,7 +60,8 @@ export interface Saying {
 
 /**
  * Whether Mocha says something now, and what. Nudges come first; a
- * comment needs a new kind of site and ten minutes since Mocha last spoke.
+ * comment needs a new site (or kind of site, when Mocha may not know the
+ * site) and two minutes since Mocha last spoke.
  */
 export function nextTalk(
   state: TalkState,
@@ -100,8 +102,9 @@ export function nextTalk(
 
   const { kind } = context;
   const due = state.lastSaidAt === null || now - state.lastSaidAt >= COMMENT_GAP_MS;
-  if (moment.may.talk && kind && kind !== 'other' && kind !== state.lastKind && due) {
-    return say('comment', COMMENT_LINES[kind], { lastKind: kind });
+  if (moment.may.talk && kind && due) {
+    const place = context.site ?? kind;
+    if (place !== state.lastPlace) return say('comment', COMMENT_LINES[kind], { lastPlace: place });
   }
   return { state: tracked, say: null };
 }

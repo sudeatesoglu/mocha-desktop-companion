@@ -4,6 +4,10 @@ All notable changes to Mocha are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Changed
+
+- Mocha comments more often: whenever you go to another site, at most every two minutes, instead of only on a new kind of site every ten minutes, and on sites of any kind ([#218](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/218))
+
 ### Added
 
 - Talk to Mocha in the Tower, if you turn on **Chat with Mocha**: it answers in character as it writes, with today's numbers and what it remembers about you. It sums up each conversation once it ends and remembers lasting things you tell it, such as what you are learning, and tells you so in the chat. **What Mocha remembers** in the Tower lets you edit, pin and forget each memory, and **Forget everything** (in the Tower or in Settings) leaves nothing of them behind. Chats are kept 90 days, their summaries longer ([#209](https://github.com/sudeatesoglu/mocha-desktop-companion/issues/209), [#210](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/210), [#211](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/211), [#212](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/212), [#216](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/216), [#217](https://github.com/sudeatesoglu/mocha-desktop-companion/pull/217))
