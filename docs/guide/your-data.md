@@ -28,4 +28,6 @@ The chat's model sees your messages, today's numbers, Mocha's mood and energy, a
 
 The browser extension tells Mocha only what you turn on in Settings, all off until then. It never sends anything from private windows, pages on your computer or network, sensitive sites, or sign-in, checkout and account pages, and nothing at all while paused. Mocha listens for it only while you let it connect, on your own computer only, and keeps only the latest page in memory, never on disk or in a log.
 
+If you turn on **Read what pages are about**, the extension also sends a page's visible text once: never forms, fields, buttons, editable or hidden parts, never chat sites, scrubbed of addresses, emails and numbers, at most 20,000 characters. Mocha's reader model, chosen in **Settings → AI → Reader model**, turns it into a one-sentence gist, and only the gist reaches comments and the chat. With a local reader model the text stays on your Mac; with Claude as the reader it goes to Anthropic. Texts and gists are kept in memory only and forgotten when you pause, the Mac sleeps or Mocha quits.
+
 The extension itself keeps only the pairing code, the sites you leave out and whether it is paused. See [the browser extension](./browser-extension) for the details.
