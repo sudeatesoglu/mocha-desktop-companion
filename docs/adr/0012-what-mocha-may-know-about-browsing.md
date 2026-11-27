@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-11-19
 - **Amended by:** [ADR-0013](0013-how-mocha-uses-ai.md): with the user's separate switch, main also keeps the last half hour of browsing in memory for the chat
+- **Amended by:** [ADR-0014](0014-read-what-pages-are-about.md): an eighth capability, reading what pages are about
 
 ## Context
 

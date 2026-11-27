@@ -32,3 +32,4 @@ Accepted records are immutable. When a decision changes, write a new ADR that su
 | [0011](0011-local-api-for-the-browser-extension.md) | Let the paired browser extension reach Mocha through a local API | Accepted |
 | [0012](0012-what-mocha-may-know-about-browsing.md) | Let the user decide what Mocha may know about their browsing | Accepted |
 | [0013](0013-how-mocha-uses-ai.md) | Let Mocha use a language model only as the user allows, local first | Accepted |
+| [0014](0014-read-what-pages-are-about.md) | Read what pages are about, through a reader layer | Accepted |
