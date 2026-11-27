@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { AI_FEATURE_TEXTS, AI_FEATURES, claudeKeyHint, localModelHint } from './ai.ts';
+import { AI_FEATURE_TEXTS, AI_FEATURES, claudeKeyHint, localModelHint, readerHint } from './ai.ts';
 
 describe('localModelHint', () => {
   it('says what to do without Ollama or a model, and nothing otherwise', () => {
     expect(localModelHint(null)).toMatch(/ollama\.com/);
     expect(localModelHint([])).toMatch(/ollama pull/);
     expect(localModelHint(['mistral:7b'])).toBe('');
+  });
+});
+
+describe('readerHint', () => {
+  it('says where page text goes', () => {
+    expect(readerHint({ provider: 'local', readerModel: null })).toMatch(/in memory only\.$/);
+    expect(readerHint({ provider: 'claude', readerModel: null })).toMatch(/goes to Anthropic/);
+    expect(readerHint({ provider: 'claude', readerModel: 'qwen3.5:4b' })).toMatch(
+      /stays on this computer/,
+    );
   });
 });
 

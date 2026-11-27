@@ -10,6 +10,7 @@ import {
   type ClaudeModel,
   claudeKeyHint,
   localModelHint,
+  readerHint,
 } from '../shared/ai.ts';
 import type { BrowserView } from '../shared/browser.ts';
 import { type LoginItem, loginItemHint } from '../shared/login-item.ts';
@@ -219,6 +220,9 @@ const keyInput = element('ai-key', HTMLInputElement);
 const keyHint = element('ai-key-hint', HTMLElement);
 const forgetKey = element('ai-forget-key', HTMLButtonElement);
 const claudeModel = element('ai-claude-model', HTMLSelectElement);
+const readerSection = element('ai-reader', HTMLElement);
+const readerModel = element('ai-reader-model', HTMLSelectElement);
+const readerHintText = element('ai-reader-hint', HTMLElement);
 const tryButton = element('ai-try', HTMLButtonElement);
 const tryStatus = element('ai-try-status', HTMLElement);
 const featureBoxes = new Map<AiFeature, HTMLInputElement>();
@@ -276,6 +280,24 @@ function showAi(view: AiView): void {
   forgetKey.hidden = !view.hasClaudeKey;
   keyInput.disabled = !view.canStoreKey;
   claudeModel.value = view.claudeModel;
+  // The reader: Mocha's own model, or one of Ollama's (ADR-0014).
+  readerSection.hidden = view.provider === 'off';
+  const own = document.createElement('option');
+  own.value = '';
+  own.textContent = 'Same as Mocha’s model';
+  const readers = [...models];
+  if (view.readerModel && !readers.includes(view.readerModel)) readers.unshift(view.readerModel);
+  readerModel.replaceChildren(
+    own,
+    ...readers.map((model) => {
+      const option = document.createElement('option');
+      option.value = model;
+      option.textContent = models.includes(model) ? model : `${model} (not installed)`;
+      return option;
+    }),
+  );
+  readerModel.value = view.readerModel ?? '';
+  readerHintText.textContent = readerHint(view);
   for (const [name, box] of featureBoxes) {
     box.checked = view.features[name];
     // Features mean nothing while AI is off.
@@ -298,6 +320,11 @@ for (const input of providerInputs) {
 }
 localModel.addEventListener('change', async () => {
   showAi(await window.settings.changeAi({ change: 'localModel', model: localModel.value }));
+});
+readerModel.addEventListener('change', async () => {
+  showAi(
+    await window.settings.changeAi({ change: 'readerModel', model: readerModel.value || null }),
+  );
 });
 claudeModel.addEventListener('change', async () => {
   if (!(CLAUDE_MODELS as readonly string[]).includes(claudeModel.value)) return;

@@ -1,12 +1,12 @@
 # ADR-0014: Read what pages are about, through a reader layer
 
-- **Status:** Proposed
-- **Date:** 2026-11-28
+- **Status:** Accepted
+- **Date:** 2026-11-28, accepted 2026-11-28
 - **Amends:** [ADR-0012](0012-what-mocha-may-know-about-browsing.md): an eighth capability lets the extension send a page's visible text
 
 ## Context
 
-With ADR-0012 and ADR-0013 (proposed), Mocha knows the kind of site, its name and a scrubbed title, and a model can write comments from these. A title says little: "Lifetimes - The Rust Book" or a video's name is as far as Mocha can understand. The owner wants Mocha to understand what a page is about and to comment on that, and to answer in the chat about what they read or watched.
+With ADR-0012 and ADR-0013, Mocha knows the kind of site, its name and a scrubbed title, and a model can write comments from these. A title says little: "Lifetimes - The Rust Book" or a video's name is as far as Mocha can understand. The owner wants Mocha to understand what a page is about and to comment on that, and to answer in the chat about what they read or watched.
 
 That means reading page content, the most private thing Mocha has been asked to see so far. Pages hold names, messages, orders and much more than a title. They are also written by strangers, so their text may try to instruct a model (prompt injection). Small local models are slow on long text, and a page can be very long.
 
@@ -20,9 +20,9 @@ We will let the user allow Mocha to read what pages are about, and send that tex
 - the meta description, then the visible text of the page in reading order
 - the main content (`main`, `article`) first, when the page marks one
 - never: navigation, forms, inputs, buttons, editable areas, hidden elements, scripts, styles, frames
-- the same filter as everything else (ADR-0012): never in incognito, on sensitive sites, on sites the user excluded, or while paused
+- the same filter as everything else (ADR-0012): never in incognito, on sensitive sites, on sites the user excluded, where even titles are held back (chat sites), or while paused
 - scrubbed like titles (addresses, emails, long numbers, tokens) and cut at 20,000 characters
-- sent with `POST /v1/page` after the page loaded, once for each address; a page still rendering is tried again on the next update
+- sent with `POST /v1/page` after the page loaded, once for each address; a page that still says little (still rendering) is read again on the next updates, and sent as it is after three tries
 
 The address is kept only in the extension's memory, to know a page was sent, and never leaves the browser.
 

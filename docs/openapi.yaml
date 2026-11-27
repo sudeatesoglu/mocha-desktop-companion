@@ -91,6 +91,7 @@ paths:
                 nudge: false
                 browserActivity: false
                 pageActivity: false
+                pageContent: false
         "401":
           $ref: "#/components/responses/WrongToken"
         "403":
@@ -154,6 +155,47 @@ paths:
           description: The body is not `application/json`.
         "429":
           $ref: "#/components/responses/TooManyRequests"
+  /v1/page:
+    post:
+      operationId: readPage
+      tags: [Browser extension]
+      summary: Let Mocha read what the page in front is about
+      description: |
+        Sent once per page, after it loads, only while the user allows `pageContent` (ADR-0014).
+        The text is the page's visible text, without navigation, forms, inputs, editable areas
+        and hidden elements, never from a page the extension's filter holds back, scrubbed
+        like titles and cut at 20,000 characters. Mocha scrubs it again and hands it to its
+        reader model, which keeps only a short gist, in memory. Nothing is stored.
+      parameters:
+        - $ref: "#/components/parameters/ExtensionOrigin"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PageText"
+            examples:
+              article:
+                summary: The visible text of an article
+                value:
+                  text: |-
+                    Validating references with lifetimes
+                    Lifetimes are another kind of generic that we've already been using.
+      responses:
+        "204":
+          description: Mocha took it in.
+        "400":
+          description: Not JSON, or not a page's text.
+        "401":
+          $ref: "#/components/responses/WrongToken"
+        "403":
+          description: Not the extension (see `NotTheExtension`), or the user does not let Mocha read pages.
+        "413":
+          description: The body is over 96 KB.
+        "415":
+          description: The body is not `application/json`.
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
 components:
   parameters:
     ExtensionOrigin:
@@ -213,7 +255,21 @@ components:
         pageActivity:
           type: boolean
           description: Notice typing, scrolling and clicking on a page, as counts.
-      required: [kind, site, title, talk, nudge, browserActivity, pageActivity]
+        pageContent:
+          type: boolean
+          description: Read what pages are about, from their visible text (ADR-0014).
+      required: [kind, site, title, talk, nudge, browserActivity, pageActivity, pageContent]
+      additionalProperties: false
+    PageText:
+      type: object
+      description: A page's visible text, scrubbed and bounded (ADR-0014).
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: The visible text, without navigation, forms, inputs, editable areas and hidden elements.
+      required: [text]
       additionalProperties: false
     BrowsingContext:
       type: object

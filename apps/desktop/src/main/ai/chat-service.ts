@@ -142,11 +142,12 @@ export function recentPages(
     kind?: SiteKind | undefined;
     site?: string | undefined;
     title?: string | undefined;
+    about?: string | undefined;
   }[],
   capabilities: BrowserCapabilities,
   now: number,
 ): RecentPage[] {
-  return visits.flatMap(({ until, kind, site, title }) => {
+  return visits.flatMap(({ until, kind, site, title, about }) => {
     const allowed = allowedContext(
       { ...(kind && { kind }), ...(site && { site }), ...(title && { title }) },
       capabilities,
@@ -158,6 +159,7 @@ export function recentPages(
         ...(allowed.kind && { kind: allowed.kind }),
         ...(allowed.site && { site: allowed.site }),
         ...(allowed.title && { title: allowed.title }),
+        ...(capabilities.pageContent && about && { about }),
       },
     ];
   });

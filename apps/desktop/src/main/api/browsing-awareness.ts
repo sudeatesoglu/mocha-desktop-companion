@@ -1,4 +1,4 @@
-import type { BrowsingContext } from '@mocha/core';
+import type { BrowsingContext, PageGist } from '@mocha/core';
 
 /** The chat may look back this far (ADR-0013). */
 export const RECENT_MS = 30 * 60_000;
@@ -11,7 +11,13 @@ export interface Visit {
   readonly kind?: BrowsingContext['kind'];
   readonly site?: string;
   readonly title?: string;
+  /** What the page is about, from the reader (ADR-0014). */
+  about?: string;
 }
+
+/** Whether two contexts show the same page, as far as Mocha may know. */
+export const samePage = (a: BrowsingContext, b: BrowsingContext) =>
+  a.kind === b.kind && a.site === b.site && a.title === b.title;
 
 /**
  * What Mocha knows about the user's browsing, in memory only (ADR-0012,
@@ -25,7 +31,7 @@ export function createBrowsingAwareness(options: {
   /** Runs `run` after `ms`; returns a function that cancels it. */
   schedule: (ms: number, run: () => void) => () => void;
 }) {
-  let latest: { context: BrowsingContext; at: number } | undefined;
+  let latest: { context: BrowsingContext; at: number; about?: PageGist } | undefined;
   let recent: Visit[] = [];
   // Only while the user lets the chat see their browsing.
   let keepRecent = false;
@@ -75,7 +81,9 @@ export function createBrowsingAwareness(options: {
     },
     report(context: BrowsingContext): void {
       const now = options.now();
-      latest = { context, at: now };
+      // The gist stays while the user stays on the same page.
+      const about = latest && samePage(latest.context, context) ? latest.about : undefined;
+      latest = { context, at: now, ...(about && { about }) };
       remember(context, now);
       // When the extension goes quiet (the browser quit, the computer
       // slept), listeners hear that the context is gone.
@@ -84,6 +92,21 @@ export function createBrowsingAwareness(options: {
       notify();
     },
     forget,
+    /** What the page in front is about, if the reader has said. */
+    get about(): PageGist | undefined {
+      if (!latest || options.now() - latest.at >= options.staleMs) return undefined;
+      return latest.about;
+    },
+    /**
+     * The reader's gist of the page shown by `context`, kept with it while
+     * the user is still there; the half hour keeps its sentence.
+     */
+    describe(context: BrowsingContext, about: PageGist): void {
+      if (!latest || !samePage(latest.context, context)) return;
+      latest.about = about;
+      const visit = recent.at(-1);
+      if (visit && samePage(visit, context)) visit.about = about.gist;
+    },
     /** Keeps the last half hour from now on, or forgets it and stops. */
     keepRecent(on: boolean): void {
       keepRecent = on;

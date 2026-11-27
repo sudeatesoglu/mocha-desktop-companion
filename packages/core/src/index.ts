@@ -1,4 +1,4 @@
-export { cleanAnswer } from './ai/answer.ts';
+export { cleanAnswer, outermostJson } from './ai/answer.ts';
 export {
   CONVERSATION_IDLE_MS,
   cleanMemory,
@@ -26,6 +26,20 @@ export {
   type RecentPage,
   untrusted,
 } from './ai/prompt.ts';
+export {
+  chunkPage,
+  cleanNote,
+  gistPrompt,
+  MAX_GIST_CHARS,
+  MAX_READ_CHUNKS,
+  MAX_TOPIC_CHARS,
+  notePrompt,
+  type PageGist,
+  type PageLabel,
+  parseGist,
+  READ_CHUNK_CHARS,
+  readPagePrompt,
+} from './ai/reader.ts';
 /**
  * Public API of @mocha/core.
  *
@@ -47,7 +61,10 @@ export {
   type BrowserCapability,
   type BrowsingContext,
   browsingContextSchema,
+  MAX_PAGE_TEXT,
   NO_BROWSER_CAPABILITIES,
+  type PageText,
+  pageTextSchema,
   SITE_KINDS,
   type SiteKind,
 } from './browsing/context.ts';
@@ -55,7 +72,12 @@ export { matchesDomain, registrableDomain } from './browsing/domains.ts';
 export { EXTENSION_ID, EXTENSION_ORIGIN, EXTENSION_PUBLIC_KEY } from './browsing/extension.ts';
 export { filterPage, type HoldReason, type PageVerdict } from './browsing/filter.ts';
 export { formatPairingCode, parsePairingCode } from './browsing/pairing.ts';
-export { MAX_TITLE_LENGTH, scrubPrivate, scrubTitle } from './browsing/scrub-title.ts';
+export {
+  MAX_TITLE_LENGTH,
+  scrubPageText,
+  scrubPrivate,
+  scrubTitle,
+} from './browsing/scrub-title.ts';
 export {
   isSensitivePath,
   SENSITIVE_DOMAINS,

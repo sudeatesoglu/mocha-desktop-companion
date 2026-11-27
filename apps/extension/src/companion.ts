@@ -1,7 +1,10 @@
 import {
   type BrowserCapabilities,
   type BrowsingContext,
+  filterPage,
+  MAX_PAGE_TEXT,
   NO_BROWSER_CAPABILITIES,
+  scrubPageText,
 } from '@mocha/core';
 import type { PageCounts } from './activity-counter.ts';
 import { type Badge, badgeFor } from './badge.ts';
@@ -19,6 +22,10 @@ import type { ExtensionSettings, Pairing } from './settings.ts';
 
 /** What Mocha allows is asked again after this long. */
 export const CAPABILITIES_TTL_MS = 60_000;
+/** Less text than this may be a page still rendering: it is read again. */
+export const MIN_PAGE_TEXT = 200;
+/** A page that stays short is sent as it is after this many reads. */
+export const PAGE_TEXT_TRIES = 3;
 
 /** The latest counts from a page, and which tab they came from. */
 export interface SavedCounts {
@@ -46,6 +53,8 @@ export interface CompanionPorts {
   savePageCounts(saved: SavedCounts | undefined): Promise<void>;
   /** Registers the page-activity script, or removes it. */
   setPageScript(enabled: boolean): Promise<void>;
+  /** The visible text of the page in tab `tabId`, if it can be read. */
+  pageText(tabId: number): Promise<string | undefined>;
   showBadge(badge: Badge): void;
   now(): number;
 }
@@ -60,6 +69,9 @@ export function createCompanion(ports: CompanionPorts) {
     | undefined;
   // Whether Mocha was last told `{}`: there is no need to say it twice.
   let toldNothing = false;
+  // The page whose text Mocha has, and how often the one in front was read.
+  let readPage: string | undefined;
+  let tries: { page: string; count: number } | undefined;
   // One step at a time, in order.
   let queue = Promise.resolve();
   function inTurn<T>(step: () => Promise<T>): Promise<T> {
@@ -91,6 +103,25 @@ export function createCompanion(ports: CompanionPorts) {
     return connection;
   }
 
+  /**
+   * Hands Mocha the text of the page in front, once per page (ADR-0014):
+   * only https pages the filter lets through, never where even the title
+   * is held back, scrubbed here before it leaves the browser.
+   */
+  async function read(pairing: Pairing, exclusions: readonly string[], tab: ActiveTab) {
+    if (tab.id === undefined || !tab.url?.startsWith('https://')) return;
+    const verdict = filterPage({ url: tab.url, incognito: tab.incognito, exclusions });
+    if (!verdict.send || !verdict.titleAllowed) return;
+    const page = `${tab.id} ${tab.url}`;
+    if (page === readPage) return;
+    const raw = await ports.pageText(tab.id);
+    const text = raw === undefined ? '' : scrubPageText(raw, MAX_PAGE_TEXT);
+    const count = tries?.page === page ? tries.count + 1 : 1;
+    tries = { page, count };
+    if (!text || (text.length < MIN_PAGE_TEXT && count < PAGE_TEXT_TRIES)) return;
+    if ((await ports.client.read(pairing, { text })) === 'connected') readPage = page;
+  }
+
   // Counts only from the tab in front, and only while they are recent.
   async function countsFor(tab: ActiveTab | undefined): Promise<PageCounts | undefined> {
     const saved = await ports.loadPageCounts();
@@ -110,6 +141,7 @@ export function createCompanion(ports: CompanionPorts) {
     }
     // Paused: Mocha forgets the page at once, then hears nothing.
     if (settings.paused) {
+      readPage = undefined;
       await ports.setPageScript(false);
       await ports.savePageCounts(undefined);
       if (!toldNothing) await tell(settings.pairing, {});
@@ -121,13 +153,15 @@ export function createCompanion(ports: CompanionPorts) {
     const wantsTabs = needsTabs(capabilities);
     const canSee = wantsTabs && granted.tabs;
     const canCount = capabilities.pageActivity && granted.pages;
+    const canRead = capabilities.pageContent && granted.pages;
     if (!(capabilities.browserActivity && canSee)) await ports.saveActivity(undefined);
     if (!canCount) await ports.savePageCounts(undefined);
     await ports.setPageScript(connection === 'connected' && canCount);
 
     let context: BrowsingContext = {};
-    if (connection === 'connected' && (canSee || canCount)) {
-      const tab = await ports.activeTab();
+    let tab: ActiveTab | undefined;
+    if (connection === 'connected' && (canSee || canCount || canRead)) {
+      tab = await ports.activeTab();
       // What needs `tabs` stays unknown until Chrome grants it, even though
       // the access to https sites for page activity would show the page.
       const allowed = canSee
@@ -149,7 +183,12 @@ export function createCompanion(ports: CompanionPorts) {
     }
     const reported =
       connection === 'connected' ? await tell(settings.pairing, context) : connection;
-    const missing = (wantsTabs && !granted.tabs) || (capabilities.pageActivity && !granted.pages);
+    if (reported === 'connected' && canRead && tab) {
+      await read(settings.pairing, settings.exclusions, tab);
+    }
+    const missing =
+      (wantsTabs && !granted.tabs) ||
+      ((capabilities.pageActivity || capabilities.pageContent) && !granted.pages);
     ports.showBadge(badgeFor({ connection: reported, paused: false, needsPermission: missing }));
   }
 
@@ -187,6 +226,7 @@ export function createCompanion(ports: CompanionPorts) {
     forgetCapabilities(): void {
       asked = undefined;
       toldNothing = false;
+      readPage = undefined;
     },
   };
 }

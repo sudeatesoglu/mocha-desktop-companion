@@ -79,7 +79,7 @@ async function showConnection(): Promise<void> {
   );
   pagesNotice.hidden = !(
     connected &&
-    capabilities.pageActivity &&
+    (capabilities.pageActivity || capabilities.pageContent) &&
     !(await chrome.permissions.contains(PAGE_PERMISSIONS))
   );
 }

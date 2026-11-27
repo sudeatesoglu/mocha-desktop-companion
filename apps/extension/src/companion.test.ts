@@ -2,7 +2,13 @@ import { type BrowserCapabilities, NO_BROWSER_CAPABILITIES } from '@mocha/core';
 import { describe, expect, it, vi } from 'vitest';
 import type { Badge } from './badge.ts';
 import type { ActivityState } from './browser-activity.ts';
-import { CAPABILITIES_TTL_MS, createCompanion, type SavedCounts } from './companion.ts';
+import {
+  CAPABILITIES_TTL_MS,
+  createCompanion,
+  MIN_PAGE_TEXT,
+  PAGE_TEXT_TRIES,
+  type SavedCounts,
+} from './companion.ts';
 import type { Connection } from './mocha-client.ts';
 import type { ActiveTab } from './page-context.ts';
 import { COUNTS_TTL_MS } from './page-script.ts';
@@ -23,6 +29,8 @@ function setup() {
     activity: undefined as ActivityState | undefined,
     counts: undefined as SavedCounts | undefined,
     pageScript: false,
+    pageText: undefined as string | undefined,
+    readConnection: 'connected' as Connection,
     now: 0,
   };
   const client = {
@@ -31,6 +39,7 @@ function setup() {
       capabilities: world.connection === 'connected' ? world.capabilities : NO_BROWSER_CAPABILITIES,
     })),
     report: vi.fn(async () => world.connection),
+    read: vi.fn(async () => world.readConnection),
   };
   const badges: Badge[] = [];
   const companion = createCompanion({
@@ -50,6 +59,7 @@ function setup() {
     setPageScript: async (enabled) => {
       world.pageScript = enabled;
     },
+    pageText: vi.fn(async () => world.pageText),
     showBadge: (badge) => badges.push(badge),
     now: () => world.now,
   });
@@ -324,6 +334,108 @@ describe('createCompanion', () => {
       await companion.update();
 
       expect(lastBadge()?.text).toBe('!');
+    });
+  });
+
+  describe('reading pages', () => {
+    const ARTICLE = `Lifetimes keep references valid. ${'More about lifetimes. '.repeat(12)}`;
+
+    function reading() {
+      const setup_ = setup();
+      setup_.world.capabilities = { ...NO_BROWSER_CAPABILITIES, pageContent: true };
+      setup_.world.canSee = false;
+      setup_.world.pageText = ARTICLE;
+      return setup_;
+    }
+
+    it('hands Mocha the page’s text once per page, scrubbed', async () => {
+      const { world, client, companion } = reading();
+      world.pageText = `${ARTICLE} Mail me@example.com`;
+      await companion.update();
+      await companion.update();
+
+      expect(client.read).toHaveBeenCalledTimes(1);
+      expect(client.read).toHaveBeenCalledWith(PAIRING, { text: `${ARTICLE.trim()} Mail` });
+      expect(client.report).toHaveBeenCalledWith(PAIRING, {});
+      world.tab = { ...(world.tab as ActiveTab), url: 'https://github.com/a/c' };
+      await companion.update();
+      expect(client.read).toHaveBeenCalledTimes(2);
+    });
+
+    it('reads nothing unless the user and Chrome allow it', async () => {
+      const off = reading();
+      off.world.capabilities = NO_BROWSER_CAPABILITIES;
+      await off.companion.update();
+      const noAccess = reading();
+      noAccess.world.canCount = false;
+      await noAccess.companion.update();
+
+      expect(off.client.read).not.toHaveBeenCalled();
+      expect(noAccess.client.read).not.toHaveBeenCalled();
+      expect(noAccess.lastBadge()?.text).toBe('!');
+    });
+
+    it.each([
+      ['a sensitive site', 'https://www.paypal.com/myaccount'],
+      ['a chat, whose titles are held back too', 'https://web.whatsapp.com/'],
+      ['a site the user left out', 'https://reddit.com/r/all'],
+      ['a page that is not https', 'http://example.com/'],
+    ])('never reads %s', async (_, url) => {
+      const { world, client, companion } = reading();
+      world.settings = { ...world.settings, exclusions: ['reddit.com'] };
+      world.tab = { id: 7, url, title: 'Page', incognito: false };
+      await companion.update();
+
+      expect(client.read).not.toHaveBeenCalled();
+    });
+
+    it('reads nothing without a tab, or a tab it cannot name', async () => {
+      const { world, client, companion } = reading();
+      world.tab = undefined;
+      await companion.update();
+      world.tab = { url: 'https://github.com/a/b', incognito: false };
+      await companion.update();
+
+      expect(client.read).not.toHaveBeenCalled();
+    });
+
+    it('reads a short page again, and sends it as it is after a few tries', async () => {
+      const { world, client, companion } = reading();
+      world.pageText = 'Loading';
+      for (let i = 1; i < PAGE_TEXT_TRIES; i++) await companion.update();
+      expect(client.read).not.toHaveBeenCalled();
+
+      await companion.update();
+      expect(client.read).toHaveBeenCalledWith(PAIRING, { text: 'Loading' });
+      expect(MIN_PAGE_TEXT).toBe(200);
+    });
+
+    it('sends nothing for a page with no text, or one it cannot read', async () => {
+      const { world, client, companion } = reading();
+      world.pageText = undefined;
+      for (let i = 0; i <= PAGE_TEXT_TRIES; i++) await companion.update();
+
+      expect(client.read).not.toHaveBeenCalled();
+    });
+
+    it('tries again when Mocha did not take it, and after a pause or a new pairing', async () => {
+      const { world, client, companion } = reading();
+      world.readConnection = 'unexpected';
+      await companion.update();
+      world.readConnection = 'connected';
+      await companion.update();
+      await companion.update();
+      expect(client.read).toHaveBeenCalledTimes(2);
+
+      world.settings = { ...world.settings, paused: true };
+      await companion.update();
+      world.settings = { ...world.settings, paused: false };
+      await companion.update();
+      expect(client.read).toHaveBeenCalledTimes(3);
+
+      companion.forgetCapabilities();
+      await companion.update();
+      expect(client.read).toHaveBeenCalledTimes(4);
     });
   });
 });

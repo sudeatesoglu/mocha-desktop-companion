@@ -229,6 +229,16 @@ describe('recentPages', () => {
     ]);
   });
 
+  it('says what a page is about only while the user lets Mocha read pages', () => {
+    const read = [{ until: 0, kind: 'docs' as const, about: 'A chapter on lifetimes.' }];
+    const kind = { ...NO_BROWSER_CAPABILITIES, kind: true };
+
+    expect(recentPages(read, { ...kind, pageContent: true }, 0)).toEqual([
+      { minutesAgo: 0, kind: 'docs', about: 'A chapter on lifetimes.' },
+    ]);
+    expect(recentPages(read, kind, 0)).toEqual([{ minutesAgo: 0, kind: 'docs' }]);
+  });
+
   it('drops pages with nothing left to tell', () => {
     expect(recentPages(visits, NO_BROWSER_CAPABILITIES, 10 * MINUTE)).toEqual([]);
     expect(recentPages([{ until: 0 }], { ...NO_BROWSER_CAPABILITIES, kind: true }, 0)).toEqual([]);

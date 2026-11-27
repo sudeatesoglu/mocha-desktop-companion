@@ -1,5 +1,7 @@
 // The extension's service worker. It only wires Chrome's events to the
 // extension's logic; the logic itself lives in tested modules.
+
+import { MAX_PAGE_TEXT } from '@mocha/core';
 import { parseActivity } from './browser-activity.ts';
 import { createCompanion } from './companion.ts';
 import { createMochaClient } from './mocha-client.ts';
@@ -10,6 +12,7 @@ import {
   pageActivityMessageSchema,
   parseSavedCounts,
 } from './page-script.ts';
+import { extractPageText } from './page-text.ts';
 import { loadSettings } from './settings.ts';
 
 // The pairing token is kept in storage: only the extension's own pages and
@@ -63,6 +66,16 @@ const companion = createCompanion({
     if (!enabled && registered) {
       await chrome.scripting.unregisterContentScripts({ ids: [PAGE_SCRIPT_ID] });
     }
+  },
+  // Run in the page's main frame, in the extension's own world, from the
+  // function's source: it reads the page and changes nothing (ADR-0014).
+  async pageText(tabId) {
+    if (!chrome.scripting) return undefined;
+    const results = await chrome.scripting
+      .executeScript({ target: { tabId }, func: extractPageText, args: [MAX_PAGE_TEXT] })
+      .catch(() => []);
+    const text: unknown = results[0]?.result;
+    return typeof text === 'string' ? text : undefined;
   },
   showBadge({ text, title }) {
     void chrome.action.setBadgeText({ text });

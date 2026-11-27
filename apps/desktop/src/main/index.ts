@@ -21,6 +21,7 @@ import {
   needsActivity,
   needsEventsForBreakChange,
   nextTalk,
+  type PageGist,
   place,
   type RitualPose,
   type Saying,
@@ -66,16 +67,18 @@ import {
   applyAiChange,
   DEFAULT_AI,
   providerFor,
+  readerFor,
   tryAi,
 } from './ai/ai-settings.ts';
 import { createChatService, recentPages, toDayNumbers } from './ai/chat-service.ts';
 import { writeComment } from './ai/comment-writer.ts';
 import { createKeyStore } from './ai/key-store.ts';
 import { ollamaModels } from './ai/ollama-provider.ts';
+import { createPageReader } from './ai/page-reader.ts';
 import { handleApiRequest } from './api/api-handler.ts';
 import { type ApiServer, startApiServer } from './api/api-server.ts';
 import { browserView } from './api/browser-view.ts';
-import { createBrowsingAwareness } from './api/browsing-awareness.ts';
+import { createBrowsingAwareness, samePage } from './api/browsing-awareness.ts';
 import { newPairingToken } from './api/pairing-token.ts';
 import { createRateLimiter } from './api/rate-limiter.ts';
 import { createPauseController } from './app-state/pause-controller.ts';
@@ -342,6 +345,18 @@ if (!app.requestSingleInstanceLock()) {
         return () => clearTimeout(timer);
       },
     });
+    // The reader layer (ADR-0014): a page's text into a gist, in memory. The
+    // model is looked up when a page is read, once the AI settings are known.
+    const reader = createPageReader({
+      provider: () => readerFor(ai, { fetch: aiFetch, claudeKey: () => keys.open(ai.claudeKey) }),
+    });
+    let reading: { context: BrowsingContext; gist: Promise<PageGist | undefined> } | undefined;
+    /** Forgets the page, the half hour and every gist: pause, sleep, lock. */
+    const forgetBrowsing = () => {
+      awareness.forget();
+      reader.forget();
+      reading = undefined;
+    };
     const browsingReporter = createChangeReporter<BrowsingPose | null>((pose) =>
       window.webContents.send(IpcChannel.OverlayBrowsing, pose),
     );
@@ -582,7 +597,7 @@ if (!app.requestSingleInstanceLock()) {
       if (!(browser.allowed && browser.token)) {
         await apiServer?.close();
         apiServer = undefined;
-        awareness.forget();
+        forgetBrowsing();
         return;
       }
       if (apiServer) return;
@@ -597,6 +612,7 @@ if (!app.requestSingleInstanceLock()) {
             allowRequest: () => apiLimiter.allow(),
             capabilities: () => browser.capabilities,
             report: (context) => awareness.report(context),
+            read: (text) => readPage(text),
           }),
       });
       if (apiServer.port !== browser.port) {
@@ -694,6 +710,30 @@ if (!app.requestSingleInstanceLock()) {
     const chatSeesBrowsing = ({ provider, features }: AiSettings) =>
       provider !== 'off' && features.chat && features.chatBrowsing;
     awareness.keepRecent(chatSeesBrowsing(ai));
+    const readsPages = () =>
+      ai.provider !== 'off' && (ai.features.comments || chatSeesBrowsing(ai));
+    function readPage(text: string) {
+      const context = awareness.current;
+      if (!context || !readsPages()) return;
+      const gist = reader.read(text, { site: context.site, title: context.title });
+      reading = { context, gist };
+      void gist.then((about) => {
+        if (about) awareness.describe(context, about);
+      });
+    }
+    /** A comment waits this long at most for the reader's gist. */
+    const ABOUT_WAIT_MS = 20_000;
+    /** What the page in front is about, waiting a little for the reader. */
+    async function aboutPage(): Promise<PageGist | undefined> {
+      const pending = reading;
+      const current = awareness.current;
+      if (awareness.about || !pending || !current || !samePage(pending.context, current)) {
+        return awareness.about;
+      }
+      const wait = new Promise<void>((resolve) => setTimeout(resolve, ABOUT_WAIT_MS));
+      await Promise.race([pending.gist, wait]);
+      return awareness.about;
+    }
     const setAi = (next: AiSettings) => {
       ai = next;
       awareness.keepRecent(chatSeesBrowsing(ai));
@@ -880,7 +920,7 @@ if (!app.requestSingleInstanceLock()) {
 
     const markAway = () => {
       activity.markAway();
-      awareness.forget();
+      forgetBrowsing();
     };
     powerMonitor.on('suspend', markAway);
     powerMonitor.on('lock-screen', markAway);
@@ -888,7 +928,7 @@ if (!app.requestSingleInstanceLock()) {
     const pause = createPauseController();
     pause.onChange((paused) => {
       window.webContents.send(IpcChannel.OverlayPaused, paused);
-      if (paused) awareness.forget();
+      if (paused) forgetBrowsing();
       breaks.dispatch({ type: paused ? 'pause' : 'resume', now: Date.now() });
       if (paused) {
         stopCursorTracking?.();
@@ -997,14 +1037,16 @@ if (!app.requestSingleInstanceLock()) {
         fetch: aiFetch,
         claudeKey: () => keys.open(ai.claudeKey),
       });
-      void writeComment(provider, context, saying.text).then((text) => {
-        // A break, a pause or another bubble may have come while it wrote,
-        // or the user may have left the site.
-        if (comment || reminder || ritual || pause.paused || breaks.state.phase !== 'working')
-          return;
-        if (placeOf(awareness.current) !== placeOf(context)) return;
-        openComment({ ...saying, text });
-      });
+      void aboutPage()
+        .then((about) => writeComment(provider, context, saying.text, about && { about }))
+        .then((text) => {
+          // A break, a pause or another bubble may have come while it wrote,
+          // or the user may have left the site.
+          if (comment || reminder || ritual || pause.paused || breaks.state.phase !== 'working')
+            return;
+          if (placeOf(awareness.current) !== placeOf(context)) return;
+          openComment({ ...saying, text });
+        });
     }
     awareness.onChange(considerTalking);
     // A break, a focus session, a ritual or a pause comes first: the

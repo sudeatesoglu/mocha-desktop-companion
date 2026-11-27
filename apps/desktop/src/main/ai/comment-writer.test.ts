@@ -25,6 +25,19 @@ describe('writeComment', () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it('tells the model what the page is about, when the reader said', async () => {
+    const { provider, answer } = answering({ ok: true, text: 'Lifetimes, huh?' });
+    const about = { topic: 'Rust lifetimes', gist: 'A chapter on lifetimes.' };
+
+    await writeComment(provider, CONTEXT, 'fixed', { about });
+    const [prompt] = answer.mock.calls[0] as [Prompt, unknown];
+    expect(JSON.parse(prompt.system.split('\n').at(-1) as string)).toEqual({
+      browsing: CONTEXT,
+      pageIsAbout: { topic: 'Rust lifetimes', about: 'A chapter on lifetimes.' },
+    });
+    expect(prompt.turns[0]?.content).toContain('about what the page is about');
+  });
+
   it('keeps a long comment short', async () => {
     const { provider } = answering({ ok: true, text: 'word '.repeat(60) });
 
@@ -52,6 +65,6 @@ describe('writeComment', () => {
         }),
     };
 
-    expect(await writeComment(provider, CONTEXT, 'fixed', 10)).toBe('fixed');
+    expect(await writeComment(provider, CONTEXT, 'fixed', { timeoutMs: 10 })).toBe('fixed');
   });
 });

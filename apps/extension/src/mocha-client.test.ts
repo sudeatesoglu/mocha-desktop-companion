@@ -95,4 +95,15 @@ describe('createMochaClient', () => {
       }),
     );
   });
+
+  it('hands Mocha a page’s text as JSON, and says when it was refused', async () => {
+    const fetch = answer(204);
+
+    expect(await createMochaClient(fetch).read(PAIRING, { text: 'Lifetimes' })).toBe('connected');
+    expect(fetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:47213/v1/page',
+      expect.objectContaining({ method: 'POST', body: '{"text":"Lifetimes"}' }),
+    );
+    expect(await createMochaClient(answer(403)).read(PAIRING, { text: 'x' })).toBe('unexpected');
+  });
 });
