@@ -48,22 +48,33 @@ describe('nextTalk: comments', () => {
     expect(say).toEqual({ kind: 'comment', text: COMMENT_LINES.video[0] });
   });
 
-  it('says nothing about other sites, or without a kind', () => {
-    expect(nextTalk(FRESH_TALK, moment({ kind: 'other' })).say).toBeNull();
+  it('comments on sites of any kind, but not without a kind', () => {
+    expect(nextTalk(FRESH_TALK, moment({ kind: 'other' })).say?.text).toBe(COMMENT_LINES.other[0]);
     expect(nextTalk(FRESH_TALK, moment({ site: 'example.org' })).say).toBeNull();
     expect(nextTalk(FRESH_TALK, moment(undefined)).say).toBeNull();
   });
 
-  it('waits ten minutes between comments, and needs a new kind of site', () => {
+  it('waits two minutes between comments, and needs a new site', () => {
     const { said } = play([
-      moment({ kind: 'code' }, { now: 0 }),
-      moment({ kind: 'video' }, { now: COMMENT_GAP_MS - 1 }),
-      moment({ kind: 'video' }, { now: COMMENT_GAP_MS }),
-      moment({ kind: 'video' }, { now: 3 * COMMENT_GAP_MS }),
-      moment({ kind: 'code' }, { now: 4 * COMMENT_GAP_MS }),
+      moment({ kind: 'code', site: 'github.com' }, { now: 0 }),
+      moment({ kind: 'code', site: 'gitlab.com' }, { now: COMMENT_GAP_MS - 1 }),
+      moment({ kind: 'code', site: 'gitlab.com' }, { now: COMMENT_GAP_MS }),
+      moment({ kind: 'code', site: 'gitlab.com' }, { now: 3 * COMMENT_GAP_MS }),
+      moment({ kind: 'video', site: 'youtube.com' }, { now: 4 * COMMENT_GAP_MS }),
     ]);
 
+    expect(COMMENT_GAP_MS).toBe(2 * 60_000);
     expect(said.map((text) => text !== null)).toEqual([true, false, true, false, true]);
+  });
+
+  it('goes by the kind of site when Mocha may not know the site', () => {
+    const { said } = play([
+      moment({ kind: 'code' }, { now: 0 }),
+      moment({ kind: 'code' }, { now: COMMENT_GAP_MS }),
+      moment({ kind: 'video' }, { now: 2 * COMMENT_GAP_MS }),
+    ]);
+
+    expect(said.map((text) => text !== null)).toEqual([true, false, true]);
   });
 
   it('uses the site and the title only when Mocha may know them', () => {
