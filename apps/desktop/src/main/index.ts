@@ -68,6 +68,7 @@ import {
   tryAi,
 } from './ai/ai-settings.ts';
 import { createChatService, toDayNumbers } from './ai/chat-service.ts';
+import { writeComment } from './ai/comment-writer.ts';
 import { createKeyStore } from './ai/key-store.ts';
 import { ollamaModels } from './ai/ollama-provider.ts';
 import { handleApiRequest } from './api/api-handler.ts';
@@ -963,7 +964,24 @@ if (!app.requestSingleInstanceLock()) {
         random: Math.random,
       });
       talk = next.state;
-      if (next.say) openComment(next.say);
+      const saying = next.say;
+      if (!saying) return;
+      // With "Let AI write Mocha's comments", the model writes the line from
+      // the allowed details; the fixed line stays as the fallback.
+      if (saying.kind !== 'comment' || !context || ai.provider === 'off' || !ai.features.comments) {
+        openComment(saying);
+        return;
+      }
+      const provider = providerFor(ai, {
+        fetch: aiFetch,
+        claudeKey: () => keys.open(ai.claudeKey),
+      });
+      void writeComment(provider, context, saying.text).then((text) => {
+        // A break, a pause or another bubble may have come while it wrote.
+        if (comment || reminder || ritual || pause.paused || breaks.state.phase !== 'working')
+          return;
+        openComment({ ...saying, text });
+      });
     });
     // A break, a focus session, a ritual or a pause comes first: the
     // comment makes way at once.
