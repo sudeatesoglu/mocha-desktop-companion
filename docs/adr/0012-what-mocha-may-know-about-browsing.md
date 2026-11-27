@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-19
+- **Amended by:** [ADR-0014](0014-read-what-pages-are-about.md) (proposed): an eighth capability, reading what pages are about
 
 ## Context
 
