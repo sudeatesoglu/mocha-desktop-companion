@@ -21,8 +21,8 @@
   },
   "devDependencies": {
     "@mocha/core": "workspace:*",
-    "@seriousme/openapi-schema-validator": "2.11.0",
-    "electron": "44.11.1",
+    "@seriousme/openapi-schema-validator": "2.12.0",
+    "electron": "44.11.5",
     "electron-builder": "26.18.0",
     "electron-vite": "6.0.0",
     "vite": "8.3.8",
